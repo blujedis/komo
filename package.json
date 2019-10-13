@@ -8,7 +8,8 @@
   "license": "ISC",
   "scripts": {
     "build": "tsc --project tsconfig.prod.json ",
-    "start": "webpack-dev-server --mode development --config ./build/webpack --watch"
+    "start": "webpack-dev-server --mode development --config ./build/webpack --watch",
+    "docs": "typedoc ./src --options ./typedoc.json --out ./docs && touch ./docs/.nojekll"
   },
   "dependencies": {
     "lodash.get": "^4.4.2",
@@ -41,6 +42,7 @@
     "ts-node": "^8.4.1",
     "tslint": "^5.20.0",
     "tslint-react": "^4.1.0",
+    "typedoc": "^0.15.0",
     "typescript": "^3.6.3",
     "webpack": "^4.41.0",
     "webpack-cli": "^3.3.9",

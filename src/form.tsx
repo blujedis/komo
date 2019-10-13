@@ -1,11 +1,9 @@
 import React, { FC, useRef, FormEvent, useEffect } from 'react';
 import { initRegister } from './register';
-import { formReducer } from './store';
 import get from 'lodash.get';
 import set from 'lodash.setwith';
 import { IOptions, IModel, KeyOf, IRegisteredElement, ValidationModel } from './types';
 import { useRenderCount, merge, log } from './utils';
-import { ObjectSchemaConstructor } from 'yup';
 
 /**
  * Native Validation reference.

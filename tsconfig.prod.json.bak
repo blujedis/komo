@@ -1,0 +1,11 @@
+{
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "target": "esnext",
+    "module": "commonjs",
+    "isolatedModules": false,
+    "declaration": true,
+    "allowJs": false,
+    "noEmit": false
+  }
+}

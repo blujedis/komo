@@ -1,6 +1,5 @@
 import { FormEvent, ChangeEvent } from 'react';
 import { ObjectSchema } from 'yup';
-import { Komo } from './form';
 
 // HELPERS //
 
@@ -30,7 +29,7 @@ export type ValidateFieldHandler<T extends IModel> =
   (value?: any, path?: string, name?: KeyOf<T> | string) =>
     ErrorModel<T> | Promise<ErrorModel<T>>;
 
-export type SubmitResetHandler<T extends IModel> = (model: T, komo: Komo, event: FormEvent<HTMLFormElement>) => void;
+export type SubmitResetHandler<T extends IModel> = (model: T, komo, event: FormEvent<HTMLFormElement>) => void;
 
 export interface IOptions<T extends IModel> {
   model: T;

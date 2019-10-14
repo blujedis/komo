@@ -1,10 +1,10 @@
-import React, { FC, useRef, FormEvent, useEffect } from 'react';
+import React, { FC, useRef, useEffect } from 'react';
 import { initRegister } from './register';
 import get from 'lodash.get';
 import set from 'lodash.setwith';
 import { IOptions, IModel, KeyOf, IRegisteredElement, ErrorModel, ValidationSchema, SubmitResetHandler } from './types';
-import { useRenderCount, merge, log, isPromise } from './utils';
-import { ObjectSchema } from 'yup';
+import { useRenderCount, merge, log, isPromise, yupToErrors } from './utils';
+import { ObjectSchema, ValidateOptions } from 'yup';
 
 /**
  * Native Validation reference.
@@ -34,9 +34,9 @@ function normalizeValidationSchema<T extends IModel>(initSchema: ValidationSchem
   if (typeof initSchema === 'function') {
 
     schema = {
-      validate: (modelOrPath: string | KeyOf<T> | T, valueOrErrors?: any, errors?: ErrorModel<T>) => {
+      validate: (model: T) => {
         return new Promise((resolve, reject) => {
-          const result = initSchema(modelOrPath as any, valueOrErrors, errors);
+          const result = initSchema(model as any);
           if (!isPromise(result))
             return result;
           return (result as Promise<ErrorModel<T>>)
@@ -46,7 +46,27 @@ function normalizeValidationSchema<T extends IModel>(initSchema: ValidationSchem
       }
     } as any;
 
-    schema.validateAt = schema.validate;
+    schema.validateAt = (path: string, value: any) => {
+      const model = set({}, path, value);
+      return schema.validate(model);
+    };
+
+  }
+
+  else if (schema) {
+
+    const validate = schema.validate;
+    const validateAt = schema.validateAt;
+
+    schema.validate = (model: T, options?: ValidateOptions) => {
+      return validate(model, options)
+        .then(res => {
+          return res;
+        })
+        .catch(err => {
+          return yupToErrors(err);
+        });
+    };
 
   }
 
@@ -70,7 +90,7 @@ export function initForm<T extends IModel>(options: IOptions<T>) {
   const schema: ObjectSchema<T> = normalizeValidationSchema(options.validationSchema);
 
   // Form wrapper creates ref sets noValidate.
-  const Form: FC<IForm> = (props) => {
+  const Form: FC<IForm<T>> = (props) => {
 
     useRenderCount();
     props = { onSubmit: options.onSubmit, onReset: options.onReset, noValidate: true, ...props };
@@ -218,5 +238,3 @@ export default function useForm<T extends IModel>(options?: IOptions<T>) {
   return api;
 
 }
-
-export type Komo = ReturnType<typeof useForm>;

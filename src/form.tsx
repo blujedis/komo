@@ -2,8 +2,9 @@ import React, { FC, useRef, FormEvent, useEffect } from 'react';
 import { initRegister } from './register';
 import get from 'lodash.get';
 import set from 'lodash.setwith';
-import { IOptions, IModel, KeyOf, IRegisteredElement, ValidationModel } from './types';
-import { useRenderCount, merge, log } from './utils';
+import { IOptions, IModel, KeyOf, IRegisteredElement, ErrorModel, ValidationSchema } from './types';
+import { useRenderCount, merge, log, isPromise } from './utils';
+import { ObjectSchema } from 'yup';
 
 /**
  * Native Validation reference.
@@ -24,6 +25,38 @@ const DEFAULTS: IOptions<any> = {
 
 export type FormApi = ReturnType<typeof initForm>;
 
+function normalizeValidationSchema<T extends IModel>(initSchema: ValidationSchema<T>) {
+
+  let schema = initSchema as ObjectSchema<T>;
+
+  // User supplied custom validation script
+  // map to same interface as yup.
+  if (typeof initSchema === 'function') {
+
+    schema = {
+      validate: (modelOrPath: string | KeyOf<T> | T, valueOrErrors?: any, errors?: ErrorModel<T>) => {
+        return new Promise((resolve, reject) => {
+          const result = initSchema(modelOrPath as any, valueOrErrors, errors);
+          if (!isPromise(result))
+            return result;
+          return (result as Promise<ErrorModel<T>>)
+            .then(res => resolve(res))
+            .catch(rej => reject(rej));
+        });
+      }
+    } as any;
+
+    schema.validateAt = schema.validate;
+
+  }
+
+  if (schema && !schema.validate)
+    throw new Error(`Validation schema requires yup ObjectSchema or function implementing: "(model) => ErrorModel | Promise<ErrorModel>".`);
+
+  return schema;
+
+}
+
 export function initForm<T extends IModel>(options: IOptions<T>) {
 
   const form = useRef<HTMLFormElement>(null);
@@ -32,8 +65,9 @@ export function initForm<T extends IModel>(options: IOptions<T>) {
   const fields = useRef(new Set<IRegisteredElement<T>>());
   const touched = useRef(new Set<string>());
   const dirty = useRef(new Set<string>());
-  const errors = useRef<ValidationModel<T>>({});
+  const errors = useRef<ErrorModel<T>>({});
   const isMounted = useRef(false);
+  const schema: ObjectSchema<T> = normalizeValidationSchema(options.validationSchema);
 
   // Form wrapper creates ref sets noValidate.
   const Form: FC<IForm> = (props) => {
@@ -58,13 +92,14 @@ export function initForm<T extends IModel>(options: IOptions<T>) {
     fields,
     getModel,
     setModel,
+    validateModel,
     touched,
-    dirty,
     setTouched,
     removeTouched,
+    dirty,
     setDirty,
     removeDirty,
-    validateModel
+    schema
   };
 
   function setModel<K extends KeyOf<T>>(path: string, value: any);
@@ -102,15 +137,14 @@ export function initForm<T extends IModel>(options: IOptions<T>) {
     }
 
     if (arguments.length === 2) {
-      if (typeof options.validationSchema === 'function') {
 
-      }
+      // Check if user defined field validator.
+
+
     }
 
     else {
-      if (typeof options.validationSchema === 'function') {
 
-      }
     }
 
   }
@@ -165,6 +199,16 @@ export function initForm<T extends IModel>(options: IOptions<T>) {
 export default function useForm<T extends IModel>(options?: IOptions<T>) {
 
   options = { ...DEFAULTS, ...options };
+
+  try {
+    // If cast schema get model from yup schema.
+    if (options.castSchema && options.validationSchema && typeof options.validationSchema === 'object')
+      // @ts-ignore
+      options.model = options.validationSchema.cast();
+  }
+  catch (ex) {
+    throw new Error(`Failed to "cast" validation schema to model, verify valid "yup" schema.`);
+  }
 
   const baseApi = initForm(options);
   const extend = { register: initRegister<T>(baseApi as any) };

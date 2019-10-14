@@ -78,3 +78,12 @@ export function isTextarea(value: TagType) {
 export function isFile(value: TagType) {
   return isTagType(value, 'file');
 }
+
+/**
+ * Checks loosely if value is a promise.
+ * 
+ * @param value the value to inspect.
+ */
+export function isPromise(value: any) {
+  return Promise.resolve(value) === value;
+}

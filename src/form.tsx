@@ -2,7 +2,7 @@ import React, { FC, useRef, FormEvent, useEffect } from 'react';
 import { initRegister } from './register';
 import get from 'lodash.get';
 import set from 'lodash.setwith';
-import { IOptions, IModel, KeyOf, IRegisteredElement, ErrorModel, ValidationSchema } from './types';
+import { IOptions, IModel, KeyOf, IRegisteredElement, ErrorModel, ValidationSchema, SubmitResetHandler } from './types';
 import { useRenderCount, merge, log, isPromise } from './utils';
 import { ObjectSchema } from 'yup';
 
@@ -11,10 +11,10 @@ import { ObjectSchema } from 'yup';
  * @see https://www.html5rocks.com/en/tutorials/forms/constraintvalidation/
  */
 
-interface IForm {
+interface IForm<T extends IModel> {
   noValidate?: boolean;
-  onSubmit?: (event: FormEvent<HTMLFormElement>) => void;
-  onReset?: (event: FormEvent<HTMLFormElement>) => void;
+  onSubmit?: SubmitResetHandler<T>;
+  onReset?: SubmitResetHandler<T>;
 }
 
 const DEFAULTS: IOptions<any> = {
@@ -218,3 +218,5 @@ export default function useForm<T extends IModel>(options?: IOptions<T>) {
   return api;
 
 }
+
+export type Komo = ReturnType<typeof useForm>;

@@ -2,9 +2,12 @@ import React, { FC, useRef, useEffect } from 'react';
 import { initRegister } from './register';
 import get from 'lodash.get';
 import set from 'lodash.setwith';
-import { IOptions, IModel, KeyOf, IRegisteredElement, ErrorModel, ValidationSchema, SubmitResetHandler, IValidator } from './types';
-import { useRenderCount, merge, log, isPromise, yupToErrors } from './utils';
-import { ObjectSchema, ValidateOptions } from 'yup';
+import {
+  IOptions, IModel, KeyOf, IRegisteredElement, ErrorModel,
+  SubmitResetHandler
+} from './types';
+import { useRenderCount, merge, log, isPromise, normalizeValidator } from './utils';
+import { ValidateOptions } from 'yup';
 
 /**
  * Native Validation reference.
@@ -25,69 +28,7 @@ const DEFAULTS: IOptions<any> = {
 
 export type FormApi = ReturnType<typeof initForm>;
 
-/**
- * Normalizes the schema into common interface.
- * 
- * @param schema the yup schema or user function for validation.
- */
-function normalizeValidation<T extends IModel>(schema: ValidationSchema<T>): IValidator<T> {
 
-  let validator: IValidator<T>;
-
-  // User supplied custom validation script
-  // map to same interface as yup.
-  if (typeof schema === 'function') {
-
-    validator = {
-      validate: (model: T) => {
-        return new Promise((resolve, reject) => {
-          const result = schema(model as any);
-          if (!isPromise(result))
-            return result;
-          return (result as Promise<T>)
-            .then(res => resolve(res))
-            .catch(err => reject(err));
-        });
-      }
-    };
-
-    validator.validateAt = (path: string, value: any) => {
-      const model = set({}, path, value) as T;
-      return validator.validate(model);
-    };
-
-  }
-
-  else if (schema) {
-
-    validator.validate = (model: T, options?: ValidateOptions) => {
-      return schema.validate(model, options)
-        .then(res => {
-          return res;
-        })
-        .catch(err => {
-          return yupToErrors(err) as any;
-        });
-    };
-
-    validator.validateAt = (path: string, value: any, options?: ValidateOptions) => {
-      return schema.validateAt(path, value, options)
-        .then(res => {
-          return res;
-        })
-        .catch(err => {
-          return yupToErrors(err) as any;
-        });
-    };
-
-  }
-
-  if (validator && !(validator.validate || validator.validateAt))
-    throw new Error(`Validation schema requires yup ObjectSchema or function implementing: "(model) => ErrorModel | Promise<T>".`);
-
-  return validator;
-
-}
 
 export function initForm<T extends IModel>(options: IOptions<T>) {
 
@@ -99,7 +40,7 @@ export function initForm<T extends IModel>(options: IOptions<T>) {
   const dirty = useRef(new Set<string>());
   const errors = useRef<ErrorModel<T>>({});
   const isMounted = useRef(false);
-  const validator = normalizeValidation(options.validationSchema);
+  const validator = normalizeValidator(options.validationSchema);
 
   // Form wrapper creates ref sets noValidate.
   const Form: FC<IForm<T>> = (props) => {
@@ -161,7 +102,9 @@ export function initForm<T extends IModel>(options: IOptions<T>) {
     return get(state.current, path, undefined);
   }
 
-  function validateModel(pathOrModel: string | KeyOf<T> | T, value?: any) {
+  function validateModel(path: string | KeyOf<T>, value?: any, opts?: ValidateOptions);
+  function validateModel(path: T, opts?: ValidateOptions);
+  function validateModel(pathOrModel: string | KeyOf<T> | T, value?: any, opts?: ValidateOptions) {
 
     if (!options.validationSchema) {
       errors.current = {};
@@ -169,8 +112,6 @@ export function initForm<T extends IModel>(options: IOptions<T>) {
     }
 
     if (arguments.length === 2) {
-
-      // Check if user defined field validator.
 
 
     }

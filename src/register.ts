@@ -6,19 +6,8 @@ import { lchown } from 'fs';
 
 type RegisterElement = (element: IRegisterElement) => void;
 
-const DEFAULTS: IRegisteredElement<any> = {
-  name: ''
-};
-
 export function initRegister<T extends IModel>(api: FormApi) {
 
-  function setCheckbox(element: IRegisteredElement<T>) {
-
-  }
-
-  function setRadio(element: IRegisteredElement<T>) {
-
-  }
 
   // Binds to events, sets initial values.
   function bindElement(element: IRegisteredElement<T>) {
@@ -26,6 +15,12 @@ export function initRegister<T extends IModel>(api: FormApi) {
     if (!element || api.fields.current.has(element as any)) return;
 
     element.path = element.path || element.name;
+
+    element.validateChange = element.onChange ? false :
+      typeof element.validateChange === 'undefined' ? true : element.validateChange;
+
+    element.validateBlur = element.onBlur ? false :
+      typeof element.validateBlur === 'undefined' ? true : element.validateBlur;
 
     const { name, type, tagName, value, checked, options } = element;
 

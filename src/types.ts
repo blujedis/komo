@@ -13,16 +13,16 @@ export interface IModel { [key: string]: any; }
 
 export type ValidateModelHandler<T extends IModel> = (model: T) => ErrorModel<T> | Promise<T>;
 
-export type ValidateFieldHandler<T extends IModel> =
-  (value?: any, path?: string, name?: KeyOf<T> | string) =>
-    ErrorModel<T> | Promise<ErrorModel<T>>;
-
 export type ValidationSchema<T extends IModel> = ObjectSchema<T> | ValidateModelHandler<T>;
 
 export interface IValidator<T extends IModel> {
   validate(model: T, options?: ValidateOptions): ErrorModel<T> | Promise<T>;
   validateAt?(path: string, value: any, options?: ValidateOptions): ErrorModel<T> | Promise<T>;
 }
+
+export type ValidateFieldHandler<T extends IModel> =
+  (value?: any, path?: string, name?: KeyOf<T> | string) =>
+    ErrorModel<T> | Promise<T>;
 
 export type SubmitResetHandler<T extends IModel> = (model: T, komo, event: FormEvent<HTMLFormElement>) => void;
 

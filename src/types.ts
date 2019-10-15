@@ -1,5 +1,5 @@
 import { FormEvent, ChangeEvent } from 'react';
-import { ObjectSchema } from 'yup';
+import { ObjectSchema, ValidateOptions } from 'yup';
 
 // HELPERS //
 
@@ -11,23 +11,18 @@ export type ValueOf<T, K extends KeyOf<T>> = T[K];
 
 export interface IModel { [key: string]: any; }
 
-export interface IValidatePromise<T extends IModel> extends Promise<T> {
-  then<TResult1 = T, TResult2 = ErrorModel<T>>(
-    onfulfilled?: ((value: T) => TResult1 | PromiseLike<TResult1>) | undefined | null,
-    onrejected?: ((reason: any) =>
-      ErrorModel<T> | PromiseLike<ErrorModel<T>>) | undefined | null): Promise<TResult1 | TResult2>;
-  catch<TResult = ErrorModel<T>>(
-    onrejected?: ((reason: any) =>
-      ErrorModel<T> | PromiseLike<ErrorModel<T>>) | undefined | null): Promise<T | TResult>;
-}
-
-export type ValidateModelHandler<T extends IModel> = (model: T) => ErrorModel<T> | IValidatePromise<T>;
-
-export type ValidationSchema<T extends IModel> = ObjectSchema<T> | ValidateModelHandler<T>;
+export type ValidateModelHandler<T extends IModel> = (model: T) => ErrorModel<T> | Promise<T>;
 
 export type ValidateFieldHandler<T extends IModel> =
   (value?: any, path?: string, name?: KeyOf<T> | string) =>
     ErrorModel<T> | Promise<ErrorModel<T>>;
+
+export type ValidationSchema<T extends IModel> = ObjectSchema<T> | ValidateModelHandler<T>;
+
+export interface IValidator<T extends IModel> {
+  validate(model: T, options?: ValidateOptions): ErrorModel<T> | Promise<T>;
+  validateAt?(path: string, value: any, options?: ValidateOptions): ErrorModel<T> | Promise<T>;
+}
 
 export type SubmitResetHandler<T extends IModel> = (model: T, komo, event: FormEvent<HTMLFormElement>) => void;
 

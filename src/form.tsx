@@ -1,12 +1,12 @@
 import React, { FC, useRef, useEffect } from 'react';
-import { initRegister } from './register';
+import { initElement } from './register';
 import get from 'lodash.get';
 import set from 'lodash.setwith';
 import {
   IOptions, IModel, KeyOf, IRegisteredElement, ErrorModel,
   SubmitResetHandler
 } from './types';
-import { useRenderCount, merge, log, isPromise, normalizeValidator } from './utils';
+import { useRenderCount, merge, log, normalizeValidator } from './utils';
 import { ValidateOptions } from 'yup';
 
 /**
@@ -27,8 +27,6 @@ const DEFAULTS: IOptions<any> = {
 };
 
 export type FormApi = ReturnType<typeof initForm>;
-
-
 
 export function initForm<T extends IModel>(options: IOptions<T>) {
 
@@ -72,6 +70,8 @@ export function initForm<T extends IModel>(options: IOptions<T>) {
     dirty,
     setDirty,
     removeDirty,
+    handleBlur,
+    handleChange,
     validator
   };
 
@@ -112,14 +112,21 @@ export function initForm<T extends IModel>(options: IOptions<T>) {
     }
 
     if (arguments.length === 2) {
-
-
+      //
     }
 
     else {
-
+      //
     }
 
+  }
+
+  function handleBlur(e) {
+    // 
+  }
+
+  function handleChange(e) {
+    // 
   }
 
   function setTouched(name: string) {
@@ -184,7 +191,7 @@ export default function useForm<T extends IModel>(options?: IOptions<T>) {
   }
 
   const baseApi = initForm(options);
-  const extend = { register: initRegister<T>(baseApi as any) };
+  const extend = { register: initElement<T>(baseApi as any) };
 
   const api = merge(baseApi, extend);
 

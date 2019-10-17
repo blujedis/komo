@@ -36,11 +36,22 @@ const App: FC = () => {
           <option>Accounts</option>
         </select><br /><br />
 
+        <label htmlFor="category">Category: </label>
+        <select name="category" multiple ref={register}>
+          <option value="volvo">Volvo</option>
+          <option value="saab">Saab</option>
+          <option value="opel">Opel</option>
+          <option value="audi">Audi</option>
+        </select><br /><br />
+
+        <label htmlFor="filename">Last Name: </label>
+        <input type="file" name="filename" ref={register} /><br /><br />
+
         <label htmlFor="message">Message: </label>
         <textarea name="message" defaultValue=" Just some text." ref={register}>
         </textarea><br /><br />
 
-        <input type="hidden" value="code"></input>
+        <input name="csrf" type="hidden" defaultValue="UYNL7_MMNG8_WRRV2_LIOP4" ref={register}></input>
 
       </Form>
 

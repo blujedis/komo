@@ -71,6 +71,15 @@ export function isTextarea(value: TagType) {
 }
 
 /**
+ * Checks if value or value.type is "hidden".
+ * 
+ * @param value the string or object containing type to inspect.
+ */
+export function isHidden(value: TagType) {
+  return isTagType(value, 'hidden');
+}
+
+/**
  * Checks if value or value.type is "file".
  * 
  * @param value the string or object containing type to inspect.

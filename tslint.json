@@ -30,6 +30,7 @@
     "jsx-no-multiline-js": false,
     "jsx-boolean-value": false,
     "no-angle-bracket-type-assertion": false,
-    "no-construct": false
+    "no-construct": false,
+    "object-literal-key-quotes": false
   }
 }

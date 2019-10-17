@@ -1,37 +1,30 @@
 
 import { IRegisterElement, IRegisterOptions, IRegisteredElement, IModel } from './types';
 import { FormApi } from './form';
-import { log, isRadio, isCheckbox } from './utils';
-import { lchown } from 'fs';
+import { log, isRadio, isCheckbox, addListener } from './utils';
 
 type RegisterElement = (element: IRegisterElement) => void;
 
-export function initRegister<T extends IModel>(api: FormApi) {
+export function initElement<T extends IModel>(api: FormApi) {
 
+  function unbindElement(element: IRegisteredElement<T>) {
+    //
+  }
 
   // Binds to events, sets initial values.
   function bindElement(element: IRegisteredElement<T>) {
 
-    if (!element || api.fields.current.has(element as any)) return;
+    if (!element || api.fields.current.has(element)) return;
 
     element.path = element.path || element.name;
+
+    console.log(element.type);
 
     element.validateChange = element.onChange ? false :
       typeof element.validateChange === 'undefined' ? true : element.validateChange;
 
     element.validateBlur = element.onBlur ? false :
       typeof element.validateBlur === 'undefined' ? true : element.validateBlur;
-
-    const { name, type, tagName, value, checked, options } = element;
-
-    console.log({
-      name,
-      type,
-      tagName,
-      value,
-      checked,
-      options
-    });
 
     if (!element.name) {
       log.warn(`${element.tagName} could NOT be registered using name of undefined.`);
@@ -45,6 +38,7 @@ export function initRegister<T extends IModel>(api: FormApi) {
         if (element.value === element.initValue)
           element.checked = true;
       }
+
       else {
 
         let val;
@@ -62,6 +56,17 @@ export function initRegister<T extends IModel>(api: FormApi) {
       }
 
     }
+
+    // Attach blur event.
+    if (element.validateBlur)
+      addListener(element, 'blur', api.handleBlur);
+
+    // Attach change event.
+    if (element.validateChange)
+      addListener(element, 'change', api.handleChange);
+
+    // add the element to fields.
+    api.fields.current.add(element);
 
   }
 

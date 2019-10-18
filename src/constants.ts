@@ -11,7 +11,7 @@ export const EVENT_CHANGE_MAP = {
   select: EVENTS.input,
   'select-one': EVENTS.change,
   'select-multiple': EVENTS.change,
-  input: EVENTS.input,
+  text: EVENTS.input,
   file: EVENTS.change,
   textarea: EVENTS.input,
   hidden: EVENTS.input

@@ -1,6 +1,7 @@
 
 import { IRegisterElement, IRegisterOptions, IRegisteredElement, IModel } from './types';
 import { FormApi } from './form';
+import { EVENT_CHANGE_MAP } from './constants';
 import { log, isRadio, isCheckbox, addListener } from './utils';
 
 type RegisterElement = (element: IRegisterElement) => void;
@@ -18,7 +19,10 @@ export function initElement<T extends IModel>(api: FormApi) {
 
     element.path = element.path || element.name;
 
-    console.log(element.type);
+    const modelVal = api.getModel(element.path);
+    const hasModelPath = api.hasModelPath(element.path);
+
+    element.initValue = element.initValue || element.value || modelVal;
 
     element.validateChange = element.onChange ? false :
       typeof element.validateChange === 'undefined' ? true : element.validateChange;
@@ -35,6 +39,7 @@ export function initElement<T extends IModel>(api: FormApi) {
     if (element.initValue) {
 
       if (isRadio(element.type)) {
+
         if (element.value === element.initValue)
           element.checked = true;
       }
@@ -57,13 +62,24 @@ export function initElement<T extends IModel>(api: FormApi) {
 
     }
 
+    else {
+      api.setModel(element.path, '');
+    }
+
     // Attach blur event.
     if (element.validateBlur)
-      addListener(element, 'blur', api.handleBlur);
+      addListener(element, 'blur', (e) => {
+        api.handleBlur(e, element);
+      });
+
+    if (element.validateChange)
+      console.log(element.name, element.type, EVENT_CHANGE_MAP[element.type])
 
     // Attach change event.
     if (element.validateChange)
-      addListener(element, 'change', api.handleChange);
+      addListener(element, EVENT_CHANGE_MAP[element.type], (e) => {
+        api.handleChange(e, element);
+      });
 
     // add the element to fields.
     api.fields.current.add(element);

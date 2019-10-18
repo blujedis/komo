@@ -2,6 +2,7 @@ import React, { FC, useRef, useEffect } from 'react';
 import { initElement } from './register';
 import get from 'lodash.get';
 import set from 'lodash.setwith';
+import has from 'lodash.has';
 import {
   IOptions, IModel, KeyOf, IRegisteredElement, ErrorModel,
   SubmitResetHandler
@@ -48,6 +49,7 @@ export function initForm<T extends IModel>(options: IOptions<T>) {
 
     useEffect(() => {
       isMounted.current = true;
+      console.log(state.current)
       return () => {
         isMounted.current = false;
       };
@@ -64,6 +66,7 @@ export function initForm<T extends IModel>(options: IOptions<T>) {
     getModel,
     setModel,
     validateModel,
+    hasModelPath,
     touched,
     setTouched,
     removeTouched,
@@ -102,6 +105,10 @@ export function initForm<T extends IModel>(options: IOptions<T>) {
     return get(state.current, path, undefined);
   }
 
+  function hasModelPath<K extends KeyOf<T>>(path: string | K) {
+    return has(state, path);
+  }
+
   function validateModel(path: string | KeyOf<T>, value?: any, opts?: ValidateOptions);
   function validateModel(path: T, opts?: ValidateOptions);
   function validateModel(pathOrModel: string | KeyOf<T> | T, value?: any, opts?: ValidateOptions) {
@@ -121,12 +128,12 @@ export function initForm<T extends IModel>(options: IOptions<T>) {
 
   }
 
-  function handleBlur(e) {
-    // 
+  function handleBlur(e, element: IRegisteredElement<T>) {
+    // console.log(element.name, e.target.value);
   }
 
-  function handleChange(e) {
-    // 
+  function handleChange(e, element: IRegisteredElement<T>) {
+    console.log(element.name, e.target.value, element.value);
   }
 
   function setTouched(name: string) {

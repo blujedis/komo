@@ -1,4 +1,4 @@
-import React, { FC, useRef, useEffect } from 'react';
+import React, { FC, useRef, useEffect, ChangeEvent, FocusEvent } from 'react';
 import { initElement } from './register';
 import get from 'lodash.get';
 import set from 'lodash.setwith';
@@ -128,12 +128,12 @@ export function initForm<T extends IModel>(options: IOptions<T>) {
 
   }
 
-  function handleBlur(e, element: IRegisteredElement<T>) {
-    // console.log(element.name, e.target.value);
+  function handleBlur(element: IRegisteredElement<T>, e: FocusEvent<HTMLElement>) {
+    // console.log(element.name, element.value);
   }
 
-  function handleChange(e, element: IRegisteredElement<T>) {
-    console.log(element.name, e.target.value, element.value);
+  function handleChange(element: IRegisteredElement<T>, e: ChangeEvent<HTMLElement>) {
+    console.log(element);
   }
 
   function setTouched(name: string) {

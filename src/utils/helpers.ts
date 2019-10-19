@@ -53,6 +53,24 @@ export function isSelect(value: TagType) {
 }
 
 /**
+ * Checks if value or value.type is "select-one".
+ * 
+ * @param value the string or object containing type to inspect.
+ */
+export function isSelectOne(value: TagType) {
+  return isTagType(value, 'select-one');
+}
+
+/**
+ * Checks if value or value.type is "select-multiple".
+ * 
+ * @param value the string or object containing type to inspect.
+ */
+export function isSelectMultiple(value: TagType) {
+  return isTagType(value, 'select-multiple');
+}
+
+/**
  * Checks if value or value.type is "input".
  * 
  * @param value the string or object containing type to inspect.

@@ -59,7 +59,7 @@ export interface IRegisterOptions<T extends IModel> {
 export interface IRegisteredElement<T extends IModel> extends IRegisterElement {
   name: KeyOf<T> | string;
   path?: string;
-  initValue?: string;
+  initValue?: string | string[];
   validateChange?: boolean;
   validateBlur?: boolean;
   onValidate?: ValidateFieldHandler<T>;

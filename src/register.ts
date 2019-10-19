@@ -2,7 +2,8 @@
 import { IRegisterElement, IRegisterOptions, IRegisteredElement, IModel } from './types';
 import { FormApi } from './form';
 import { EVENT_CHANGE_MAP } from './constants';
-import { log, isRadio, isCheckbox, addListener } from './utils';
+import { log, isRadio, isCheckbox, addListener, isSelectMultiple } from './utils';
+import { FocusEvent, ChangeEvent } from 'react';
 
 type RegisterElement = (element: IRegisterElement) => void;
 
@@ -20,7 +21,6 @@ export function initElement<T extends IModel>(api: FormApi) {
     element.path = element.path || element.name;
 
     const modelVal = api.getModel(element.path);
-    const hasModelPath = api.hasModelPath(element.path);
 
     element.initValue = element.initValue || element.value || modelVal;
 
@@ -42,6 +42,12 @@ export function initElement<T extends IModel>(api: FormApi) {
 
         if (element.value === element.initValue)
           element.checked = true;
+
+      }
+
+      else if (isSelectMultiple(element.type)) {
+        element.initValue = !Array.isArray(element.initValue) ? [element.initValue] : element.initValue;
+
       }
 
       else {
@@ -49,11 +55,11 @@ export function initElement<T extends IModel>(api: FormApi) {
         let val;
 
         if (isCheckbox(element.type)) {
-          val = /(false|0)/.test(element.initValue) ? false : true;
+          val = /(false|0)/.test(element.initValue as string) ? false : true;
           element.checked = val;
         }
         else {
-          val = element.value = element.initValue;
+          val = element.value = element.initValue as string;
         }
 
         api.setModel(element.path, val);
@@ -68,17 +74,15 @@ export function initElement<T extends IModel>(api: FormApi) {
 
     // Attach blur event.
     if (element.validateBlur)
-      addListener(element, 'blur', (e) => {
-        api.handleBlur(e, element);
+      addListener(element, 'blur', (e: any) => {
+        api.handleBlur(element, e);
       });
 
-    if (element.validateChange)
-      console.log(element.name, element.type, EVENT_CHANGE_MAP[element.type])
 
     // Attach change event.
     if (element.validateChange)
-      addListener(element, EVENT_CHANGE_MAP[element.type], (e) => {
-        api.handleChange(e, element);
+      addListener(element, EVENT_CHANGE_MAP[element.type], (e: any) => {
+        api.handleChange(element, e);
       });
 
     // add the element to fields.

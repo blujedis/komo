@@ -107,6 +107,18 @@ export function isFile(value: TagType) {
 }
 
 /**
+ * Checks if value.type is text like input (i.e. not radio, check, submit, reset etc.)
+ * 
+ * @param value the string or object containing type to inspect.
+ */
+export function isTextLike(value: TagType) {
+  const type = (value as any).type || value;
+  return !['select-one', 'select-multiple', 'radio',
+    'checkbox', 'file', 'submit', 'reset'].includes(type);
+}
+
+
+/**
  * Checks loosely if value is a promise.
  * 
  * @param value the value to inspect.
@@ -114,3 +126,13 @@ export function isFile(value: TagType) {
 export function isPromise(value: any) {
   return Promise.resolve(value) === value;
 }
+
+/**
+ * Checks if a value is boolean like.
+ * 
+ * @param value the value to inspect.
+ */
+export function isBooleanLike(value: any) {
+  return /^(true|false|0|1)$/.test(value);
+}
+

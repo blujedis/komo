@@ -12,10 +12,8 @@
     "docs": "typedoc ./src --options ./typedoc.json --out ./docs && touch ./docs/.nojekll"
   },
   "dependencies": {
-    "@types/lodash.has": "^4.5.6",
-    "lodash.get": "^4.4.2",
-    "lodash.has": "^4.5.2",
-    "lodash.setwith": "^4.3.2",
+    "dot-prop": "^5.1.0",
+    "lodash.isequal": "^4.5.0",
     "yup": "^0.27.0"
   },
   "peerDependencies": {

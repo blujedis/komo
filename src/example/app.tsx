@@ -3,7 +3,7 @@ import useForm from '../';
 
 const App: FC = () => {
 
-  const { Form, register } = useForm({
+  const { register, reset } = useForm({
     model: {
       firstName: 'bob',
       lastName: 'johnson'
@@ -13,7 +13,10 @@ const App: FC = () => {
   return (
     <div style={{ padding: '24px' }} >
 
-      <Form>
+      <h2>Example Form</h2>
+      <hr /><br />
+
+      <form>
 
         <label htmlFor="firstName">First Name: </label>
         <input name="firstName" type="text" ref={register} /><br /><br />
@@ -22,7 +25,7 @@ const App: FC = () => {
         <input name="lastName" ref={register} /><br /><br />
 
         <label htmlFor="urgent">Urgent: </label>
-        <input name="urgent" type="checkbox" ref={register({ value: true })} defaultChecked={false} /><br /><br />
+        <input name="urgent" type="checkbox" ref={register({ value: true })} /><br /><br />
 
         <label htmlFor="method">Contact Method: </label> &nbsp;
         Phone <input name="method" type="radio" value="Phone" ref={register} defaultChecked={true} /> &nbsp;
@@ -53,7 +56,11 @@ const App: FC = () => {
 
         <input name="csrf" type="hidden" defaultValue="UYNL7_MMNG8_WRRV2_LIOP4" ref={register}></input>
 
-      </Form>
+        <hr />
+
+        <input type="reset" value="Reset" onClick={reset} />
+
+      </form>
 
     </div>
   );

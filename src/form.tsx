@@ -1,13 +1,11 @@
-import React, { FC, useRef, useEffect, ChangeEvent, FocusEvent } from 'react';
+import { useRef, useEffect, FormEvent, useState, MouseEvent } from 'react';
 import { initElement } from './register';
-import get from 'lodash.get';
-import set from 'lodash.setwith';
-import has from 'lodash.has';
+import { get, set, delete as del, has } from 'dot-prop';
 import {
   IOptions, IModel, KeyOf, IRegisteredElement, ErrorModel,
   SubmitResetHandler
 } from './types';
-import { useRenderCount, merge, log, normalizeValidator } from './utils';
+import { merge, log, normalizeValidator, isRadio, isCheckbox, isBooleanLike } from './utils';
 import { ValidateOptions } from 'yup';
 
 /**
@@ -15,84 +13,141 @@ import { ValidateOptions } from 'yup';
  * @see https://www.html5rocks.com/en/tutorials/forms/constraintvalidation/
  */
 
-interface IForm<T extends IModel> {
-  noValidate?: boolean;
-  onSubmit?: SubmitResetHandler<T>;
-  onReset?: SubmitResetHandler<T>;
-}
-
 const DEFAULTS: IOptions<any> = {
-  model: {},
-  onSubmit: ((e) => undefined),
-  onReset: ((e) => undefined)
+  model: {}
 };
 
 export type FormApi = ReturnType<typeof initForm>;
 
 export function initForm<T extends IModel>(options: IOptions<T>) {
 
-  const form = useRef<HTMLFormElement>(null);
   const defaults = useRef({ ...options.model });
-  const state = useRef({ ...options.model });
+  const model = useRef({ ...options.model });
   const fields = useRef(new Set<IRegisteredElement<T>>());
   const touched = useRef(new Set<string>());
   const dirty = useRef(new Set<string>());
   const errors = useRef<ErrorModel<T>>({});
-  const isMounted = useRef(false);
+  const [, render] = useState({});
+  const mounted = useRef(false);
+
+  useEffect(() => {
+    mounted.current = true;
+    return () => {
+      mounted.current = false;
+      [...fields.current.values()].forEach(e => unref);
+    };
+  }, []);
+
   const validator = normalizeValidator(options.validationSchema);
 
-  // Form wrapper creates ref sets noValidate.
-  const Form: FC<IForm<T>> = (props) => {
-
-    useRenderCount();
-    props = { onSubmit: options.onSubmit, onReset: options.onReset, noValidate: true, ...props };
-
-    useEffect(() => {
-      isMounted.current = true;
-      console.log(state.current)
-      return () => {
-        isMounted.current = false;
-      };
-    }, []);
-
-    return <form ref={form} {...props} />;
-
-  };
-
   const api = {
-    form,
-    Form,
+
+    // Fields & Defaults
+    defaults,
     fields,
+
+    // Form
+    validator,
+    mounted,
+    isFormDirty: false,
+    isFormTouched: false,
+    isFormValid: true,
+    reset,
+    handleReset,
+    handleSubmit,
+
+    // Model
+    getDefault,
+    setDefaultValue,
     getModel,
     setModel,
     validateModel,
     hasModelPath,
+
+    // Touched
     touched,
     setTouched,
     removeTouched,
+    clearTouched,
+    isTouched,
+
+    // Dirty
     dirty,
     setDirty,
     removeDirty,
-    handleBlur,
-    handleChange,
-    validator
+    clearDirty,
+    isDirty,
+
+    // Errors
+    setError,
+    removeError,
+    clearError,
+
+    unref
+
   };
 
-  function setModel<K extends KeyOf<T>>(path: string, value: any);
+  function setDefaultValue(element: IRegisteredElement<T>, isReset: boolean = false) {
+
+    let value;
+
+    if (isRadio(element.type) || isCheckbox(element.type)) {
+
+      if (isRadio(element.type)) {
+        if (element.checked) {
+          value = element.initValue = element.value;
+          // @ts-ignore
+          element.defaultChecked = element.checked = true;
+        }
+      }
+
+      else {
+        value = element.initValue = element.checked || isBooleanLike(element.initValue);
+        // @ts-ignore
+        element.defaultChecked = element.checked = value;
+      }
+
+    }
+
+    else {
+      // @ts-ignore
+      value = element.defaultValue = element.value = element.initValue;
+    }
+
+    // Update the model and set defaults.
+    if (value)
+      api.setModel(element.path, value, true);
+
+  }
+
+  function getDefault<K extends KeyOf<T>>(path: string);
+  function getDefault<K extends KeyOf<T>>(key: K);
+  function getDefault();
+  function getDefault<K extends KeyOf<T>>(path?: K | string) {
+    if (!path)
+      return defaults.current;
+    return get(defaults.current, path);
+  }
+
+  function setModel<K extends KeyOf<T>>(path: string, value: any, setDefault?: boolean);
   function setModel<K extends KeyOf<T>>(key: K, value: T[K]);
   function setModel(model: T);
-  function setModel<K extends KeyOf<T>>(pathOrModel: string | K | T, value?: T[K]) {
+  function setModel<K extends KeyOf<T>>(pathOrModel: string | K | T, value?: T[K], setDefault: boolean = false) {
 
     if (!pathOrModel) {
       log.error(`Cannot set model using key or model of undefined.`);
       return;
     }
 
-    if (arguments.length === 2)
-      state.current = set(state.current, pathOrModel as K, value);
+    if (arguments.length >= 2) {
+      model.current = set({ ...model.current }, pathOrModel as K, value);
+      if (setDefault)
+        defaults.current = set({ ...defaults.current }, pathOrModel as string, value);
+    }
 
-    else
-      state.current = { ...state.current, ...pathOrModel as T };
+    else {
+      model.current = { ...model.current, ...pathOrModel as T };
+    }
 
   }
 
@@ -101,12 +156,12 @@ export function initForm<T extends IModel>(options: IOptions<T>) {
   function getModel();
   function getModel<K extends KeyOf<T>>(path?: K | string) {
     if (!path)
-      return state.current;
-    return get(state.current, path, undefined);
+      return model.current;
+    return get(model.current, path);
   }
 
   function hasModelPath<K extends KeyOf<T>>(path: string | K) {
-    return has(state, path);
+    return has(model, path);
   }
 
   function validateModel(path: string | KeyOf<T>, value?: any, opts?: ValidateOptions);
@@ -128,50 +183,151 @@ export function initForm<T extends IModel>(options: IOptions<T>) {
 
   }
 
-  function handleBlur(element: IRegisteredElement<T>, e: FocusEvent<HTMLElement>) {
-    // console.log(element.name, element.value);
-  }
-
-  function handleChange(element: IRegisteredElement<T>, e: ChangeEvent<HTMLElement>) {
-    console.log(element);
-  }
-
   function setTouched(name: string) {
     if (!touched.current.has(name))
       touched.current.add(name);
+    api.isFormTouched = !!touched.current.size;
   }
 
   function removeTouched(name: string) {
-    return touched.current.delete(name);
+    const removed = touched.current.delete(name);
+    api.isFormTouched = !!touched.current.size;
+    return removed;
+  }
+
+  function clearTouched() {
+    api.touched.current.clear();
+  }
+
+  function isTouched(name?: string) {
+    if (name)
+      return touched.current.has(name);
+    return !!touched.current.size;
   }
 
   function setDirty(name: string) {
     if (!dirty.current.has(name))
       dirty.current.add(name);
-
-    // if (!fieldsRef.current[name]) return false;
-
-    // const isDirty =
-    //   defaultValuesRef.current[name] !==
-    //   getFieldValue(fieldsRef.current, fieldsRef.current[name]!.ref);
-    // const isDirtyChanged = dirtyFieldsRef.current.has(name) !== isDirty;
-
-    // if (isDirty) {
-    //   dirtyFieldsRef.current.add(name);
-    // } else {
-    //   dirtyFieldsRef.current.delete(name);
-    // }
-
-    // isDirtyRef.current = !!dirtyFieldsRef.current.size;
-    // return isDirtyChanged;
+    api.isFormDirty = !!dirty.current.size;
   }
 
   function removeDirty(name: string) {
-    return dirty.current.delete(name);
+    const removed = dirty.current.delete(name);
+    api.isFormDirty = !!dirty.current.size;
+    return removed;
   }
 
-  function reset() {
-    state.current = { ...defaults.current };
+  function clearDirty() {
+    api.dirty.current.clear();
+  }
+
+  function isDirty(name?: string) {
+    if (name)
+      return dirty.current.has(name);
+    return !!dirty.current.size;
+  }
+
+  function setError(name: string, value: string) {
+    errors.current = set({ ...errors.current }, name, value);
+  }
+
+  function removeError(name: string) {
+    const clone = { ...errors.current };
+    del(clone, name);
+    errors.current = clone;
+  }
+
+  function clearError() {
+    errors.current = {};
+  }
+
+  function findField(name: string) {
+    return [...fields.current.values()].find(e => e.name === name || e.path === name);
+  }
+
+  function unref(element: string | IRegisteredElement<T>) {
+
+    // If string find the element in fields.
+    const _element = typeof element === 'string' ?
+      findField(element as string) :
+      element as IRegisteredElement<T>;
+
+    if (!_element) {
+      log.warn(`Failed to unref element of undefined.`);
+      return;
+    }
+
+    // Remove any flags/errors that are stored.
+    removeDirty(_element.path);
+    removeTouched(_element.path);
+    removeError(_element.path);
+
+    // Unbind any listener events.
+    _element.unbind();
+
+    // Delete the element from fields collection.
+    fields.current.delete(_element);
+
+  }
+
+  function reset(event?: FormEvent<HTMLFormElement> | MouseEvent<any>) {
+
+    // Reset all states.
+    model.current = { ...defaults.current };
+    clearDirty();
+    clearTouched();
+    api.isFormDirty = false;
+    api.isFormTouched = false;
+    api.isFormValid = true;
+
+    // Reset all fields.
+    [...fields.current.values()].forEach(e => {
+      setDefaultValue(e, true);
+    });
+
+    // Rerender the form
+    render({});
+
+  }
+
+  function handleReset(handler: SubmitResetHandler<T>): (event?: FormEvent<HTMLFormElement>) => void;
+  function handleReset(event: FormEvent<HTMLFormElement>): void;
+  function handleReset(): void;
+  function handleReset(eventOrHandler?: FormEvent<HTMLFormElement> | SubmitResetHandler<T>) {
+
+    if (typeof eventOrHandler === 'function')
+      return (event: FormEvent<HTMLFormElement>) => {
+        const fn = eventOrHandler as SubmitResetHandler<T>;
+        if (fn)
+          fn(model.current, event, api);
+        else
+          reset(); // whoops should get here just in case reset for user.
+      };
+
+    if (options.onReset)
+      return options.onReset(model.current, eventOrHandler, api);
+
+    // If we get here just use internal reset.
+    reset();
+
+  }
+
+  function handleSubmit(handler: SubmitResetHandler<T>): (event?: FormEvent<HTMLFormElement>) => void;
+  function handleSubmit(event: FormEvent<HTMLFormElement>): void;
+  function handleSubmit(eventOrHandler: FormEvent<HTMLFormElement> | SubmitResetHandler<T>) {
+
+    if (typeof eventOrHandler === 'function')
+      return (event: FormEvent<HTMLFormElement>) => {
+        const fn = eventOrHandler as SubmitResetHandler<T>;
+        fn(model.current, event, api);
+      };
+
+    if (options.onSubmit)
+      return options.onSubmit(model.current, eventOrHandler, api);
+
+    // Submit called but no handler!!
+    log.warn(`Cannot handleSubmit using submit handler of undefined.\n    Pass handler as "onSubmit={handleSubmit(your_submit_handler)}".\n    Or pass in options as "options.onSubmit".`);
+
   }
 
   return api as typeof api;

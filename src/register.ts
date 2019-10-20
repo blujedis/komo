@@ -1,16 +1,65 @@
 
-import { IRegisterElement, IRegisterOptions, IRegisteredElement, IModel } from './types';
 import { FormApi } from './form';
-import { EVENT_CHANGE_MAP } from './constants';
-import { log, isRadio, isCheckbox, addListener, isSelectMultiple } from './utils';
-import { FocusEvent, ChangeEvent } from 'react';
+import isEqual from 'lodash.isequal';
+import { log, isRadio, isCheckbox, addListener, isTextLike, removeListener } from './utils';
+import { IRegisterElement, IRegisterOptions, IRegisteredElement, IModel } from './types';
 
 type RegisterElement = (element: IRegisterElement) => void;
 
 export function initElement<T extends IModel>(api: FormApi) {
 
-  function unbindElement(element: IRegisteredElement<T>) {
-    //
+  function setElement(element: IRegisteredElement<T>, isBlur: boolean = false) {
+
+    // Previous value & flags.
+    const defaultValue = api.getDefault(element.path);
+    const prevTouched = api.isTouched(element.path);
+    const prevDirty = api.isDirty(element.path);
+
+    let value: any;
+    let touched = false;
+    let dirty = false;
+
+    // On change always set local touched.
+    if (!isBlur)
+      touched = true;
+
+    if (isRadio(element.type)) {
+
+      const radios =
+        [...api.fields.current.values()]
+          .filter(e => isRadio(e.type) && e.name === element.name);
+
+      const checked = radios.find(e => e.checked);
+      value = (checked && checked.value) || '';
+    }
+
+    else if (isCheckbox(element.type)) {
+      value = element.checked;
+    }
+
+    else {
+      value = element.value;
+    }
+
+    dirty = !isEqual(defaultValue + '', value + '');
+
+    // If is dirty on blur then
+    // it is also touched.
+    if (isBlur)
+      touched = !!dirty || prevTouched;
+
+    if (dirty)
+      api.setDirty(element.path);
+
+    if (touched)
+      api.setTouched(element.path);
+
+    if (!dirty && prevDirty)
+      api.removeDirty(element.path);
+
+    // Set the model value.
+    api.setModel(element.path, value);
+
   }
 
   // Binds to events, sets initial values.
@@ -18,11 +67,20 @@ export function initElement<T extends IModel>(api: FormApi) {
 
     if (!element || api.fields.current.has(element)) return;
 
+    if (!element.name) {
+      log.warn(`${element.tagName} could NOT be registered using name of undefined.`);
+      return;
+    }
+
+    // Normalize path, initialValue and events.
+
     element.path = element.path || element.name;
 
     const modelVal = api.getModel(element.path);
 
-    element.initValue = element.initValue || element.value || modelVal;
+    element.initValue = isRadio(element.type) ?
+      element.initValue || modelVal || '' :
+      element.initValue || element.value || modelVal || '';
 
     element.validateChange = element.onChange ? false :
       typeof element.validateChange === 'undefined' ? true : element.validateChange;
@@ -30,62 +88,45 @@ export function initElement<T extends IModel>(api: FormApi) {
     element.validateBlur = element.onBlur ? false :
       typeof element.validateBlur === 'undefined' ? true : element.validateBlur;
 
-    if (!element.name) {
-      log.warn(`${element.tagName} could NOT be registered using name of undefined.`);
-      return;
+    // Set the Initial Value.
+
+    api.setDefaultValue(element);
+
+    // Bind events & add to fields
+
+    let events = [];
+
+    const handleBlur = (e: Event) => { setElement(element, true); };
+    const handleChange = (e: Event) => { setElement(element); };
+
+    if (element.validateBlur) {
+      addListener(element, 'blur', handleBlur);
+      events = [['blur', handleBlur]];
     }
 
-    // Options passed value.
-    if (element.initValue) {
-
-      if (isRadio(element.type)) {
-
-        if (element.value === element.initValue)
-          element.checked = true;
-
-      }
-
-      else if (isSelectMultiple(element.type)) {
-        element.initValue = !Array.isArray(element.initValue) ? [element.initValue] : element.initValue;
-
-      }
-
-      else {
-
-        let val;
-
-        if (isCheckbox(element.type)) {
-          val = /(false|0)/.test(element.initValue as string) ? false : true;
-          element.checked = val;
-        }
-        else {
-          val = element.value = element.initValue as string;
-        }
-
-        api.setModel(element.path, val);
-
-      }
-
+    if (element.validateChange) {
+      const changeEvent = isTextLike(element.type) ? 'input' : 'change';
+      addListener(element, changeEvent, handleChange);
+      events = [...events, [changeEvent, handleChange]];
     }
 
-    else {
-      api.setModel(element.path, '');
-    }
-
-    // Attach blur event.
-    if (element.validateBlur)
-      addListener(element, 'blur', (e: any) => {
-        api.handleBlur(element, e);
+    // Unbind events helper.
+    element.unbind = () => {
+      if (!events.length)
+        return;
+      events.forEach(tuple => {
+        const [event, handler] = tuple;
+        removeListener(element, event, handler);
       });
+    };
 
+    // Unbind any events and then unref
+    // the lement from any collections.
+    element.unregister = () => {
+      api.unref(element);
+    };
 
-    // Attach change event.
-    if (element.validateChange)
-      addListener(element, EVENT_CHANGE_MAP[element.type], (e: any) => {
-        api.handleChange(element, e);
-      });
-
-    // add the element to fields.
+    // Add to current fields collection.
     api.fields.current.add(element);
 
   }
@@ -117,7 +158,8 @@ export function initElement<T extends IModel>(api: FormApi) {
       return (element: IRegisterElement) => {
 
         if (!element) {
-          log.warn(`Failed to register unknown element using options ${JSON.stringify(options)}.`);
+          if (!api.mounted.current) // only show warning if not mounted.
+            log.warn(`Failed to register unknown element using options ${JSON.stringify(options)}.`);
           return;
         }
 

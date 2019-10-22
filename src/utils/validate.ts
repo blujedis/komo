@@ -1,5 +1,5 @@
 import { ValidationError, ValidateOptions } from 'yup';
-import set from 'lodash.setwith';
+import { set } from  'dot-prop';
 import { IModel, ErrorModel, ValidationSchema, IValidator } from '../types';
 import { isPromise } from './helpers';
 

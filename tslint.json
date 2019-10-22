@@ -31,6 +31,7 @@
     "jsx-boolean-value": false,
     "no-angle-bracket-type-assertion": false,
     "no-construct": false,
-    "object-literal-key-quotes": false
+    "object-literal-key-quotes": false,
+    "prefer-for-of": false
   }
 }

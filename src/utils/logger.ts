@@ -1,11 +1,11 @@
 const logType = {
-  error: '',
-  warn: '',
-  info: ''
+  error: 'font-weight: bold; color: #8B0000;',
+  warn: 'color: #CCCC00;',
+  info: 'color: #2B65EC;'
 };
 
 function colorize(value: any, styles: string) {
-  return [`%c ${value}`, styles];
+  return [`%c${value}`, styles];
 }
 
 function logger(type: 'log' | 'error' | 'warn' | 'info', ...args: any[]): ILogger {

@@ -3,10 +3,16 @@ import useForm from '../';
 
 const App: FC = () => {
 
-  const { register, reset } = useForm({
+  const { register, handleSubmit, handleReset } = useForm({
     model: {
       firstName: 'bob',
       lastName: 'johnson'
+    },
+    onSubmit: (model) => {
+      // tslint:disable-next-line
+      console.log('\nModel Result:');
+      // tslint:disable-next-line
+      console.log(JSON.stringify(model, null, 2));
     }
   });
 
@@ -16,7 +22,7 @@ const App: FC = () => {
       <h2>Example Form</h2>
       <hr /><br />
 
-      <form>
+      <form onSubmit={handleSubmit} onReset={handleReset}>
 
         <label htmlFor="firstName">First Name: </label>
         <input name="firstName" type="text" ref={register} /><br /><br />
@@ -40,7 +46,7 @@ const App: FC = () => {
         </select><br /><br />
 
         <label htmlFor="category">Category: </label>
-        <select name="category" multiple ref={register}>
+        <select name="category" multiple ref={register} defaultValue={['audi', 'volvo']}>
           <option value="volvo">Volvo</option>
           <option value="saab">Saab</option>
           <option value="opel">Opel</option>
@@ -58,7 +64,8 @@ const App: FC = () => {
 
         <hr />
 
-        <input type="reset" value="Reset" onClick={reset} />
+        <input type="reset" value="Reset" />&nbsp;
+        <input type="submit" value="Submit" />
 
       </form>
 

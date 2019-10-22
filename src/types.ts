@@ -1,4 +1,4 @@
-import { FormEvent, ChangeEvent } from 'react';
+import { FormEvent, ChangeEvent, MouseEvent } from 'react';
 import { ObjectSchema, ValidateOptions } from 'yup';
 
 // HELPERS //
@@ -24,7 +24,10 @@ export type ValidateFieldHandler<T extends IModel> =
   (value?: any, path?: string, name?: KeyOf<T> | string) =>
     ErrorModel<T> | Promise<T>;
 
-export type SubmitResetHandler<T extends IModel> = (model: T, event?: FormEvent<HTMLFormElement>, komo?) => void;
+export type SubmitResetEvent<T extends IModel> = 
+  FormEvent<HTMLFormElement> | SubmitResetHandler<T> | MouseEvent<HTMLInputElement>;
+
+export type SubmitResetHandler<T extends IModel> = (model: T, event?: SubmitResetEvent<T>, komo?) => void;
 
 export interface IOptions<T extends IModel> {
   model: T;

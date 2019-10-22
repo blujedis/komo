@@ -37,6 +37,19 @@ export function initElement<T extends IModel>(api: FormApi) {
       value = element.checked;
     }
 
+    else if (element.multiple) {
+
+      value = [];
+
+      // tslint:disable-next-line
+      for (let i = 0; i < element.options.length; i++) {
+        const opt = element.options[i];
+        if (opt.selected)
+          value.push(opt.value || opt.text);
+      }
+
+    }
+
     else {
       value = element.value;
     }
@@ -78,9 +91,36 @@ export function initElement<T extends IModel>(api: FormApi) {
 
     const modelVal = api.getModel(element.path);
 
-    element.initValue = isRadio(element.type) ?
-      element.initValue || modelVal || '' :
-      element.initValue || element.value || modelVal || '';
+    if (isRadio(element.type)) {
+      element.initValue = element.initValue || modelVal || '';
+    }
+
+    else if (element.multiple) {
+
+      let arr = element.initValue || element.value || modelVal || [];
+
+      if (!Array.isArray(arr))
+        arr = [element.initValue];
+
+      arr = arr.filter(v => typeof v !== 'undefined');
+
+      // Ensure initial value includes
+      // any default selected values in options.
+      for (let i = 0; i < element.options.length; i++) {
+        const opt = element.options[i];
+        if (opt.selected) {
+          if (!arr.includes(opt.value || opt.text))
+            arr.push(opt.value || opt.text);
+        }
+      }
+
+      element.initValue = arr;
+
+    }
+
+    else {
+      element.initValue = element.initValue || element.value || modelVal || '';
+    }
 
     element.validateChange = element.onChange ? false :
       typeof element.validateChange === 'undefined' ? true : element.validateChange;

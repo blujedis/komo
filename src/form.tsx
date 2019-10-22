@@ -3,7 +3,8 @@ import { initElement } from './register';
 import { get, set, delete as del, has } from 'dot-prop';
 import {
   IOptions, IModel, KeyOf, IRegisteredElement, ErrorModel,
-  SubmitResetHandler
+  SubmitResetHandler,
+  SubmitResetEvent
 } from './types';
 import { merge, log, normalizeValidator, isRadio, isCheckbox, isBooleanLike } from './utils';
 import { ValidateOptions } from 'yup';
@@ -87,18 +88,21 @@ export function initForm<T extends IModel>(options: IOptions<T>) {
 
   };
 
-  function setDefaultValue(element: IRegisteredElement<T>, isReset: boolean = false) {
+  function setDefaultValue(element: IRegisteredElement<T>) {
 
     let value;
 
     if (isRadio(element.type) || isCheckbox(element.type)) {
 
       if (isRadio(element.type)) {
+
         if (element.checked) {
           value = element.initValue = element.value;
+          element.checked = true;
           // @ts-ignore
-          element.defaultChecked = element.checked = true;
+          element.defaultChecked = true;
         }
+
       }
 
       else {
@@ -109,9 +113,27 @@ export function initForm<T extends IModel>(options: IOptions<T>) {
 
     }
 
+    else if (element.multiple) {
+
+      // @ts-ignore
+      element.defaultValue = element.initValue;
+
+      value = [...element.initValue];
+
+      for (let i = 0; i < element.options.length; i++) {
+        const opt = element.options[i];
+        if (value.includes(opt.value || opt.text)) {
+          element.options[i].selected = true;
+        }
+      }
+
+    }
+
     else {
+
       // @ts-ignore
       value = element.defaultValue = element.value = element.initValue;
+
     }
 
     // Update the model and set defaults.
@@ -270,7 +292,7 @@ export function initForm<T extends IModel>(options: IOptions<T>) {
 
   }
 
-  function reset(event?: FormEvent<HTMLFormElement> | MouseEvent<any>) {
+  function reset(event?: SubmitResetEvent<T>) {
 
     // Reset all states.
     model.current = { ...defaults.current };
@@ -282,7 +304,7 @@ export function initForm<T extends IModel>(options: IOptions<T>) {
 
     // Reset all fields.
     [...fields.current.values()].forEach(e => {
-      setDefaultValue(e, true);
+      setDefaultValue(e);
     });
 
     // Rerender the form
@@ -290,10 +312,10 @@ export function initForm<T extends IModel>(options: IOptions<T>) {
 
   }
 
-  function handleReset(handler: SubmitResetHandler<T>): (event?: FormEvent<HTMLFormElement>) => void;
-  function handleReset(event: FormEvent<HTMLFormElement>): void;
+  function handleReset(handler: SubmitResetHandler<T>): (event?: SubmitResetEvent<T>) => void;
+  function handleReset(event: SubmitResetEvent<T>): void;
   function handleReset(): void;
-  function handleReset(eventOrHandler?: FormEvent<HTMLFormElement> | SubmitResetHandler<T>) {
+  function handleReset(eventOrHandler?: SubmitResetEvent<T> | SubmitResetHandler<T>) {
 
     if (typeof eventOrHandler === 'function')
       return (event: FormEvent<HTMLFormElement>) => {
@@ -308,25 +330,29 @@ export function initForm<T extends IModel>(options: IOptions<T>) {
       return options.onReset(model.current, eventOrHandler, api);
 
     // If we get here just use internal reset.
-    reset();
+    reset(eventOrHandler);
 
   }
 
-  function handleSubmit(handler: SubmitResetHandler<T>): (event?: FormEvent<HTMLFormElement>) => void;
-  function handleSubmit(event: FormEvent<HTMLFormElement>): void;
-  function handleSubmit(eventOrHandler: FormEvent<HTMLFormElement> | SubmitResetHandler<T>) {
+  function handleSubmit(handler: SubmitResetHandler<T>): (event?: SubmitResetEvent<T>) => void;
+  function handleSubmit(event: SubmitResetEvent<T>): void;
+  function handleSubmit(eventOrHandler: SubmitResetEvent<T> | SubmitResetHandler<T>) {
 
     if (typeof eventOrHandler === 'function')
       return (event: FormEvent<HTMLFormElement>) => {
+        event.preventDefault();
         const fn = eventOrHandler as SubmitResetHandler<T>;
         fn(model.current, event, api);
       };
+
+    const _event = eventOrHandler as FormEvent<HTMLFormElement>;
+    _event.preventDefault();
 
     if (options.onSubmit)
       return options.onSubmit(model.current, eventOrHandler, api);
 
     // Submit called but no handler!!
-    log.warn(`Cannot handleSubmit using submit handler of undefined.\n    Pass handler as "onSubmit={handleSubmit(your_submit_handler)}".\n    Or pass in options as "options.onSubmit".`);
+    log.warn(`Cannot handleSubmit using submit handler of undefined.\n      Pass handler as "onSubmit={handleSubmit(your_submit_handler)}".\n      Or pass in options as "options.onSubmit".`);
 
   }
 

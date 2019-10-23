@@ -24,7 +24,7 @@ export type ValidateFieldHandler<T extends IModel> =
   (value?: any, path?: string, name?: KeyOf<T> | string) =>
     ErrorModel<T> | Promise<T>;
 
-export type SubmitResetEvent<T extends IModel> = 
+export type SubmitResetEvent<T extends IModel> =
   FormEvent<HTMLFormElement> | SubmitResetHandler<T> | MouseEvent<HTMLInputElement>;
 
 export type SubmitResetHandler<T extends IModel> = (model: T, event?: SubmitResetEvent<T>, komo?) => void;
@@ -43,7 +43,7 @@ export interface IOptions<T extends IModel> {
 // REGISTER //
 
 export interface IRegisterElement extends Partial<HTMLElement> {
-  name: string;
+  name?: string;
   type?: string;
   value?: string;
   checked?: boolean;

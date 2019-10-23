@@ -96,19 +96,17 @@ export function initForm<T extends IModel>(options: IOptions<T>) {
 
       if (isRadio(element.type)) {
 
-        if (element.checked) {
-          value = element.initValue = element.value;
-          element.checked = true;
-          // @ts-ignore
-          element.defaultChecked = true;
-        }
+        // @ts-ignore
+        value = element.defaultChecked = element.initValue = element.checked;
+        // element.checked = true;
+        // element.defaultChecked = true;
+        console.log(value, element.checked)
 
       }
 
       else {
-        value = element.initValue = element.checked || isBooleanLike(element.initValue);
         // @ts-ignore
-        element.defaultChecked = element.checked = value;
+        value = element.defaultChecked = element.initValue = element.checked || isBooleanLike(element.initValue);
       }
 
     }
@@ -132,7 +130,7 @@ export function initForm<T extends IModel>(options: IOptions<T>) {
     else {
 
       // @ts-ignore
-      value = element.defaultValue = element.value = element.initValue;
+      value = element.defaultValue = element.initValue;
 
     }
 

@@ -3,8 +3,9 @@ import { FormApi } from './form';
 import isEqual from 'lodash.isequal';
 import { log, isRadio, isCheckbox, addListener, isTextLike, removeListener } from './utils';
 import { IRegisterElement, IRegisterOptions, IRegisteredElement, IModel } from './types';
+import { LegacyRef } from 'react';
 
-type RegisterElement = (element: IRegisterElement) => void;
+type RegisterElement = (element: IRegisterElement) => LegacyRef<HTMLElement>;
 
 export function initElement<T extends IModel>(api: FormApi) {
 
@@ -93,6 +94,10 @@ export function initElement<T extends IModel>(api: FormApi) {
 
     if (isRadio(element.type)) {
       element.initValue = element.initValue || modelVal || '';
+    }
+
+    else if (isCheckbox(element.type)) {
+      element.initValue = element.checked || element.initValue || modelVal || '';
     }
 
     else if (element.multiple) {
@@ -212,6 +217,8 @@ export function initElement<T extends IModel>(api: FormApi) {
 
         if (options.onValidate)
           _element.onValidate = options.onValidate;
+
+        console.log(options);
 
         bindElement(_element);
 

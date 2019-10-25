@@ -98,9 +98,6 @@ export function initForm<T extends IModel>(options: IOptions<T>) {
 
         // @ts-ignore
         value = element.defaultChecked = element.initValue = element.checked;
-        // element.checked = true;
-        // element.defaultChecked = true;
-        console.log(value, element.checked)
 
       }
 
@@ -114,16 +111,16 @@ export function initForm<T extends IModel>(options: IOptions<T>) {
     else if (element.multiple) {
 
       // @ts-ignore
-      element.defaultValue = element.initValue;
+      // element.defaultValue = element.initValue;
 
-      value = [...element.initValue];
+      // value = [...element.defaultValue];
 
-      for (let i = 0; i < element.options.length; i++) {
-        const opt = element.options[i];
-        if (value.includes(opt.value || opt.text)) {
-          element.options[i].selected = true;
-        }
-      }
+      // for (let i = 0; i < element.options.length; i++) {
+      //   const opt = element.options[i];
+      //   if (value.includes(opt.value || opt.text)) {
+      //     element.options[i].selected = true;
+      //   }
+      // }
 
     }
 

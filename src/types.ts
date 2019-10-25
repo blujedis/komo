@@ -59,14 +59,16 @@ export interface IRegisterElement extends Partial<HTMLElement> {
 
 export interface IRegisterOptions<T extends IModel> {
   path?: string;
-  value?: any;
+  defaultValue?: any;
+  defaultChecked?: boolean;
   onValidate?: ValidateFieldHandler<T>;
 }
 
 export interface IRegisteredElement<T extends IModel> extends IRegisterElement {
   name: KeyOf<T> | string;
   path?: string;
-  initValue?: any;
+  defaultValue?: any;
+  defaultChecked?: boolean;
   validateChange?: boolean;
   validateBlur?: boolean;
   onValidate?: ValidateFieldHandler<T>;

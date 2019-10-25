@@ -93,19 +93,27 @@ export function initElement<T extends IModel>(api: FormApi) {
     const modelVal = api.getModel(element.path);
 
     if (isRadio(element.type)) {
-      element.initValue = element.initValue || modelVal || '';
+
+      element.defaultValue = element.defaultValue || modelVal || '';
+
+      // If not checked see if value
+      // matches model value.
+      if (!element.checked) {
+
+      }
+
     }
 
     else if (isCheckbox(element.type)) {
-      element.initValue = element.checked || element.initValue || modelVal || '';
+      element.defaultValue = element.checked || element.defaultValue || modelVal || '';
     }
 
     else if (element.multiple) {
 
-      let arr = element.initValue || element.value || modelVal || [];
+      let arr = element.defaultValue || element.value || modelVal || [];
 
       if (!Array.isArray(arr))
-        arr = [element.initValue];
+        arr = [element.defaultValue];
 
       arr = arr.filter(v => typeof v !== 'undefined');
 
@@ -119,12 +127,12 @@ export function initElement<T extends IModel>(api: FormApi) {
         }
       }
 
-      element.initValue = arr;
+      element.defaultValue = arr;
 
     }
 
     else {
-      element.initValue = element.initValue || element.value || modelVal || '';
+      element.defaultValue = element.defaultValue || element.value || modelVal || '';
     }
 
     element.validateChange = element.onChange ? false :
@@ -193,7 +201,7 @@ export function initElement<T extends IModel>(api: FormApi) {
     if (!hasElement) {
 
       if (typeof pathElementOrOptions !== 'string') {
-        options = pathElementOrOptions;
+        options = pathElementOrOptions as IRegisterOptions<T>;
         pathElementOrOptions = undefined;
       }
 
@@ -208,17 +216,16 @@ export function initElement<T extends IModel>(api: FormApi) {
           return;
         }
 
+        // Extend element with options.
+
         const _element = element as IRegisteredElement<T>;
 
-        if (options.value)
-          _element.initValue = options.value;
-
         _element.path = options.path || _element.name;
-
-        if (options.onValidate)
-          _element.onValidate = options.onValidate;
-
-        console.log(options);
+        _element.defaultValue = options.defaultValue || _element.defaultValue;
+        _element.defaultChecked = options.defaultChecked || _element.defaultChecked;
+        _element.value = _element.defaultValue || _element.value;
+        _element.checked = _element.defaultChecked || _element.checked;
+        _element.onValidate = options.onValidate;
 
         bindElement(_element);
 

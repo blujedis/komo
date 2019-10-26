@@ -1,15 +1,56 @@
 
 import { FormApi } from './form';
 import isEqual from 'lodash.isequal';
-import { log, isRadio, isCheckbox, addListener, isTextLike, removeListener } from './utils';
+import {
+  log, isRadio, isCheckbox, addListener, isTextLike, removeListener, initObserver,
+  isBooleanLike
+} from './utils';
 import { IRegisterElement, IRegisterOptions, IRegisteredElement, IModel } from './types';
 import { LegacyRef } from 'react';
 
 type RegisterElement = (element: IRegisterElement) => LegacyRef<HTMLElement>;
 
-export function initElement<T extends IModel>(api: FormApi) {
+export function initElement<T extends IModel>(api?: FormApi) {
 
-  function setElement(element: IRegisteredElement<T>, isBlur: boolean = false) {
+  function resetElement(element: IRegisteredElement<T>) {
+
+    let value;
+
+    if (isRadio(element.type)) {
+      element.checked = element.defaultChecked;
+      if (element.checked)
+        value = element.value;
+
+    }
+
+    else if (isCheckbox(element.type)) {
+      value = element.defaultChecked = isBooleanLike(element.defaultChecked);
+      element.checked = value;
+    }
+
+    else if (element.multiple) {
+
+      value = [...element.defaultValue];
+
+      for (let i = 0; i < element.options.length; i++) {
+        const opt = element.options[i];
+        if (value.includes(opt.value || opt.text))
+          opt.setAttribute('selected', 'true');
+      }
+
+    }
+
+    else {
+      value = element.defaultValue;
+    }
+
+    // Update the model and set defaults.
+    if (value)
+      api.setModel(element.path, value, true);
+
+  }
+
+  function updateElement(element: IRegisteredElement<T>, isBlur: boolean = false) {
 
     // Previous value & flags.
     const defaultValue = api.getDefault(element.path);
@@ -86,31 +127,26 @@ export function initElement<T extends IModel>(api: FormApi) {
       return;
     }
 
-    // Normalize path, initialValue and events.
+    // Normalize path, get default values.
 
     element.path = element.path || element.name;
 
     const modelVal = api.getModel(element.path);
 
     if (isRadio(element.type)) {
-
-      element.defaultValue = element.defaultValue || modelVal || '';
-
-      // If not checked see if value
-      // matches model value.
-      if (!element.checked) {
-
-      }
-
+      element.defaultValue = element.initValue || element.value || modelVal || '';
+      element.defaultChecked = element.initChecked || element.checked || modelVal === element.value;
     }
 
     else if (isCheckbox(element.type)) {
-      element.defaultValue = element.checked || element.defaultValue || modelVal || '';
+      element.defaultValue = element.initValue || element.value || element.checked || modelVal || false;
+      element.defaultChecked = element.defaultValue || false;
+
     }
 
     else if (element.multiple) {
 
-      let arr = element.defaultValue || element.value || modelVal || [];
+      let arr = element.defaultValue = element.initValue || element.value || modelVal || [];
 
       if (!Array.isArray(arr))
         arr = [element.defaultValue];
@@ -132,7 +168,7 @@ export function initElement<T extends IModel>(api: FormApi) {
     }
 
     else {
-      element.defaultValue = element.defaultValue || element.value || modelVal || '';
+      element.defaultValue = element.value || modelVal || '';
     }
 
     element.validateChange = element.onChange ? false :
@@ -143,14 +179,14 @@ export function initElement<T extends IModel>(api: FormApi) {
 
     // Set the Initial Value.
 
-    api.setDefaultValue(element);
+    resetElement(element);
 
     // Bind events & add to fields
 
     let events = [];
 
-    const handleBlur = (e: Event) => { setElement(element, true); };
-    const handleChange = (e: Event) => { setElement(element); };
+    const handleBlur = (e: Event) => { updateElement(element, true); };
+    const handleChange = (e: Event) => { updateElement(element); };
 
     if (element.validateBlur) {
       addListener(element, 'blur', handleBlur);
@@ -162,6 +198,11 @@ export function initElement<T extends IModel>(api: FormApi) {
       addListener(element, changeEvent, handleChange);
       events = [...events, [changeEvent, handleChange]];
     }
+
+    // Reset the element to initial values.
+    element.resetElement = () => {
+      resetElement(element);
+    };
 
     // Unbind events helper.
     element.unbind = () => {
@@ -178,6 +219,9 @@ export function initElement<T extends IModel>(api: FormApi) {
     element.unregister = () => {
       api.unref(element);
     };
+
+    // Bind mutation observer.
+    initObserver(element as any, element.unregister.bind(element));
 
     // Add to current fields collection.
     api.fields.current.add(element);
@@ -221,10 +265,8 @@ export function initElement<T extends IModel>(api: FormApi) {
         const _element = element as IRegisteredElement<T>;
 
         _element.path = options.path || _element.name;
-        _element.defaultValue = options.defaultValue || _element.defaultValue;
-        _element.defaultChecked = options.defaultChecked || _element.defaultChecked;
-        _element.value = _element.defaultValue || _element.value;
-        _element.checked = _element.defaultChecked || _element.checked;
+        _element.initValue = options.defaultValue;
+        _element.initChecked = options.defaultChecked;
         _element.onValidate = options.onValidate;
 
         bindElement(_element);

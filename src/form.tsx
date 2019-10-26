@@ -59,7 +59,6 @@ export function initForm<T extends IModel>(options: IOptions<T>) {
 
     // Model
     getDefault,
-    setDefaultValue,
     getModel,
     setModel,
     validateModel,
@@ -87,55 +86,6 @@ export function initForm<T extends IModel>(options: IOptions<T>) {
     unref
 
   };
-
-  function setDefaultValue(element: IRegisteredElement<T>) {
-
-    let value;
-
-    if (isRadio(element.type) || isCheckbox(element.type)) {
-
-      if (isRadio(element.type)) {
-
-        // @ts-ignore
-        value = element.defaultChecked = element.initValue = element.checked;
-
-      }
-
-      else {
-        // @ts-ignore
-        value = element.defaultChecked = element.initValue = element.checked || isBooleanLike(element.initValue);
-      }
-
-    }
-
-    else if (element.multiple) {
-
-      // @ts-ignore
-      // element.defaultValue = element.initValue;
-
-      // value = [...element.defaultValue];
-
-      // for (let i = 0; i < element.options.length; i++) {
-      //   const opt = element.options[i];
-      //   if (value.includes(opt.value || opt.text)) {
-      //     element.options[i].selected = true;
-      //   }
-      // }
-
-    }
-
-    else {
-
-      // @ts-ignore
-      value = element.defaultValue = element.initValue;
-
-    }
-
-    // Update the model and set defaults.
-    if (value)
-      api.setModel(element.path, value, true);
-
-  }
 
   function getDefault<K extends KeyOf<T>>(path: string);
   function getDefault<K extends KeyOf<T>>(key: K);
@@ -299,7 +249,7 @@ export function initForm<T extends IModel>(options: IOptions<T>) {
 
     // Reset all fields.
     [...fields.current.values()].forEach(e => {
-      setDefaultValue(e);
+      e.resetElement();
     });
 
     // Rerender the form
@@ -376,7 +326,6 @@ export default function useForm<T extends IModel>(options?: IOptions<T>) {
 
   const baseApi = initForm(options);
   const extend = { register: initElement<T>(baseApi as any) };
-
   const api = merge(baseApi, extend);
 
   return api;

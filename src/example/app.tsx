@@ -46,7 +46,7 @@ const App: FC = () => {
         </select><br /><br />
 
         <label htmlFor="category">Category: </label>
-        <select name="category" multiple ref={register} defaultValue={['audi', 'volvo']}>
+        <select name="category" multiple ref={register({ defaultValue: ['audi', 'volvo'] })}>
           <option value="volvo">Volvo</option>
           <option value="saab">Saab</option>
           <option value="opel">Opel</option>

@@ -67,6 +67,8 @@ export interface IRegisterOptions<T extends IModel> {
 export interface IRegisteredElement<T extends IModel> extends IRegisterElement {
   name: KeyOf<T> | string;
   path?: string;
+  initValue?: any;
+  initChecked?: boolean;
   defaultValue?: any;
   defaultChecked?: boolean;
   validateChange?: boolean;
@@ -74,6 +76,7 @@ export interface IRegisteredElement<T extends IModel> extends IRegisterElement {
   onValidate?: ValidateFieldHandler<T>;
   unbind?: () => void;
   unregister?: () => void;
+  resetElement?: () => void;
 }
 
 // ERRORS //

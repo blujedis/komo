@@ -1,15 +1,35 @@
-
 // PRIVATE //
 
 type TagType = string | Partial<{ type: string; }>;
 
-function isTagType(value: TagType, type: string) {
-  const compare = ((typeof value === 'object' ? value.type : value) || '').toLowerCase();
+/**
+ * Checks if value is matching tag type.
+ * 
+ * @param tag the tag type or object containing type. 
+ * @param match the value to match. 
+ */
+function isTagType(tag: TagType, match: string) {
+  const compare = ((typeof tag === 'object' ? tag.type : tag) || '').toLowerCase();
   if (!compare) return false;
-  return compare.startsWith(type);
+  return compare.startsWith(match);
 }
 
 // PUBLIC //
+
+/**
+ * Promise wrapper that returns an object when used
+ * with `await` preventing the need for try/catch.
+ * 
+ * @example
+ * const { err, data } = await me(Promise);
+ * 
+ * @param promise the promise to be executed.
+ */
+export const me = <T>(promise: Promise<T>) => {
+  return promise
+    .then(data => ({ err: null, data }))
+    .catch(err => ({ err })) as { err?: Error, data?: T };
+};
 
 /**
  * Merges own property names and types.
@@ -136,3 +156,57 @@ export function isBooleanLike(value: any) {
   return /^(true|false|0|1)$/.test(value);
 }
 
+/**
+ * Checks if a value is truthy.
+ * 
+ * @param value the value to inspect.
+ */
+export function isTruthy(value: unknown) {
+  return (typeof value !== undefined &&
+    value !== undefined &&
+    value !== null &&
+    value !== false &&
+    value !== -1 &&
+    value !== '');
+}
+
+/**
+ * Checks if value is undefined.
+ * 
+ * @param value the value to inspect.
+ */
+export function isUndefined(value: unknown) {
+  return value === undefined;
+}
+
+/**
+ * Checks if is null or undefined.
+ * 
+ * @param value the value to inspect.
+ */
+export function isNullOrUndefined(value: unknown) {
+  return value === null || isUndefined(value);
+}
+
+/**
+ * Checks if is an object.
+ * 
+ * @param value the value to inspect.
+ */
+export function isObject(value: unknown) {
+  return (!isNullOrUndefined(value) &&
+    value.constructor &&
+    value.constructor === Object);
+}
+
+/**
+ * Checks if string, object or array are empty.
+ * 
+ * @param value the value to inspect.
+ */
+export function isEmpty(value: unknown) {
+  return value === '' ||
+    (Array.isArray(value) && !value.length) ||
+    (isObject(value) &&
+      !Object.entries(value).length);
+}

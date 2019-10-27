@@ -3,10 +3,11 @@ import { FormApi } from './form';
 import isEqual from 'lodash.isequal';
 import {
   log, isRadio, isCheckbox, addListener, isTextLike, removeListener, initObserver,
-  isBooleanLike
+  isBooleanLike, getNativeValidators
 } from './utils';
-import { IRegisterElement, IRegisterOptions, IRegisteredElement, IModel } from './types';
+import { IRegisterElement, IRegisterOptions, IRegisteredElement, IModel, INativeValidators, KeyOf } from './types';
 import { LegacyRef } from 'react';
+import { object } from 'yup';
 
 type RegisterElement = (element: IRegisterElement) => LegacyRef<HTMLElement>;
 
@@ -131,6 +132,9 @@ export function initElement<T extends IModel>(api?: FormApi) {
 
     element.path = element.path || element.name;
 
+    if (!element.type)
+      element.setAttribute('type', 'text');
+
     const modelVal = api.getModel(element.path);
 
     if (isRadio(element.type)) {
@@ -176,6 +180,28 @@ export function initElement<T extends IModel>(api?: FormApi) {
 
     element.validateBlur = element.onBlur ? false :
       typeof element.validateBlur === 'undefined' ? true : element.validateBlur;
+
+    const nativeValidators = getNativeValidators(element);
+
+    if (nativeValidators.length) {
+
+      if (api.isSchemaUser)
+        throw new Error(`Field ${element.name} contains native validation keys ${nativeValidators.join(', ')}. Cannot use native validators with user defined schema function.`);
+
+      api.schemaAst = api.schemaAst || {};
+      api.schemaAst[element.path] = api.schemaAst[element.path] || [];
+      const type = element.type === 'number' || element.type === 'range' ? 'number' : 'string';
+
+      // Set the type.
+      api.schemaAst[element.path] = [[type, undefined]];
+
+      // Extend AST with each native validator.
+      nativeValidators.forEach(k => {
+        api.schemaAst[element.path] = [...api.schemaAst[element.path], 
+          [k as KeyOf<INativeValidators>, element[k]]];
+      });
+
+    }
 
     // Set the Initial Value.
 

@@ -16,8 +16,24 @@ export type ValidateModelHandler<T extends IModel> = (model: T) => ErrorModel<T>
 export type ValidationSchema<T extends IModel> = ObjectSchema<T> | ValidateModelHandler<T>;
 
 export interface IValidator<T extends IModel> {
-  validate(model: T, options?: ValidateOptions): ErrorModel<T> | Promise<T>;
-  validateAt?(path: string, value: any, options?: ValidateOptions): ErrorModel<T> | Promise<T>;
+  validate(model: T, options?: ValidateOptions): Promise<T>;
+  validateAt?(path: string, value: any, options?: ValidateOptions): Promise<T>;
+}
+
+export interface INativeValidators {
+  string?: undefined;
+  number?: undefined;
+  boolean?: undefined;
+  required?: boolean | string;
+  min?: number | string;
+  max?: number | string;
+  maxLength?: number | string;
+  minLength?: number | string;
+  pattern?: string | RegExp;
+}
+
+export interface ISchemaAst {
+  [key: string]: Array<[KeyOf<INativeValidators>, INativeValidators[KeyOf<INativeValidators>]]>;
 }
 
 export type ValidateFieldHandler<T extends IModel> =
@@ -29,13 +45,14 @@ export type SubmitResetEvent<T extends IModel> =
 
 export type SubmitResetHandler<T extends IModel> = (model: T, event?: SubmitResetEvent<T>, komo?) => void;
 
+// OPTIONS //
+
 export interface IOptions<T extends IModel> {
-  model: T;
+  model?: T;
   validationSchema?: ValidationSchema<T>;
-  castSchema?: boolean;
   validateChange?: boolean;
   validateBlur?: boolean;
-  onValidate?: ValidateModelHandler<T>;
+  validateSubmit?: boolean;
   onSubmit?: SubmitResetHandler<T>;
   onReset?: SubmitResetHandler<T>;
 }
@@ -49,10 +66,12 @@ export interface IRegisterElement extends Partial<HTMLElement> {
   checked?: boolean;
   options?: HTMLOptionsCollection;
   multiple?: boolean;
+  required?: boolean;
   min?: string | number;
   max?: string | number;
   pattern?: string | RegExp;
-  required?: boolean;
+  minLength?: string | number;
+  maxLength?: string | number;
   onChange?: (e: ChangeEvent) => void;
   onBlur?: (e: FocusEvent) => void;
 }

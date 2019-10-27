@@ -4,10 +4,12 @@ import { get, set, delete as del, has } from 'dot-prop';
 import {
   IOptions, IModel, KeyOf, IRegisteredElement, ErrorModel,
   SubmitResetHandler,
-  SubmitResetEvent
+  SubmitResetEvent,
+  IValidator,
+  ISchemaAst
 } from './types';
-import { merge, log, normalizeValidator, isRadio, isCheckbox, isBooleanLike } from './utils';
-import { ValidateOptions } from 'yup';
+import { merge, log, normalizeValidator, astToSchema, isUndefined } from './utils';
+import { ValidateOptions, object, ObjectSchema } from 'yup';
 
 /**
  * Native Validation reference.
@@ -31,24 +33,26 @@ export function initForm<T extends IModel>(options: IOptions<T>) {
   const [, render] = useState({});
   const mounted = useRef(false);
 
-  useEffect(() => {
-    mounted.current = true;
-    return () => {
-      mounted.current = false;
-      [...fields.current.values()].forEach(e => unref);
-    };
-  }, []);
-
-  const validator = normalizeValidator(options.validationSchema);
+  const schemaAst: ISchemaAst = undefined;
+  const validator: IValidator<T> = undefined;
+  const isSchemaUser = validator && typeof options.validationSchema === 'function';
+  const isSchemaYup = validator && typeof options.validationSchema === 'object';
 
   const api = {
 
-    // Fields & Defaults
+    // Common
+    options,
     defaults,
     fields,
+    unref,
+
+    // Schema
+    schemaAst,
+    isSchemaYup,
+    isSchemaUser,
+    validator,
 
     // Form
-    validator,
     mounted,
     isFormDirty: false,
     isFormTouched: false,
@@ -82,10 +86,31 @@ export function initForm<T extends IModel>(options: IOptions<T>) {
     setError,
     removeError,
     clearError,
-
-    unref
+    isValid
 
   };
+
+  useEffect(() => {
+
+    mounted.current = true;
+
+    let schema: ObjectSchema<T>;
+
+    // AST provided merge or create schema.
+    if (api.schemaAst) {
+      const currentSchema = options.validationSchema as ObjectSchema<T>;
+      schema = astToSchema(api.schemaAst, currentSchema);
+    }
+
+    // Create the validator.
+    api.validator = normalizeValidator(schema);
+
+    return () => {
+      mounted.current = false;
+      [...fields.current.values()].forEach(e => unref);
+    };
+
+  }, []);
 
   function getDefault<K extends KeyOf<T>>(path: string);
   function getDefault<K extends KeyOf<T>>(key: K);
@@ -131,22 +156,32 @@ export function initForm<T extends IModel>(options: IOptions<T>) {
     return has(model, path);
   }
 
-  function validateModel(path: string | KeyOf<T>, value?: any, opts?: ValidateOptions);
-  function validateModel(path: T, opts?: ValidateOptions);
-  function validateModel(pathOrModel: string | KeyOf<T> | T, value?: any, opts?: ValidateOptions) {
+  function validateModel(path: string | KeyOf<T>, value: object, opts?: ValidateOptions): Promise<any>;
+  function validateModel(model: T, opts?: ValidateOptions): Promise<T>;
+  function validateModel(pathOrModel: string | KeyOf<T> | T, value?: object, opts?: ValidateOptions) {
 
-    if (!options.validationSchema) {
+    if (!api.validator) {
       errors.current = {};
-      return true;
+      if (typeof pathOrModel === 'string')
+        return Promise.resolve(get(value, pathOrModel));
+      return Promise.resolve(pathOrModel);
     }
 
-    if (arguments.length === 2) {
-      //
-    }
+    if (typeof pathOrModel === 'string')
+      return api.validator.validateAt(pathOrModel, value, opts);
 
-    else {
-      //
-    }
+    return api.validator.validate(pathOrModel, opts);
+
+  }
+
+  function validateSetError(path: string | KeyOf<T>, value: object, opts?: ValidateOptions): Promise<any>;
+  function validateSetError(model: T, opts?: ValidateOptions): Promise<T>;
+  function validateSetError(pathOrModel: string | KeyOf<T> | T, value?: object, opts?: ValidateOptions): Promise<any> {
+
+    return validateModel(pathOrModel as any, value, opts)
+      .catch(err => {
+        setError(err);
+      });
 
   }
 
@@ -194,8 +229,11 @@ export function initForm<T extends IModel>(options: IOptions<T>) {
     return !!dirty.current.size;
   }
 
-  function setError(name: string, value: string) {
-    errors.current = set({ ...errors.current }, name, value);
+  function setError(name: string | object, value?: string) {
+    if (isUndefined(value))
+      errors.current = name as object;
+    else
+      errors.current = set({ ...errors.current }, name as string, value);
   }
 
   function removeError(name: string) {
@@ -206,6 +244,12 @@ export function initForm<T extends IModel>(options: IOptions<T>) {
 
   function clearError() {
     errors.current = {};
+  }
+
+  function isValid(name: string) {
+    if (name)
+      return !isUndefined(errors[name]);
+    return !Object.entries(errors).length;
   }
 
   function findField(name: string) {
@@ -243,6 +287,7 @@ export function initForm<T extends IModel>(options: IOptions<T>) {
     model.current = { ...defaults.current };
     clearDirty();
     clearTouched();
+    clearError();
     api.isFormDirty = false;
     api.isFormTouched = false;
     api.isFormValid = true;
@@ -287,14 +332,28 @@ export function initForm<T extends IModel>(options: IOptions<T>) {
       return (event: FormEvent<HTMLFormElement>) => {
         event.preventDefault();
         const fn = eventOrHandler as SubmitResetHandler<T>;
-        fn(model.current, event, api);
+        if (options.validateSubmit) {
+          validateModel(model.current)
+            .then(m => {
+              //
+            })
+            .catch(err => {
+              //
+            });
+
+        }
+        else {
+          // fn(model.current, event, api);
+        }
       };
 
     const _event = eventOrHandler as FormEvent<HTMLFormElement>;
     _event.preventDefault();
 
-    if (options.onSubmit)
-      return options.onSubmit(model.current, eventOrHandler, api);
+    if (options.onSubmit) {
+      options.onSubmit(model.current, eventOrHandler, api);
+      return;
+    }
 
     // Submit called but no handler!!
     log.warn(`Cannot handleSubmit using submit handler of undefined.\n      Pass handler as "onSubmit={handleSubmit(your_submit_handler)}".\n      Or pass in options as "options.onSubmit".`);
@@ -313,16 +372,6 @@ export function initForm<T extends IModel>(options: IOptions<T>) {
 export default function useForm<T extends IModel>(options?: IOptions<T>) {
 
   options = { ...DEFAULTS, ...options };
-
-  try {
-    // If cast schema get model from yup schema.
-    if (options.castSchema && options.validationSchema && typeof options.validationSchema === 'object')
-      // @ts-ignore
-      options.model = options.validationSchema.cast();
-  }
-  catch (ex) {
-    throw new Error(`Failed to "cast" validation schema to model, verify valid "yup" schema.`);
-  }
 
   const baseApi = initForm(options);
   const extend = { register: initElement<T>(baseApi as any) };

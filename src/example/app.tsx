@@ -57,7 +57,7 @@ const App: FC = () => {
         <input type="file" name="filename" ref={register} /><br /><br />
 
         <label htmlFor="message">Message: </label>
-        <textarea name="message" defaultValue=" Just some text." ref={register}>
+        <textarea name="message" defaultValue="Just some text." ref={register} required maxLength={10}>
         </textarea><br /><br />
 
         <input name="csrf" type="hidden" defaultValue="UYNL7_MMNG8_WRRV2_LIOP4" ref={register}></input>

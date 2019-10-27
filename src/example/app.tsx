@@ -8,11 +8,14 @@ const App: FC = () => {
       firstName: 'bob',
       lastName: 'johnson'
     },
-    onSubmit: (model) => {
+    enableWarnings: true,
+    onSubmit: (model, errors) => {
       // tslint:disable-next-line
       console.log('\nModel Result:');
       // tslint:disable-next-line
       console.log(JSON.stringify(model, null, 2));
+
+      console.log(errors);
     }
   });
 
@@ -22,7 +25,7 @@ const App: FC = () => {
       <h2>Example Form</h2>
       <hr /><br />
 
-      <form onSubmit={handleSubmit} onReset={handleReset}>
+      <form noValidate onSubmit={handleSubmit} onReset={handleReset}>
 
         <label htmlFor="firstName">First Name: </label>
         <input name="firstName" type="text" ref={register} /><br /><br />

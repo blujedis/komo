@@ -1,13 +1,12 @@
 
 import { FormApi } from './form';
-import isEqual from 'lodash.isequal';
 import {
-  log, isRadio, isCheckbox, addListener, isTextLike, removeListener, initObserver,
-  isBooleanLike, getNativeValidators
+  log, isRadio, isCheckbox, addListener, isTextLike, removeListener,
+  initObserver, isBooleanLike, isEqual
 } from './utils';
+import { getNativeValidators } from './validate';
 import { IRegisterElement, IRegisterOptions, IRegisteredElement, IModel, INativeValidators, KeyOf } from './types';
 import { LegacyRef } from 'react';
-import { object } from 'yup';
 
 type RegisterElement = (element: IRegisterElement) => LegacyRef<HTMLElement>;
 
@@ -197,8 +196,8 @@ export function initElement<T extends IModel>(api?: FormApi) {
 
       // Extend AST with each native validator.
       nativeValidators.forEach(k => {
-        api.schemaAst[element.path] = [...api.schemaAst[element.path], 
-          [k as KeyOf<INativeValidators>, element[k]]];
+        api.schemaAst[element.path] = [...api.schemaAst[element.path],
+        [k as KeyOf<INativeValidators>, element[k]]];
       });
 
     }

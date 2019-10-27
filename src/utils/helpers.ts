@@ -1,3 +1,7 @@
+import isEqual from 'lodash.isequal';
+
+export { isEqual };
+
 // PRIVATE //
 
 type TagType = string | Partial<{ type: string; }>;

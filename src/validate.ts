@@ -1,7 +1,7 @@
 import { ValidationError, ValidateOptions, object, ObjectSchema, number, string, boolean } from 'yup';
 import { set } from 'dot-prop';
-import { IModel, ErrorModel, ValidationSchema, IValidator, IRegisteredElement, ISchemaAst } from '../types';
-import { isPromise, isTruthy } from './helpers';
+import { IModel, ErrorModel, ValidationSchema, IValidator, IRegisteredElement, ISchemaAst } from './types';
+import { isPromise, isTruthy } from './utils/helpers';
 
 /**
  * Parses yup error to friendly form errors.
@@ -52,6 +52,9 @@ export function astToSchema<T extends IModel>(ast: ISchemaAst, schema?: ObjectSc
         opts = new RegExp(opts);
       }
 
+      if (type === 'required')
+        opts = undefined;
+
       if (a.out) {
         a.out = a.out[type](opts);
       }
@@ -68,7 +71,7 @@ export function astToSchema<T extends IModel>(ast: ISchemaAst, schema?: ObjectSc
 
     }, { out: undefined });
 
-    obj = set({ ...obj}, k, chain.out);
+    obj = set({ ...obj }, k, chain.out);
 
   }
 
@@ -129,7 +132,7 @@ export function normalizeValidator<T extends IModel>(schema: ValidationSchema<T>
     validator.validateAt = (path: string, value: any, options?: ValidateOptions) => {
       return schema.validateAt(path, value, options)
         .then(res => {
-          return res;
+          return { [path]: res };
         })
         .catch(err => {
           return yupToErrors(err) as any;

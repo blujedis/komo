@@ -1,6 +1,7 @@
 import { useRef, useEffect, FormEvent, useState, MouseEvent } from 'react';
 import { initElement } from './register';
 import { get, set, delete as del, has } from 'dot-prop';
+import mixin from 'mixin-deep';
 import {
   IOptions, IModel, KeyOf, IRegisteredElement, ErrorModel,
   SubmitResetHandler,
@@ -8,8 +9,9 @@ import {
   IValidator,
   ISchemaAst
 } from './types';
-import { merge, log, normalizeValidator, astToSchema, isUndefined } from './utils';
-import { ValidateOptions, object, ObjectSchema } from 'yup';
+import { merge, log, isUndefined, isObject } from './utils';
+import { normalizeValidator, astToSchema } from './validate';
+import { ValidateOptions, ObjectSchema } from 'yup';
 
 /**
  * Native Validation reference.
@@ -17,7 +19,10 @@ import { ValidateOptions, object, ObjectSchema } from 'yup';
  */
 
 const DEFAULTS: IOptions<any> = {
-  model: {}
+  model: {},
+  validateSubmit: true,
+  validateBlur: true,
+  validateChange: true
 };
 
 export type FormApi = ReturnType<typeof initForm>;
@@ -42,6 +47,7 @@ export function initForm<T extends IModel>(options: IOptions<T>) {
 
     // Common
     options,
+    warn,
     defaults,
     fields,
     unref,
@@ -112,6 +118,11 @@ export function initForm<T extends IModel>(options: IOptions<T>) {
 
   }, []);
 
+  function warn(...args: any[]) {
+    if (!options.enableWarnings) return;
+    log.warn(...args);
+  }
+
   function getDefault<K extends KeyOf<T>>(path: string);
   function getDefault<K extends KeyOf<T>>(key: K);
   function getDefault();
@@ -177,22 +188,23 @@ export function initForm<T extends IModel>(options: IOptions<T>) {
   function validateSetError(path: string | KeyOf<T>, value: object, opts?: ValidateOptions): Promise<any>;
   function validateSetError(model: T, opts?: ValidateOptions): Promise<T>;
   function validateSetError(pathOrModel: string | KeyOf<T> | T, value?: object, opts?: ValidateOptions): Promise<any> {
-
     return validateModel(pathOrModel as any, value, opts)
+      .then(res => {
+        console.log(res);
+      })
       .catch(err => {
-        setError(err);
+        setError(err, typeof pathOrModel === 'string');
       });
-
   }
 
-  function setTouched(name: string) {
-    if (!touched.current.has(name))
-      touched.current.add(name);
+  function setTouched(path: string) {
+    if (!touched.current.has(path))
+      touched.current.add(path);
     api.isFormTouched = !!touched.current.size;
   }
 
-  function removeTouched(name: string) {
-    const removed = touched.current.delete(name);
+  function removeTouched(path: string) {
+    const removed = touched.current.delete(path);
     api.isFormTouched = !!touched.current.size;
     return removed;
   }
@@ -201,20 +213,20 @@ export function initForm<T extends IModel>(options: IOptions<T>) {
     api.touched.current.clear();
   }
 
-  function isTouched(name?: string) {
-    if (name)
-      return touched.current.has(name);
+  function isTouched(path?: string) {
+    if (path)
+      return touched.current.has(path);
     return !!touched.current.size;
   }
 
-  function setDirty(name: string) {
-    if (!dirty.current.has(name))
-      dirty.current.add(name);
+  function setDirty(path: string) {
+    if (!dirty.current.has(path))
+      dirty.current.add(path);
     api.isFormDirty = !!dirty.current.size;
   }
 
-  function removeDirty(name: string) {
-    const removed = dirty.current.delete(name);
+  function removeDirty(path: string) {
+    const removed = dirty.current.delete(path);
     api.isFormDirty = !!dirty.current.size;
     return removed;
   }
@@ -223,22 +235,30 @@ export function initForm<T extends IModel>(options: IOptions<T>) {
     api.dirty.current.clear();
   }
 
-  function isDirty(name?: string) {
-    if (name)
-      return dirty.current.has(name);
+  function isDirty(path?: string) {
+    if (path)
+      return dirty.current.has(path);
     return !!dirty.current.size;
   }
 
-  function setError(name: string | object, value?: string) {
-    if (isUndefined(value))
-      errors.current = name as object;
-    else
-      errors.current = set({ ...errors.current }, name as string, value);
+  function setError(errs: object, isMixin?: boolean): ErrorModel<T>;
+  function setError(path: string, value: any): ErrorModel<T>;
+  function setError(pathOrErrors: string | object, value?: any) {
+    if (isObject(pathOrErrors)) {
+      if (value === true)
+        errors.current = mixin(errors.current, pathOrErrors);
+      else
+        errors.current = pathOrErrors as object;
+    }
+    else {
+      errors.current = set({ ...errors.current }, pathOrErrors as any, value);
+    }
+    return errors.current;
   }
 
-  function removeError(name: string) {
+  function removeError(path: string) {
     const clone = { ...errors.current };
-    del(clone, name);
+    del(clone, path);
     errors.current = clone;
   }
 
@@ -246,14 +266,14 @@ export function initForm<T extends IModel>(options: IOptions<T>) {
     errors.current = {};
   }
 
-  function isValid(name: string) {
-    if (name)
-      return !isUndefined(errors[name]);
+  function isValid(path: string) {
+    if (path)
+      return !isUndefined(errors[path]);
     return !Object.entries(errors).length;
   }
 
-  function findField(name: string) {
-    return [...fields.current.values()].find(e => e.name === name || e.path === name);
+  function findField(nameOrPath: string) {
+    return [...fields.current.values()].find(e => e.name === nameOrPath || e.path === nameOrPath);
   }
 
   function unref(element: string | IRegisteredElement<T>) {
@@ -264,7 +284,7 @@ export function initForm<T extends IModel>(options: IOptions<T>) {
       element as IRegisteredElement<T>;
 
     if (!_element) {
-      log.warn(`Failed to unref element of undefined.`);
+      warn(`Failed to unref element of undefined.`);
       return;
     }
 
@@ -328,35 +348,34 @@ export function initForm<T extends IModel>(options: IOptions<T>) {
   function handleSubmit(event: SubmitResetEvent<T>): void;
   function handleSubmit(eventOrHandler: SubmitResetEvent<T> | SubmitResetHandler<T>) {
 
+    const handleFinal = (handler: SubmitResetHandler<T>, event: SubmitResetEvent<T>) => {
+
+      clearError();
+
+      if (!options.validateSubmit)
+        return handler(model.current, errors.current, event, api as any);
+
+      validateSetError(model.current)
+        .finally(() => {
+          handler(model.current, errors.current, event, api as any);
+        });
+
+    };
+
     if (typeof eventOrHandler === 'function')
       return (event: FormEvent<HTMLFormElement>) => {
         event.preventDefault();
-        const fn = eventOrHandler as SubmitResetHandler<T>;
-        if (options.validateSubmit) {
-          validateModel(model.current)
-            .then(m => {
-              //
-            })
-            .catch(err => {
-              //
-            });
-
-        }
-        else {
-          // fn(model.current, event, api);
-        }
+        handleFinal(eventOrHandler as SubmitResetHandler<T>, event);
       };
 
     const _event = eventOrHandler as FormEvent<HTMLFormElement>;
     _event.preventDefault();
 
-    if (options.onSubmit) {
-      options.onSubmit(model.current, eventOrHandler, api);
-      return;
-    }
+    if (options.onSubmit)
+      return handleFinal(options.onSubmit, _event);
 
     // Submit called but no handler!!
-    log.warn(`Cannot handleSubmit using submit handler of undefined.\n      Pass handler as "onSubmit={handleSubmit(your_submit_handler)}".\n      Or pass in options as "options.onSubmit".`);
+    warn(`Cannot handleSubmit using submit handler of undefined.\n      Pass handler as "onSubmit={handleSubmit(your_submit_handler)}".\n      Or pass in options as "options.onSubmit".`);
 
   }
 

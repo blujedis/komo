@@ -1,5 +1,6 @@
 import { FormEvent, ChangeEvent, MouseEvent } from 'react';
 import { ObjectSchema, ValidateOptions } from 'yup';
+import { FormApi } from './form';
 
 // HELPERS //
 
@@ -43,7 +44,8 @@ export type ValidateFieldHandler<T extends IModel> =
 export type SubmitResetEvent<T extends IModel> =
   FormEvent<HTMLFormElement> | SubmitResetHandler<T> | MouseEvent<HTMLInputElement>;
 
-export type SubmitResetHandler<T extends IModel> = (model: T, event?: SubmitResetEvent<T>, komo?) => void;
+export type SubmitResetHandler<T extends IModel> =
+  (model: T, errors?: ErrorModel<T>, event?: SubmitResetEvent<T>, komo?: FormApi) => void;
 
 // OPTIONS //
 
@@ -53,6 +55,7 @@ export interface IOptions<T extends IModel> {
   validateChange?: boolean;
   validateBlur?: boolean;
   validateSubmit?: boolean;
+  enableWarnings?: boolean;
   onSubmit?: SubmitResetHandler<T>;
   onReset?: SubmitResetHandler<T>;
 }

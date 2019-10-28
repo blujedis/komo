@@ -1,4 +1,4 @@
-import { useRef, useEffect, FormEvent, useState, MouseEvent } from 'react';
+import { useRef, useEffect, FormEvent, useState, MutableRefObject } from 'react';
 import { initElement } from './register';
 import { get, set, delete as del, has } from 'dot-prop';
 import mixin from 'mixin-deep';
@@ -9,9 +9,9 @@ import {
   IValidator,
   ISchemaAst
 } from './types';
-import { merge, log, isUndefined, isObject } from './utils';
+import { merge, createLogger, isObject } from './utils';
 import { normalizeValidator, astToSchema } from './validate';
-import { ValidateOptions, ObjectSchema } from 'yup';
+import { ValidateOptions, ObjectSchema, InferType } from 'yup';
 
 /**
  * Native Validation reference.
@@ -27,7 +27,10 @@ const DEFAULTS: IOptions<any> = {
 
 export type FormApi = ReturnType<typeof initForm>;
 
+// export function initForm<T extends IModel>(options: IOptions<T>) {
 export function initForm<T extends IModel>(options: IOptions<T>) {
+
+  type Model = ReturnType<typeof initSchema>;
 
   const defaults = useRef({ ...options.model });
   const model = useRef({ ...options.model });
@@ -35,81 +38,23 @@ export function initForm<T extends IModel>(options: IOptions<T>) {
   const touched = useRef(new Set<string>());
   const dirty = useRef(new Set<string>());
   const errors = useRef<ErrorModel<T>>({});
-  const [, render] = useState({});
+  const validator = useRef<IValidator<T>>();
+  const schemaAst = useRef<ISchemaAst>();
   const mounted = useRef(false);
-
-  const schemaAst: ISchemaAst = undefined;
-  const validator: IValidator<T> = undefined;
-  const isSchemaUser = validator && typeof options.validationSchema === 'function';
-  const isSchemaYup = validator && typeof options.validationSchema === 'object';
-
-  const api = {
-
-    // Common
-    options,
-    warn,
-    defaults,
-    fields,
-    unref,
-
-    // Schema
-    schemaAst,
-    isSchemaYup,
-    isSchemaUser,
-    validator,
-
-    // Form
-    mounted,
-    isFormDirty: false,
-    isFormTouched: false,
-    isFormValid: true,
-    reset,
-    handleReset,
-    handleSubmit,
-
-    // Model
-    getDefault,
-    getModel,
-    setModel,
-    validateModel,
-    hasModelPath,
-
-    // Touched
-    touched,
-    setTouched,
-    removeTouched,
-    clearTouched,
-    isTouched,
-
-    // Dirty
-    dirty,
-    setDirty,
-    removeDirty,
-    clearDirty,
-    isDirty,
-
-    // Errors
-    setError,
-    removeError,
-    clearError,
-    isValid
-
-  };
+  const [, render] = useState({});
 
   useEffect(() => {
 
     mounted.current = true;
 
-    let schema: ObjectSchema<T>;
-
     // AST provided merge or create schema.
-    if (api.schemaAst) {
-      const currentSchema = options.validationSchema as ObjectSchema<T>;
-      schema = astToSchema(api.schemaAst, currentSchema);
-    }
+    // if (schemaAst.current)
+    //   options.validationSchema = astToSchema(schemaAst.current, options.validationSchema as ObjectSchema<T>);
 
     // Create the validator.
-    api.validator = normalizeValidator(schema);
+    // validator.current = normalizeValidator(options.validationSchema);
+
+    initSchema();
 
     return () => {
       mounted.current = false;
@@ -118,9 +63,42 @@ export function initForm<T extends IModel>(options: IOptions<T>) {
 
   }, []);
 
-  function warn(...args: any[]) {
-    if (!options.enableWarnings) return;
-    log.warn(...args);
+  const log = createLogger(options.enableWarnings ? 'info' : 'error');
+
+  function initSchema() {
+
+    let schema: T & InferType<typeof options.validationSchema>;
+
+    if (schemaAst.current)
+      options.validationSchema = astToSchema(schemaAst.current, options.validationSchema as ObjectSchema<T>);
+
+    // Create the validator.
+    validator.current = normalizeValidator(options.validationSchema);
+
+    schema = options.validationSchema as any;
+
+    return schema;
+
+  }
+
+  function setRef<R, K extends KeyOf<R>>(ref: MutableRefObject<R>, path: K, value: R[K]): R;
+  function setRef<R>(ref: MutableRefObject<R>, model: object): R;
+  function setRef<R>(ref: MutableRefObject<R>, pathOrModel: string | object, value?: any) {
+    if (!setRef)
+      return log.error(`Cannot setRef using ref of undefined.`);
+    if (value)
+      ref.current = ref[pathOrModel as string] = value;
+    else
+      ref.current = value;
+    return ref.current;
+  }
+
+  function getRef<R, K extends KeyOf<R>>(ref: MutableRefObject<R>, path?: K): R[K];
+  function getRef<R>(ref: MutableRefObject<R>): R;
+  function getRef<R>(ref: MutableRefObject<R>, path?: string) {
+    if (!path)
+      return ref.current;
+    return ref.current[path];
   }
 
   function getDefault<K extends KeyOf<T>>(path: string);
@@ -143,6 +121,8 @@ export function initForm<T extends IModel>(options: IOptions<T>) {
     }
 
     if (arguments.length >= 2) {
+      if (value === '')
+        value = undefined;
       model.current = set({ ...model.current }, pathOrModel as K, value);
       if (setDefault)
         defaults.current = set({ ...defaults.current }, pathOrModel as string, value);
@@ -163,54 +143,53 @@ export function initForm<T extends IModel>(options: IOptions<T>) {
     return get(model.current, path);
   }
 
-  function hasModelPath<K extends KeyOf<T>>(path: string | K) {
-    return has(model, path);
-  }
-
   function validateModel(path: string | KeyOf<T>, value: object, opts?: ValidateOptions): Promise<any>;
   function validateModel(model: T, opts?: ValidateOptions): Promise<T>;
   function validateModel(pathOrModel: string | KeyOf<T> | T, value?: object, opts?: ValidateOptions) {
 
-    if (!api.validator) {
+    const _validator = validator.current;
+
+    if (!_validator) {
       errors.current = {};
       if (typeof pathOrModel === 'string')
         return Promise.resolve(get(value, pathOrModel));
       return Promise.resolve(pathOrModel);
     }
 
+    if (typeof pathOrModel === 'object') {
+      opts = value;
+      value = undefined;
+    }
+
+    opts = { abortEarly: false, ...opts };
+
     if (typeof pathOrModel === 'string')
-      return api.validator.validateAt(pathOrModel, value, opts);
+      return _validator
+        .validateAt(pathOrModel, value, opts)
+        .catch(err => {
+          setError(err, typeof pathOrModel === 'string');
+        });
 
-    return api.validator.validate(pathOrModel, opts);
-
-  }
-
-  function validateSetError(path: string | KeyOf<T>, value: object, opts?: ValidateOptions): Promise<any>;
-  function validateSetError(model: T, opts?: ValidateOptions): Promise<T>;
-  function validateSetError(pathOrModel: string | KeyOf<T> | T, value?: object, opts?: ValidateOptions): Promise<any> {
-    return validateModel(pathOrModel as any, value, opts)
-      .then(res => {
-        console.log(res);
-      })
+    return _validator
+      .validate(pathOrModel, opts)
       .catch(err => {
         setError(err, typeof pathOrModel === 'string');
       });
+
   }
 
   function setTouched(path: string) {
     if (!touched.current.has(path))
       touched.current.add(path);
-    api.isFormTouched = !!touched.current.size;
   }
 
   function removeTouched(path: string) {
     const removed = touched.current.delete(path);
-    api.isFormTouched = !!touched.current.size;
     return removed;
   }
 
   function clearTouched() {
-    api.touched.current.clear();
+    touched.current.clear();
   }
 
   function isTouched(path?: string) {
@@ -222,17 +201,15 @@ export function initForm<T extends IModel>(options: IOptions<T>) {
   function setDirty(path: string) {
     if (!dirty.current.has(path))
       dirty.current.add(path);
-    api.isFormDirty = !!dirty.current.size;
   }
 
   function removeDirty(path: string) {
     const removed = dirty.current.delete(path);
-    api.isFormDirty = !!dirty.current.size;
     return removed;
   }
 
   function clearDirty() {
-    api.dirty.current.clear();
+    dirty.current.clear();
   }
 
   function isDirty(path?: string) {
@@ -253,6 +230,7 @@ export function initForm<T extends IModel>(options: IOptions<T>) {
     else {
       errors.current = set({ ...errors.current }, pathOrErrors as any, value);
     }
+    render({});
     return errors.current;
   }
 
@@ -266,9 +244,9 @@ export function initForm<T extends IModel>(options: IOptions<T>) {
     errors.current = {};
   }
 
-  function isValid(path: string) {
+  function isValid(path?: string) {
     if (path)
-      return !isUndefined(errors[path]);
+      return !has(errors, path);
     return !Object.entries(errors).length;
   }
 
@@ -284,7 +262,7 @@ export function initForm<T extends IModel>(options: IOptions<T>) {
       element as IRegisteredElement<T>;
 
     if (!_element) {
-      warn(`Failed to unref element of undefined.`);
+      log.warn(`Failed to unref element of undefined.`);
       return;
     }
 
@@ -308,9 +286,6 @@ export function initForm<T extends IModel>(options: IOptions<T>) {
     clearDirty();
     clearTouched();
     clearError();
-    api.isFormDirty = false;
-    api.isFormTouched = false;
-    api.isFormValid = true;
 
     // Reset all fields.
     [...fields.current.values()].forEach(e => {
@@ -322,6 +297,72 @@ export function initForm<T extends IModel>(options: IOptions<T>) {
 
   }
 
+  return {
+
+    // Common
+    log,
+    options,
+    defaults,
+    fields,
+    unref,
+    schemaAst,
+
+    // Form
+    mounted,
+    reset,
+
+    // Model
+    getDefault,
+    getModel,
+    setModel,
+    validateModel,
+
+    // Touched
+    setTouched,
+    removeTouched,
+    clearTouched,
+    isTouchedPath: (path: string) => isTouched(path),
+
+    // Dirty
+    setDirty,
+    removeDirty,
+    clearDirty,
+    isDirtyPath: (path: string) => isDirty(path),
+
+    // Errors
+    errors: errors.current,
+    setError,
+    removeError,
+    clearError,
+    isValidPath: (path: string) => isValid(path),
+
+    // Getters
+
+    get isValidatedByUser() {
+      return validator.current && typeof options.validationSchema === 'function';
+    },
+
+    get isValidatedByYup() {
+      return validator.current && typeof options.validationSchema === 'object';
+    }
+
+  };
+
+}
+
+/**
+ * Use form hook exposes Komo form hook API.
+ * 
+ * @param options form api options.
+ */
+export default function useForm<T extends IModel>(options?: IOptions<T>) {
+
+  options = { ...DEFAULTS, ...options };
+
+  const api = initForm(options);
+
+  const { getModel, reset, validateModel, clearError, log } = api;
+
   function handleReset(handler: SubmitResetHandler<T>): (event?: SubmitResetEvent<T>) => void;
   function handleReset(event: SubmitResetEvent<T>): void;
   function handleReset(): void;
@@ -331,13 +372,13 @@ export function initForm<T extends IModel>(options: IOptions<T>) {
       return (event: FormEvent<HTMLFormElement>) => {
         const fn = eventOrHandler as SubmitResetHandler<T>;
         if (fn)
-          fn(model.current, event, api);
+          fn(getModel(), event, api as any);
         else
           reset(); // whoops should get here just in case reset for user.
       };
 
     if (options.onReset)
-      return options.onReset(model.current, eventOrHandler, api);
+      return options.onReset(getModel(), eventOrHandler, api as any);
 
     // If we get here just use internal reset.
     reset(eventOrHandler);
@@ -348,16 +389,16 @@ export function initForm<T extends IModel>(options: IOptions<T>) {
   function handleSubmit(event: SubmitResetEvent<T>): void;
   function handleSubmit(eventOrHandler: SubmitResetEvent<T> | SubmitResetHandler<T>) {
 
+    clearError();
+
     const handleFinal = (handler: SubmitResetHandler<T>, event: SubmitResetEvent<T>) => {
 
-      clearError();
-
       if (!options.validateSubmit)
-        return handler(model.current, errors.current, event, api as any);
+        return handler(getModel(), event, api as any);
 
-      validateSetError(model.current)
+      validateModel(getModel())
         .finally(() => {
-          handler(model.current, errors.current, event, api as any);
+          handler(getModel(), event, api as any);
         });
 
     };
@@ -371,31 +412,21 @@ export function initForm<T extends IModel>(options: IOptions<T>) {
     const _event = eventOrHandler as FormEvent<HTMLFormElement>;
     _event.preventDefault();
 
-    if (options.onSubmit)
+    if (options.onSubmit) {
       return handleFinal(options.onSubmit, _event);
+    }
 
     // Submit called but no handler!!
-    warn(`Cannot handleSubmit using submit handler of undefined.\n      Pass handler as "onSubmit={handleSubmit(your_submit_handler)}".\n      Or pass in options as "options.onSubmit".`);
+    log.warn(`Cannot handleSubmit using submit handler of undefined.\n      Pass handler as "onSubmit={handleSubmit(your_submit_handler)}".\n      Or pass in options as "options.onSubmit".`);
 
   }
 
-  return api as typeof api;
+  const extend = {
+    register: initElement<T>(api as any),
+    handleReset,
+    handleSubmit
+  };
 
-}
-
-/**
- * Use form hook exposes Komo form hook API.
- * 
- * @param options form api options.
- */
-export default function useForm<T extends IModel>(options?: IOptions<T>) {
-
-  options = { ...DEFAULTS, ...options };
-
-  const baseApi = initForm(options);
-  const extend = { register: initElement<T>(baseApi as any) };
-  const api = merge(baseApi, extend);
-
-  return api;
+  return merge(api, extend);
 
 }

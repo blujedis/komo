@@ -1,7 +1,7 @@
 
 import { FormApi } from './form';
 import {
-  log, isRadio, isCheckbox, addListener, isTextLike, removeListener,
+  isRadio, isCheckbox, addListener, isTextLike, removeListener,
   initObserver, isBooleanLike, isEqual
 } from './utils';
 import { getNativeValidators } from './validate';
@@ -11,6 +11,12 @@ import { LegacyRef } from 'react';
 type RegisterElement = (element: IRegisterElement) => LegacyRef<HTMLElement>;
 
 export function initElement<T extends IModel>(api?: FormApi) {
+
+  const { 
+    log, schemaAst, fields, unref, mounted, setModel,
+    getModel, getDefault, isTouchedPath, isDirtyPath,
+    setDirty, setTouched, removeDirty, isValidatedByUser
+  } = api;
 
   function resetElement(element: IRegisteredElement<T>) {
 
@@ -46,16 +52,16 @@ export function initElement<T extends IModel>(api?: FormApi) {
 
     // Update the model and set defaults.
     if (value)
-      api.setModel(element.path, value, true);
+      setModel(element.path, value, true);
 
   }
 
   function updateElement(element: IRegisteredElement<T>, isBlur: boolean = false) {
 
     // Previous value & flags.
-    const defaultValue = api.getDefault(element.path);
-    const prevTouched = api.isTouched(element.path);
-    const prevDirty = api.isDirty(element.path);
+    const defaultValue = getDefault(element.path);
+    const prevTouched = isTouchedPath(element.path);
+    const prevDirty = isDirtyPath(element.path);
 
     let value: any;
     let touched = false;
@@ -68,7 +74,7 @@ export function initElement<T extends IModel>(api?: FormApi) {
     if (isRadio(element.type)) {
 
       const radios =
-        [...api.fields.current.values()]
+        [...fields.current.values()]
           .filter(e => isRadio(e.type) && e.name === element.name);
 
       const checked = radios.find(e => e.checked);
@@ -104,23 +110,23 @@ export function initElement<T extends IModel>(api?: FormApi) {
       touched = !!dirty || prevTouched;
 
     if (dirty)
-      api.setDirty(element.path);
+      setDirty(element.path);
 
     if (touched)
-      api.setTouched(element.path);
+      setTouched(element.path);
 
     if (!dirty && prevDirty)
-      api.removeDirty(element.path);
+      removeDirty(element.path);
 
     // Set the model value.
-    api.setModel(element.path, value);
+    setModel(element.path, value);
 
   }
 
   // Binds to events, sets initial values.
   function bindElement(element: IRegisteredElement<T>) {
 
-    if (!element || api.fields.current.has(element)) return;
+    if (!element || fields.current.has(element)) return;
 
     if (!element.name) {
       log.warn(`${element.tagName} could NOT be registered using name of undefined.`);
@@ -134,7 +140,7 @@ export function initElement<T extends IModel>(api?: FormApi) {
     if (!element.type)
       element.setAttribute('type', 'text');
 
-    const modelVal = api.getModel(element.path);
+    const modelVal = getModel(element.path);
 
     if (isRadio(element.type)) {
       element.defaultValue = element.initValue || element.value || modelVal || '';
@@ -184,19 +190,19 @@ export function initElement<T extends IModel>(api?: FormApi) {
 
     if (nativeValidators.length) {
 
-      if (api.isSchemaUser)
+      if (isValidatedByUser)
         throw new Error(`Field ${element.name} contains native validation keys ${nativeValidators.join(', ')}. Cannot use native validators with user defined schema function.`);
 
-      api.schemaAst = api.schemaAst || {};
-      api.schemaAst[element.path] = api.schemaAst[element.path] || [];
+      schemaAst.current = schemaAst.current || {};
+      schemaAst.current[element.path] = schemaAst.current[element.path] || [];
       const type = element.type === 'number' || element.type === 'range' ? 'number' : 'string';
 
       // Set the type.
-      api.schemaAst[element.path] = [[type, undefined]];
+      schemaAst.current[element.path] = [[type, undefined]];
 
       // Extend AST with each native validator.
       nativeValidators.forEach(k => {
-        api.schemaAst[element.path] = [...api.schemaAst[element.path],
+        schemaAst.current[element.path] = [...schemaAst.current[element.path],
         [k as KeyOf<INativeValidators>, element[k]]];
       });
 
@@ -242,14 +248,14 @@ export function initElement<T extends IModel>(api?: FormApi) {
     // Unbind any events and then unref
     // the lement from any collections.
     element.unregister = () => {
-      api.unref(element);
+      unref(element);
     };
 
     // Bind mutation observer.
     initObserver(element as any, element.unregister.bind(element));
 
     // Add to current fields collection.
-    api.fields.current.add(element);
+    fields.current.add(element);
 
   }
 
@@ -280,7 +286,7 @@ export function initElement<T extends IModel>(api?: FormApi) {
       return (element: IRegisterElement) => {
 
         if (!element) {
-          if (!api.mounted.current) // only show warning if not mounted.
+          if (!mounted.current) // only show warning if not mounted.
             log.warn(`Failed to register unknown element using options ${JSON.stringify(options)}.`);
           return;
         }

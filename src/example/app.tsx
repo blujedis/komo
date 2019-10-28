@@ -1,23 +1,25 @@
 import React, { FC } from 'react';
 import useForm from '../';
+import { useRenderCount } from '../utils/renders';
 
 const App: FC = () => {
 
-  const { register, handleSubmit, handleReset } = useForm({
+  const { register, handleSubmit, handleReset, errors } = useForm({
     model: {
       firstName: 'bob',
       lastName: 'johnson'
     },
-    enableWarnings: true,
-    onSubmit: (model, errors) => {
-      // tslint:disable-next-line
-      console.log('\nModel Result:');
-      // tslint:disable-next-line
-      console.log(JSON.stringify(model, null, 2));
-
-      console.log(errors);
-    }
+    enableWarnings: true
   });
+
+  const onSubmit = (model) => {
+    // @ts-ignore
+    console.log('message', model.message);
+    // console.log(isTouched, isDirty);
+    console.log(errors);
+  };
+
+  useRenderCount();
 
   return (
     <div style={{ padding: '24px' }} >
@@ -25,7 +27,7 @@ const App: FC = () => {
       <h2>Example Form</h2>
       <hr /><br />
 
-      <form noValidate onSubmit={handleSubmit} onReset={handleReset}>
+      <form noValidate onSubmit={handleSubmit(onSubmit)} onReset={handleReset}>
 
         <label htmlFor="firstName">First Name: </label>
         <input name="firstName" type="text" ref={register} /><br /><br />
@@ -60,7 +62,7 @@ const App: FC = () => {
         <input type="file" name="filename" ref={register} /><br /><br />
 
         <label htmlFor="message">Message: </label>
-        <textarea name="message" defaultValue="Just some text." ref={register} required maxLength={10}>
+        <textarea name="message" ref={register} required minLength={5}>
         </textarea><br /><br />
 
         <input name="csrf" type="hidden" defaultValue="UYNL7_MMNG8_WRRV2_LIOP4" ref={register}></input>

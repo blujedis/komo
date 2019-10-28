@@ -12,14 +12,18 @@ export function yupToErrors<T extends IModel>(error: ValidationError): ErrorMode
 
   let errors: any = {};
 
-  if (error.inner) {
-    if (error.inner.length === 0)
-      return set(errors, error.path, error.message);
+  if (!error.inner || !error.inner.length) {
+    errors = set(errors, error.path, error.message);
+
+  }
+
+  else {
 
     for (const err of error.inner) {
       if (!(errors as any)[err.path])
         errors = set(errors, err.path, err.message);
     }
+
   }
 
   return errors;
@@ -125,17 +129,17 @@ export function normalizeValidator<T extends IModel>(schema: ValidationSchema<T>
           return res;
         })
         .catch(err => {
-          return yupToErrors(err) as any;
+          return Promise.reject(yupToErrors(err)) as any;
         });
     };
 
     validator.validateAt = (path: string, value: any, options?: ValidateOptions) => {
       return schema.validateAt(path, value, options)
         .then(res => {
-          return { [path]: res };
+          return set({}, path, res) as T;
         })
         .catch(err => {
-          return yupToErrors(err) as any;
+          return Promise.reject(yupToErrors(err)) as any;
         });
     };
 

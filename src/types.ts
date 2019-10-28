@@ -8,6 +8,18 @@ export type KeyOf<T> = Extract<keyof T, string>;
 
 export type ValueOf<T, K extends KeyOf<T>> = T[K];
 
+// export type FieldValues = Record<string, any>;
+
+// export type RawFieldName<V extends FieldValues> = KeyOf<V>;
+
+// export type FieldName<V extends FieldValues> = RawFieldName<V> | string;
+
+// export type FieldValue<V extends FieldValues> = V[FieldName<V>];
+
+// export type DefaultModel<V extends FieldValues> = Record<FieldName<V>, FieldValue<V>>;
+
+// export type Model<V extends FieldValues> = Partial<Record<FieldName<V>, FieldValue<V>>>;
+
 // MODEL & VALIDATION //
 
 export interface IModel { [key: string]: any; }
@@ -45,7 +57,7 @@ export type SubmitResetEvent<T extends IModel> =
   FormEvent<HTMLFormElement> | SubmitResetHandler<T> | MouseEvent<HTMLInputElement>;
 
 export type SubmitResetHandler<T extends IModel> =
-  (model: T, errors?: ErrorModel<T>, event?: SubmitResetEvent<T>, komo?: FormApi) => void;
+  (model: T, event?: SubmitResetEvent<T>, komo?: FormApi) => void;
 
 // OPTIONS //
 
@@ -124,3 +136,9 @@ export type TouchedModel<T extends IModel> = {
   ? TouchedModel<T[K]>
   : boolean;
 };
+
+// API //
+
+export interface IApi {
+
+}

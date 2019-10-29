@@ -1,14 +1,23 @@
 import React, { FC } from 'react';
 import useForm from '../';
 import { useRenderCount } from '../utils/renders';
+import { string, object, boolean } from 'yup';
+
+const schema = object({
+  firstName: string(),
+  lastName: string(),
+  urgent: boolean()
+});
 
 const App: FC = () => {
 
   const { register, handleSubmit, handleReset, errors } = useForm({
-    model: {
-      firstName: 'bob',
-      lastName: 'johnson'
-    },
+    // model: {
+    //   firstName: 'bob',
+    //   lastName: 'johnson',
+    //   urgent: false
+    // },
+    validationSchema: schema,
     enableWarnings: true
   });
 
@@ -17,6 +26,7 @@ const App: FC = () => {
     console.log('message', model.message);
     // console.log(isTouched, isDirty);
     console.log(errors);
+
   };
 
   useRenderCount();

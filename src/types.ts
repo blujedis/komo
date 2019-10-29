@@ -59,6 +59,15 @@ export type SubmitResetEvent<T extends IModel> =
 export type SubmitResetHandler<T extends IModel> =
   (model: T, event?: SubmitResetEvent<T>, komo?: FormApi) => void;
 
+export interface IParsedPath<T extends IModel> {
+  key?: KeyOf<T>;
+  suffix?: string;
+  segments?: string[];
+  path?: string;
+  toPath?: (key: KeyOf<T>, suffix: string) => string;
+  valid: boolean;
+}
+
 // OPTIONS //
 
 export interface IOptions<T extends IModel> {
@@ -99,6 +108,7 @@ export interface IRegisterOptions<T extends IModel> {
 }
 
 export interface IRegisteredElement<T extends IModel> extends IRegisterElement {
+  key: KeyOf<T>;
   name: KeyOf<T> | string;
   path?: string;
   initValue?: any;

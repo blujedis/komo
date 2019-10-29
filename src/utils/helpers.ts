@@ -1,4 +1,5 @@
 import isEqual from 'lodash.isequal';
+import { IModel, IParsedPath, KeyOf } from '../types';
 
 export { isEqual };
 
@@ -204,6 +205,15 @@ export function isObject(value: unknown) {
 }
 
 /**
+ * Checks if is a string.
+ * 
+ * @param value the value to inspect.
+ */
+export function isString(value: unknown) {
+  return typeof value === 'string';
+}
+
+/**
  * Checks if string, object or array are empty.
  * 
  * @param value the value to inspect.
@@ -213,4 +223,27 @@ export function isEmpty(value: unknown) {
     (Array.isArray(value) && !value.length) ||
     (isObject(value) &&
       !Object.entries(value).length);
+}
+
+export function parsePath<T extends IModel>(path: string): IParsedPath<T> {
+
+  if (!isString(path))
+    return {
+      segments: [],
+      valid: false
+    };
+
+  const segments = path.split('.');
+  const key = segments[0] as KeyOf<T>;
+  const suffix = segments.slice(1).join('.');
+
+  return {
+    key,
+    suffix,
+    segments,
+    path,
+    toPath: (k: KeyOf<T> = key, s: string = suffix) => [key, suffix].join('.'),
+    valid: !!segments.length
+  };
+
 }

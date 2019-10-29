@@ -2,9 +2,10 @@
 import { FormApi } from './form';
 import {
   isRadio, isCheckbox, addListener, isTextLike, removeListener,
-  initObserver, isBooleanLike, isEqual
+  initObserver, isBooleanLike, isEqual, parsePath, isString, isUndefined, isNullOrUndefined, isObject
 } from './utils';
 import { getNativeValidators } from './validate';
+import { get } from 'dot-prop';
 import { IRegisterElement, IRegisterOptions, IRegisteredElement, IModel, INativeValidators, KeyOf } from './types';
 import { LegacyRef } from 'react';
 
@@ -12,7 +13,7 @@ type RegisterElement = (element: IRegisterElement) => LegacyRef<HTMLElement>;
 
 export function initElement<T extends IModel>(api?: FormApi) {
 
-  const { 
+  const {
     log, schemaAst, fields, unref, mounted, setModel,
     getModel, getDefault, isTouchedPath, isDirtyPath,
     setDirty, setTouched, removeDirty, isValidatedByUser
@@ -129,7 +130,7 @@ export function initElement<T extends IModel>(api?: FormApi) {
     if (!element || fields.current.has(element)) return;
 
     if (!element.name) {
-      log.warn(`${element.tagName} could NOT be registered using name of undefined.`);
+      log.warn(`Element of tag "${element.tagName}" could NOT be registered using name of undefined.`);
       return;
     }
 
@@ -139,6 +140,21 @@ export function initElement<T extends IModel>(api?: FormApi) {
 
     if (!element.type)
       element.setAttribute('type', 'text');
+
+    const parsed = parsePath<T>(element.path);
+
+    if (!parsed.valid) {
+      log.error(`Failed to parse path "${element.path}" for element "${element.name}" of type "${element.type}".`);
+      return;
+    }
+
+    // Store the model key.
+
+    element.key = parsed.key;
+
+    // Get the model by key.
+
+    const model = getModel(parsed.key);
 
     const modelVal = getModel(element.path);
 
@@ -160,7 +176,7 @@ export function initElement<T extends IModel>(api?: FormApi) {
       if (!Array.isArray(arr))
         arr = [element.defaultValue];
 
-      arr = arr.filter(v => typeof v !== 'undefined');
+      arr = arr.filter(v => !isUndefined(v));
 
       // Ensure initial value includes
       // any default selected values in options.
@@ -181,10 +197,10 @@ export function initElement<T extends IModel>(api?: FormApi) {
     }
 
     element.validateChange = element.onChange ? false :
-      typeof element.validateChange === 'undefined' ? true : element.validateChange;
+      isUndefined(element.validateChange) ? true : element.validateChange;
 
     element.validateBlur = element.onBlur ? false :
-      typeof element.validateBlur === 'undefined' ? true : element.validateBlur;
+      isUndefined(element.validateBlur) ? true : element.validateBlur;
 
     const nativeValidators = getNativeValidators(element);
 
@@ -266,16 +282,16 @@ export function initElement<T extends IModel>(api?: FormApi) {
     pathElementOrOptions: string | IRegisterElement | IRegisterOptions<T>,
     options?: IRegisterOptions<T>) {
 
-    if (pathElementOrOptions === null || typeof pathElementOrOptions === 'undefined')
+    if (isNullOrUndefined(pathElementOrOptions))
       return;
 
-    const hasElement = arguments.length === 1 && typeof pathElementOrOptions === 'object' &&
+    const hasElement = arguments.length === 1 && isObject(pathElementOrOptions) &&
       (pathElementOrOptions as any).nodeName ? pathElementOrOptions as IRegisterElement : null;
 
     // No element just config return callback to get element.
     if (!hasElement) {
 
-      if (typeof pathElementOrOptions !== 'string') {
+      if (!isString(pathElementOrOptions)) {
         options = pathElementOrOptions as IRegisterOptions<T>;
         pathElementOrOptions = undefined;
       }

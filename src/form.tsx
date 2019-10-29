@@ -34,11 +34,11 @@ export function initForm<T extends IModel>(options: IOptions<T>) {
 
   const defaults = useRef({ ...options.model });
   const model = useRef({ ...options.model });
-  const fields = useRef(new Set<IRegisteredElement<T>>());
-  const touched = useRef(new Set<string>());
-  const dirty = useRef(new Set<string>());
-  const errors = useRef<ErrorModel<T>>({});
-  const validator = useRef<IValidator<T>>();
+  const fields = useRef(new Set<IRegisteredElement<Model>>());
+  const touched = useRef(new Set<KeyOf<Model>>());
+  const dirty = useRef(new Set<KeyOf<Model>>());
+  const errors = useRef<ErrorModel<Model>>({});
+  const validator = useRef<IValidator<Model>>();
   const schemaAst = useRef<ISchemaAst>();
   const mounted = useRef(false);
   const [, render] = useState({});
@@ -46,14 +46,6 @@ export function initForm<T extends IModel>(options: IOptions<T>) {
   useEffect(() => {
 
     mounted.current = true;
-
-    // AST provided merge or create schema.
-    // if (schemaAst.current)
-    //   options.validationSchema = astToSchema(schemaAst.current, options.validationSchema as ObjectSchema<T>);
-
-    // Create the validator.
-    // validator.current = normalizeValidator(options.validationSchema);
-
     initSchema();
 
     return () => {

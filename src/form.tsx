@@ -68,43 +68,20 @@ export function initForm<T extends IModel>(options: IOptions<T>) {
 
     schema = options.validationSchema as any;
 
+
     return schema;
 
   }
 
-  function setRef<R, K extends KeyOf<R>>(ref: MutableRefObject<R>, path: K, value: R[K]): R;
-  function setRef<R>(ref: MutableRefObject<R>, model: object): R;
-  function setRef<R>(ref: MutableRefObject<R>, pathOrModel: string | object, value?: any) {
-    if (!setRef)
-      return log.error(`Cannot setRef using ref of undefined.`);
-    if (value)
-      ref.current = ref[pathOrModel as string] = value;
-    else
-      ref.current = value;
-    return ref.current;
-  }
-
-  function getRef<R, K extends KeyOf<R>>(ref: MutableRefObject<R>, path?: K): R[K];
-  function getRef<R>(ref: MutableRefObject<R>): R;
-  function getRef<R>(ref: MutableRefObject<R>, path?: string) {
-    if (!path)
-      return ref.current;
-    return ref.current[path];
-  }
-
-  function getDefault<K extends KeyOf<T>>(path: string);
-  function getDefault<K extends KeyOf<T>>(key: K);
-  function getDefault();
-  function getDefault<K extends KeyOf<T>>(path?: K | string) {
+  function getDefault(path?: string) {
     if (!path)
       return defaults.current;
     return get(defaults.current, path);
   }
 
-  function setModel<K extends KeyOf<T>>(path: string, value: any, setDefault?: boolean);
-  function setModel<K extends KeyOf<T>>(key: K, value: T[K]);
+  function setModel(path: string, value: any, setDefault?: boolean);
   function setModel(model: T);
-  function setModel<K extends KeyOf<T>>(pathOrModel: string | K | T, value?: T[K], setDefault: boolean = false) {
+  function setModel(pathOrModel: string | T, value?: any, setDefault: boolean = false) {
 
     if (!pathOrModel) {
       log.error(`Cannot set model using key or model of undefined.`);
@@ -125,46 +102,44 @@ export function initForm<T extends IModel>(options: IOptions<T>) {
 
   }
 
-  function getModel<K extends KeyOf<T>>(path: string);
-  function getModel<K extends KeyOf<T>>(key: K);
-  function getModel();
-  function getModel<K extends KeyOf<T>>(path?: K | string) {
+  function getModel(path?: string) {
     if (!path)
       return model.current;
     return get(model.current, path);
   }
 
-  function validateModel(path: string | KeyOf<T>, value: object, opts?: ValidateOptions): Promise<any>;
+  function validateModel(name: KeyOf<T>, path: string, value: object, opts?: ValidateOptions): Promise<any>;
   function validateModel(model: T, opts?: ValidateOptions): Promise<T>;
-  function validateModel(pathOrModel: string | KeyOf<T> | T, value?: object, opts?: ValidateOptions) {
+  function validateModel(
+    nameOrModel: KeyOf<T> | T, path?: string | ValidateOptions, value?: object, opts?: ValidateOptions) {
 
     const _validator = validator.current;
 
     if (!_validator) {
       errors.current = {} as any;
-      if (typeof pathOrModel === 'string')
-        return Promise.resolve(get(value, pathOrModel));
-      return Promise.resolve(pathOrModel);
+      if (typeof nameOrModel === 'string')
+        return Promise.resolve(get(value, nameOrModel));
+      return Promise.resolve(nameOrModel);
     }
 
-    if (typeof pathOrModel === 'object') {
+    if (typeof nameOrModel === 'object') {
       opts = value;
       value = undefined;
     }
 
     opts = { abortEarly: false, ...opts };
 
-    if (typeof pathOrModel === 'string')
+    if (typeof nameOrModel === 'string')
       return _validator
-        .validateAt(pathOrModel, value, opts)
+        .validateAt(path as string, value, opts)
         .catch(err => {
-          setError(err, typeof pathOrModel === 'string');
+          setError(nameOrModel as ErrorKey<T>, err);
         });
 
     return _validator
-      .validate(pathOrModel, opts)
+      .validate(nameOrModel, opts)
       .catch(err => {
-        setError(err, typeof pathOrModel === 'string');
+        setError(err, typeof nameOrModel === 'string');
       });
 
   }
@@ -209,14 +184,14 @@ export function initForm<T extends IModel>(options: IOptions<T>) {
     return !!dirty.current.size;
   }
 
-  function setError(errs: object, isMixin?: boolean): ErrorModel<T>;
-  function setError(path: ErrorKey<T>, value: any): ErrorModel<T>;
+  function setError(name: ErrorKey<T>, value: any): ErrorModel<T>;
+  function setError(errs: object): ErrorModel<T>;
   function setError(nameOrErrors: ErrorKey<T> | object, value?: any) {
-    if (isString(nameOrErrors)) 
+    if (isString(nameOrErrors))
       errors.current = { ...errors.current, [nameOrErrors as ErrorKey<T>]: value };
-    else 
+    else
       errors.current = { ...nameOrErrors as ErrorModel<T> };
-    
+
     render({});
     return errors.current;
   }

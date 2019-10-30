@@ -1,6 +1,6 @@
 import { ValidationError, ValidateOptions, object, ObjectSchema, number, string, boolean } from 'yup';
 import { set } from 'dot-prop';
-import { IModel, ErrorModel, ValidationSchema, IValidator, IRegisteredElement, ISchemaAst } from './types';
+import { IModel, ErrorModel, ValidationSchema, IValidator, IRegisteredElement, ISchemaAst, ErrorKey } from './types';
 import { isPromise, isTruthy } from './utils/helpers';
 
 /**
@@ -10,18 +10,31 @@ import { isPromise, isTruthy } from './utils/helpers';
  */
 export function yupToErrors<T extends IModel>(error: ValidationError): ErrorModel<T> {
 
-  let errors: any = {};
+  const errors: ErrorModel<T> = {} as any;
 
   if (!error.inner || !error.inner.length) {
-    errors = set(errors, error.path, error.message);
-
+    errors[error.path as ErrorKey<T>] = errors[error.path] || [];
+    errors[error.path].push({
+      type: error.type,
+      name: error.name,
+      path: error.path,
+      value: error.value,
+      message: error.message
+    });
   }
 
   else {
 
     for (const err of error.inner) {
-      if (!(errors as any)[err.path])
-        errors = set(errors, err.path, err.message);
+
+      errors[err.path as ErrorKey<T>] = errors[err.path] || [];
+      errors[err.path].push({
+        type: error.type,
+        name: error.name,
+        path: error.path,
+        value: error.value,
+        message: error.message
+      });
     }
 
   }

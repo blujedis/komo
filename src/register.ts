@@ -127,7 +127,7 @@ export function initElement<T extends IModel>(api?: FormApi) {
   // Binds to events, sets initial values.
   function bindElement(element: IRegisteredElement<T>) {
 
-    if (!element || fields.current.has(element)) return;
+    if (!element || fields.current.has(element as IRegisteredElement<any>)) return;
 
     if (!element.name) {
       log.warn(`Element of tag "${element.tagName}" could NOT be registered using name of undefined.`);
@@ -251,14 +251,14 @@ export function initElement<T extends IModel>(api?: FormApi) {
     // Unbind any events and then unref
     // the lement from any collections.
     element.unregister = () => {
-      unref(element);
+      unref(element as IRegisteredElement<any>);
     };
 
     // Bind mutation observer.
     initObserver(element as any, element.unregister.bind(element));
 
     // Add to current fields collection.
-    fields.current.add(element);
+    fields.current.add(element as IRegisteredElement<any>);
 
   }
 

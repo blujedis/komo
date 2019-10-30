@@ -1,5 +1,5 @@
 import { FormEvent, ChangeEvent, MouseEvent } from 'react';
-import { ObjectSchema, ValidateOptions } from 'yup';
+import { ObjectSchema, ValidateOptions, ValidationError } from 'yup';
 import { FormApi } from './form';
 
 // HELPERS //
@@ -124,7 +124,10 @@ export interface IRegisteredElement<T extends IModel> extends IRegisterElement {
 
 // ERRORS //
 
-export type ErrorModel<T extends IModel> = { [K in keyof T]: string[]; };
+export interface IValidationError
+  extends Pick<ValidationError, 'type' | 'name' | 'path' | 'value' | 'message'> { }
+
+export type ErrorModel<T extends IModel> = { [K in keyof T]: IValidationError[] };
 
 export type ErrorKey<T> = KeyOf<ErrorModel<T>>;
 

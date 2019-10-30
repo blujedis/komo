@@ -28,7 +28,6 @@ const App: FC = () => {
   const onSubmit = (model) => {
     // @ts-ignore
     console.log('message', model.message);
-    // console.log(isTouched, isDirty);
     console.log(errors);
 
   };

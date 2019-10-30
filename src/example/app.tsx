@@ -6,7 +6,11 @@ import { string, object, boolean } from 'yup';
 const schema = object({
   firstName: string(),
   lastName: string(),
-  urgent: boolean()
+  urgent: boolean(),
+  numbers: object({
+    type: string(),
+    number: string()
+  })
 });
 
 const App: FC = () => {

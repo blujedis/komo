@@ -111,13 +111,13 @@ export function initElement<T extends IModel>(api?: FormApi) {
       touched = !!dirty || prevTouched;
 
     if (dirty)
-      setDirty(element.path);
+      setDirty(element.name);
 
     if (touched)
-      setTouched(element.path);
+      setTouched(element.name);
 
     if (!dirty && prevDirty)
-      removeDirty(element.path);
+      removeDirty(element.name);
 
     // Set the model value.
     setModel(element.path, value);
@@ -141,20 +141,7 @@ export function initElement<T extends IModel>(api?: FormApi) {
     if (!element.type)
       element.setAttribute('type', 'text');
 
-    const parsed = parsePath<T>(element.path);
-
-    if (!parsed.valid) {
-      log.error(`Failed to parse path "${element.path}" for element "${element.name}" of type "${element.type}".`);
-      return;
-    }
-
-    // Store the model key.
-
-    element.key = parsed.key;
-
     // Get the model by key.
-
-    const model = getModel(parsed.key);
 
     const modelVal = getModel(element.path);
 

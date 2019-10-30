@@ -108,8 +108,7 @@ export interface IRegisterOptions<T extends IModel> {
 }
 
 export interface IRegisteredElement<T extends IModel> extends IRegisterElement {
-  key: KeyOf<T>;
-  name: KeyOf<T> | string;
+  name: KeyOf<T>;
   path?: string;
   initValue?: any;
   initChecked?: boolean;
@@ -125,27 +124,9 @@ export interface IRegisteredElement<T extends IModel> extends IRegisterElement {
 
 // ERRORS //
 
-export type ErrorModel<T extends IModel> = {
-  [K in keyof T]?: T[K] extends any[]
-  ? T[K][number] extends object
-  ? Array<ErrorModel<T[K][number]>> | string | string[]
-  : string | string[]
-  : T[K] extends object
-  ? ErrorModel<T[K]>
-  : string;
-};
+export type ErrorModel<T extends IModel> = { [K in keyof T]: string[]; };
 
-// TOUCHED & DIRTY //
-
-export type TouchedModel<T extends IModel> = {
-  [K in keyof T]?: T[K] extends any[]
-  ? T[K][number] extends object
-  ? Array<TouchedModel<T[K][number]>>
-  : boolean
-  : T[K] extends object
-  ? TouchedModel<T[K]>
-  : boolean;
-};
+export type ErrorKey<T> = KeyOf<ErrorModel<T>>;
 
 // API //
 

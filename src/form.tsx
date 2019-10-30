@@ -7,9 +7,10 @@ import {
   SubmitResetHandler,
   SubmitResetEvent,
   IValidator,
-  ISchemaAst
+  ISchemaAst,
+  ErrorKey
 } from './types';
-import { merge, createLogger, isObject } from './utils';
+import { merge, createLogger, isObject, isString } from './utils';
 import { normalizeValidator, astToSchema } from './validate';
 import { ValidateOptions, ObjectSchema, InferType } from 'yup';
 
@@ -30,15 +31,13 @@ export type FormApi = ReturnType<typeof initForm>;
 // export function initForm<T extends IModel>(options: IOptions<T>) {
 export function initForm<T extends IModel>(options: IOptions<T>) {
 
-  type Model = ReturnType<typeof initSchema>;
-
   const defaults = useRef({ ...options.model });
   const model = useRef({ ...options.model });
-  const fields = useRef(new Set<IRegisteredElement<Model>>());
-  const touched = useRef(new Set<KeyOf<Model>>());
-  const dirty = useRef(new Set<KeyOf<Model>>());
-  const errors = useRef<ErrorModel<Model>>({});
-  const validator = useRef<IValidator<Model>>();
+  const fields = useRef(new Set<IRegisteredElement<T>>());
+  const touched = useRef(new Set<KeyOf<T>>());
+  const dirty = useRef(new Set<KeyOf<T>>());
+  const errors = useRef<ErrorModel<T>>({} as any);
+  const validator = useRef<IValidator<T>>();
   const schemaAst = useRef<ISchemaAst>();
   const mounted = useRef(false);
   const [, render] = useState({});
@@ -142,7 +141,7 @@ export function initForm<T extends IModel>(options: IOptions<T>) {
     const _validator = validator.current;
 
     if (!_validator) {
-      errors.current = {};
+      errors.current = {} as any;
       if (typeof pathOrModel === 'string')
         return Promise.resolve(get(value, pathOrModel));
       return Promise.resolve(pathOrModel);
@@ -170,13 +169,13 @@ export function initForm<T extends IModel>(options: IOptions<T>) {
 
   }
 
-  function setTouched(path: string) {
-    if (!touched.current.has(path))
-      touched.current.add(path);
+  function setTouched(name: KeyOf<T>) {
+    if (!touched.current.has(name))
+      touched.current.add(name);
   }
 
-  function removeTouched(path: string) {
-    const removed = touched.current.delete(path);
+  function removeTouched(name: KeyOf<T>) {
+    const removed = touched.current.delete(name);
     return removed;
   }
 
@@ -184,19 +183,19 @@ export function initForm<T extends IModel>(options: IOptions<T>) {
     touched.current.clear();
   }
 
-  function isTouched(path?: string) {
-    if (path)
-      return touched.current.has(path);
+  function isTouched(name?: KeyOf<T>) {
+    if (name)
+      return touched.current.has(name);
     return !!touched.current.size;
   }
 
-  function setDirty(path: string) {
-    if (!dirty.current.has(path))
-      dirty.current.add(path);
+  function setDirty(name: KeyOf<T>) {
+    if (!dirty.current.has(name))
+      dirty.current.add(name);
   }
 
-  function removeDirty(path: string) {
-    const removed = dirty.current.delete(path);
+  function removeDirty(name: KeyOf<T>) {
+    const removed = dirty.current.delete(name);
     return removed;
   }
 
@@ -204,41 +203,36 @@ export function initForm<T extends IModel>(options: IOptions<T>) {
     dirty.current.clear();
   }
 
-  function isDirty(path?: string) {
-    if (path)
-      return dirty.current.has(path);
+  function isDirty(name?: KeyOf<T>) {
+    if (name)
+      return dirty.current.has(name);
     return !!dirty.current.size;
   }
 
   function setError(errs: object, isMixin?: boolean): ErrorModel<T>;
-  function setError(path: string, value: any): ErrorModel<T>;
-  function setError(pathOrErrors: string | object, value?: any) {
-    if (isObject(pathOrErrors)) {
-      if (value === true)
-        errors.current = mixin(errors.current, pathOrErrors);
-      else
-        errors.current = pathOrErrors as object;
-    }
-    else {
-      errors.current = set({ ...errors.current }, pathOrErrors as any, value);
-    }
+  function setError(path: ErrorKey<T>, value: any): ErrorModel<T>;
+  function setError(nameOrErrors: ErrorKey<T> | object, value?: any) {
+    if (isString(nameOrErrors)) 
+      errors.current = { ...errors.current, [nameOrErrors as ErrorKey<T>]: value };
+    else 
+      errors.current = { ...nameOrErrors as ErrorModel<T> };
+    
     render({});
     return errors.current;
   }
 
-  function removeError(path: string) {
-    const clone = { ...errors.current };
-    del(clone, path);
+  function removeError(name: ErrorKey<T>) {
+    const clone = { [name]: undefined, ...errors.current };
     errors.current = clone;
   }
 
   function clearError() {
-    errors.current = {};
+    errors.current = {} as any;
   }
 
-  function isValid(path?: string) {
-    if (path)
-      return !has(errors, path);
+  function isValid(name?: ErrorKey<T>) {
+    if (name)
+      return !has(errors, name);
     return !Object.entries(errors).length;
   }
 
@@ -259,9 +253,9 @@ export function initForm<T extends IModel>(options: IOptions<T>) {
     }
 
     // Remove any flags/errors that are stored.
-    removeDirty(_element.path);
-    removeTouched(_element.path);
-    removeError(_element.path);
+    removeDirty(_element.name);
+    removeTouched(_element.name);
+    removeError(_element.name);
 
     // Unbind any listener events.
     _element.unbind();
@@ -313,20 +307,20 @@ export function initForm<T extends IModel>(options: IOptions<T>) {
     setTouched,
     removeTouched,
     clearTouched,
-    isTouchedPath: (path: string) => isTouched(path),
+    isTouchedPath: (name: ErrorKey<T>) => isTouched(name),
 
     // Dirty
     setDirty,
     removeDirty,
     clearDirty,
-    isDirtyPath: (path: string) => isDirty(path),
+    isDirtyPath: (name: ErrorKey<T>) => isDirty(name),
 
     // Errors
     errors: errors.current,
     setError,
     removeError,
     clearError,
-    isValidPath: (path: string) => isValid(path),
+    isValidPath: (name: ErrorKey<T>) => isValid(name),
 
     // Getters
 

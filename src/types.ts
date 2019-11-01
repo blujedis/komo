@@ -1,6 +1,7 @@
-import { FormEvent, ChangeEvent, MouseEvent, BaseSyntheticEvent } from 'react';
+import { FormEvent, ChangeEvent, MouseEvent, BaseSyntheticEvent, MutableRefObject } from 'react';
 import { ObjectSchema, ValidateOptions, ValidationError } from 'yup';
 import { FormApi } from './form';
+import { createLogger } from './utils';
 
 // HELPERS //
 
@@ -135,6 +136,62 @@ export type ErrorKey<T extends IModel> = KeyOf<T>;
 
 // API //
 
-export interface IApi {
+type Logger = ReturnType<typeof createLogger>;
 
+export interface IBaseApi<T extends IModel> {
+
+  log: Logger;
+  fields: MutableRefObject<Set<IRegisteredElement<T>>>;
+  schemaAst: MutableRefObject<ISchemaAst>;
+  mounted: MutableRefObject<boolean>;
+
+  render(status?: string): void;
+  render(): string;
+
+  // Model
+
+  getDefault(path?: string): any;
+  getModel(path: string): any;
+  getModel(): T;
+
+  setModel(path: string, value: any, setDefault?: boolean): void;
+  setModel(model: T): void;
+
+  // Validation
+
+  isValidateable(): boolean;
+  validateModel(name: KeyOf<T>, path: string, value: object, opts?: ValidateOptions): Promise<any>;
+  validateModel(model: T, opts?: ValidateOptions): Promise<T>;
+
+  // Touched
+
+  setTouched(name: KeyOf<T>): void;
+  removeTouched(name: KeyOf<T>): void;
+  clearTouched(): void;
+  isTouched(name?: KeyOf<T>): boolean;
+
+  // Dirty
+
+  setDirty(name: KeyOf<T>): void;
+  removeDirty(name: KeyOf<T>): boolean;
+  clearDirty(): void;
+  isDirty(name?: KeyOf<T>): boolean;
+
+  // Error
+
+  setError(name: ErrorKey<T>, value: any): ErrorModel<T>;
+  setError(errs: object): ErrorModel<T>;
+  removeError(name: ErrorKey<T>): boolean;
+  isError(name?: ErrorKey<T>): boolean;
+
+  // Element
+
+  findField(nameOrPath: string): IRegisteredElement<T>;
+  unref(element: string | IRegisteredElement<T>): void;
+  reset(values?: T): void;
+
+  // Form
+
+  handleReset(modelOrEvent?: ResetHandler<T> | BaseSyntheticEvent<object, any, any>): (values?: T) => void;
+  handleSubmit(handler: SubmitHandler<T>): (event: BaseSyntheticEvent) => Promise<void>;
 }

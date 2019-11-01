@@ -61,7 +61,7 @@ export function initForm<T extends IModel>(options: IOptionsInternal<T>) {
 
   const log = createLogger(options.enableWarnings ? 'info' : 'error');
 
-  function rerender(status: any) {
+  function render(status: any) {
     status = status || Date.now();
     renderStatus({ status });
   }
@@ -88,8 +88,6 @@ export function initForm<T extends IModel>(options: IOptionsInternal<T>) {
     return get(defaults.current, path);
   }
 
-  function setModel(path: string, value: any, setDefault?: boolean);
-  function setModel(model: T);
   function setModel(pathOrModel: string | T, value?: any, setDefault: boolean = false) {
 
     if (!pathOrModel) {
@@ -111,16 +109,12 @@ export function initForm<T extends IModel>(options: IOptionsInternal<T>) {
 
   }
 
-  function getModel(path: string): any;
-  function getModel(): T;
   function getModel(path?: string) {
     if (!path)
       return model.current;
     return get(model.current, path);
   }
 
-  function validateModel(name: KeyOf<T>, path: string, value: object, opts?: ValidateOptions): Promise<any>;
-  function validateModel(model: T, opts?: ValidateOptions): Promise<T>;
   function validateModel(
     nameOrModel: KeyOf<T> | T, path?: string | ValidateOptions, value?: object, opts?: ValidateOptions) {
 
@@ -198,14 +192,12 @@ export function initForm<T extends IModel>(options: IOptionsInternal<T>) {
     return !!dirty.current.size;
   }
 
-  function setError(name: ErrorKey<T>, value: any): ErrorModel<T>;
-  function setError(errs: object): ErrorModel<T>;
   function setError(nameOrErrors: ErrorKey<T> | object, value?: any) {
     if (isString(nameOrErrors))
       errors.current = { ...errors.current, [nameOrErrors as ErrorKey<T>]: value };
     else
       errors.current = { ...nameOrErrors as ErrorModel<T> };
-    rerender('seterror');
+    render('seterror');
     return errors.current;
   }
 
@@ -271,7 +263,7 @@ export function initForm<T extends IModel>(options: IOptionsInternal<T>) {
     submitted.current = false;
 
     // Rerender the form
-    rerender('reset');
+    render('reset');
 
   }
 
@@ -284,7 +276,7 @@ export function initForm<T extends IModel>(options: IOptionsInternal<T>) {
     }
 
     reset();
-    rerender('reset');
+    render('reset');
 
   }
 
@@ -309,7 +301,7 @@ export function initForm<T extends IModel>(options: IOptionsInternal<T>) {
       submitting.current = false;
       submitted.current = true;
       submitCount.current = submitCount.current + 1;
-      rerender('submit');
+      render('submit');
     };
 
   }
@@ -323,7 +315,7 @@ export function initForm<T extends IModel>(options: IOptionsInternal<T>) {
     fields,
     unref,
     schemaAst,
-    rerender,
+    render,
 
     // Form
     mounted,
@@ -336,16 +328,22 @@ export function initForm<T extends IModel>(options: IOptionsInternal<T>) {
     getModel,
     setModel,
     validateModel,
+    isValidateable: () => {
+      return (typeof options.validationSchema === 'object' && (options.validationSchema as any)._nodes) ||
+        typeof options.validationSchema === 'function';
+    },
 
     // Touched
     setTouched,
     removeTouched,
     clearTouched,
+    isTouched,
 
     // Dirty
     setDirty,
     removeDirty,
     clearDirty,
+    isDirty,
 
     // Errors,
     errors: errors.current,

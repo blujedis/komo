@@ -5,17 +5,17 @@ import {
   initObserver, isBooleanLike, isEqual, parsePath, isString, isUndefined, isNullOrUndefined
 } from './utils';
 import { getNativeValidators } from './validate';
-import { IRegisterElement, IRegisterOptions, IRegisteredElement, IModel, INativeValidators, KeyOf } from './types';
+import { IRegisterElement, IRegisterOptions, IRegisteredElement, IModel, INativeValidators, KeyOf, IBaseApi } from './types';
 import { LegacyRef } from 'react';
 
 type RegisterElement = (element: IRegisterElement) => LegacyRef<HTMLElement>;
 
-export function initElement<T extends IModel>(api?: FormApi) {
+export function initElement<T extends IModel>(api?: IBaseApi<T>) {
 
   const {
     log, schemaAst, fields, unref, mounted, setModel,
-    getModel, getDefault, isTouchedPath, isDirtyPath,
-    setDirty, setTouched, removeDirty, isValidatedByUser
+    getModel, getDefault, isTouched, isDirty,
+    setDirty, setTouched, removeDirty, isValidateable
   } = api;
 
   function resetElement(element: IRegisteredElement<T>) {
@@ -60,8 +60,8 @@ export function initElement<T extends IModel>(api?: FormApi) {
 
     // Previous value & flags.
     const defaultValue = getDefault(element.path);
-    const prevTouched = isTouchedPath(element.path);
-    const prevDirty = isDirtyPath(element.path);
+    const prevTouched = isTouched(element.path);
+    const prevDirty = isDirty(element.path);
 
     let value: any;
     let touched = false;

@@ -25,14 +25,20 @@ const App: FC = () => {
     enableWarnings: true
   });
 
-  const onSubmit = (model) => {
-    // @ts-ignore
-    console.log('message', model.message);
-    console.log(errors);
-
+  const onSubmit = (model, errors, event) => {
+    console.log(model);
+    // console.log(errors);
   };
 
   useRenderCount();
+
+  const ErrComp = ({ name }) => {
+
+    if (!errors || typeof errors[name] === 'undefined')
+      return null;
+    const err = errors[name][0];
+    return (<div style={{ color: 'red' }}>{err.message}</div>);
+  };
 
   return (
     <div style={{ padding: '24px' }} >
@@ -43,7 +49,7 @@ const App: FC = () => {
       <form noValidate onSubmit={handleSubmit(onSubmit)} onReset={handleReset}>
 
         <label htmlFor="firstName">First Name: </label>
-        <input name="firstName" type="text" ref={register} /><br /><br />
+        <input name="firstName" type="text" ref={register} defaultValue="Jim" /><br /><br />
 
         <label htmlFor="lastName">Last Name: </label>
         <input name="lastName" ref={register} /><br /><br />
@@ -76,7 +82,7 @@ const App: FC = () => {
 
         <label htmlFor="message">Message: </label>
         <textarea name="message" ref={register} required minLength={5}>
-        </textarea><br /><br />
+        </textarea><ErrComp name="message" /><br /><br />
 
         <input name="csrf" type="hidden" defaultValue="UYNL7_MMNG8_WRRV2_LIOP4" ref={register}></input>
 

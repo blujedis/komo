@@ -29,11 +29,11 @@ export function yupToErrors<T extends IModel>(error: ValidationError): ErrorMode
 
       errors[err.path as ErrorKey<T>] = errors[err.path] || [];
       errors[err.path].push({
-        type: error.type,
-        name: error.name,
-        path: error.path,
-        value: error.value,
-        message: error.message
+        type: err.type,
+        name: err.name,
+        path: err.path,
+        value: err.value,
+        message: err.message
       });
     }
 

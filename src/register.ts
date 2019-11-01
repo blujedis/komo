@@ -2,10 +2,9 @@
 import { FormApi } from './form';
 import {
   isRadio, isCheckbox, addListener, isTextLike, removeListener,
-  initObserver, isBooleanLike, isEqual, parsePath, isString, isUndefined, isNullOrUndefined, isObject
+  initObserver, isBooleanLike, isEqual, parsePath, isString, isUndefined, isNullOrUndefined
 } from './utils';
 import { getNativeValidators } from './validate';
-import { get } from 'dot-prop';
 import { IRegisterElement, IRegisterOptions, IRegisteredElement, IModel, INativeValidators, KeyOf } from './types';
 import { LegacyRef } from 'react';
 
@@ -272,7 +271,7 @@ export function initElement<T extends IModel>(api?: FormApi) {
     if (isNullOrUndefined(pathElementOrOptions))
       return;
 
-    const hasElement = arguments.length === 1 && isObject(pathElementOrOptions) &&
+    const hasElement = arguments.length === 1 && typeof pathElementOrOptions === 'object' &&
       (pathElementOrOptions as any).nodeName ? pathElementOrOptions as IRegisterElement : null;
 
     // No element just config return callback to get element.

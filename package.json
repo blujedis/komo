@@ -12,7 +12,6 @@
     "docs": "typedoc ./src --options ./typedoc.json --out ./docs && touch ./docs/.nojekll"
   },
   "dependencies": {
-    "@types/lodash.isequal": "^4.5.5",
     "dot-prop": "^5.1.0",
     "lodash.isequal": "^4.5.0",
     "mixin-deep": "^2.0.1",
@@ -29,6 +28,7 @@
     "@babel/preset-react": "^7.6.3",
     "@babel/preset-typescript": "^7.6.0",
     "@types/lodash.get": "^4.4.6",
+    "@types/lodash.isequal": "^4.5.5",
     "@types/lodash.set": "^4.3.6",
     "@types/lodash.setwith": "^4.3.6",
     "@types/react": "^16.9.5",

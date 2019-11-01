@@ -1,16 +1,18 @@
-import { useRef, useEffect, FormEvent, useState, MutableRefObject } from 'react';
+import { useRef, useEffect, FormEvent, useState, MutableRefObject, useCallback, BaseSyntheticEvent } from 'react';
 import { initElement } from './register';
 import { get, set, delete as del, has } from 'dot-prop';
 import mixin from 'mixin-deep';
 import {
   IOptions, IModel, KeyOf, IRegisteredElement, ErrorModel,
-  SubmitResetHandler,
+  SubmitHandler,
   SubmitResetEvent,
   IValidator,
   ISchemaAst,
-  ErrorKey
+  ErrorKey,
+  ResetHandler,
+  IOptionsInternal
 } from './types';
-import { merge, createLogger, isObject, isString } from './utils';
+import { merge, createLogger, isObject, isString, me } from './utils';
 import { normalizeValidator, astToSchema } from './validate';
 import { ValidateOptions, ObjectSchema, InferType } from 'yup';
 
@@ -29,10 +31,10 @@ const DEFAULTS: IOptions<any> = {
 export type FormApi = ReturnType<typeof initForm>;
 
 // export function initForm<T extends IModel>(options: IOptions<T>) {
-export function initForm<T extends IModel>(options: IOptions<T>) {
+export function initForm<T extends IModel>(options: IOptionsInternal<T>) {
 
-  const defaults = useRef({ ...options.model });
-  const model = useRef({ ...options.model });
+  const defaults = useRef<T>({ ...options.model });
+  const model = useRef<T>({ ...options.model });
   const fields = useRef(new Set<IRegisteredElement<T>>());
   const touched = useRef(new Set<KeyOf<T>>());
   const dirty = useRef(new Set<KeyOf<T>>());
@@ -40,7 +42,10 @@ export function initForm<T extends IModel>(options: IOptions<T>) {
   const validator = useRef<IValidator<T>>();
   const schemaAst = useRef<ISchemaAst>();
   const mounted = useRef(false);
-  const [, render] = useState({});
+  const submitCount = useRef(0);
+  const submitting = useRef(false);
+  const submitted = useRef(false);
+  const [getStatus, renderStatus] = useState({ status: 'init' });
 
   useEffect(() => {
 
@@ -56,6 +61,11 @@ export function initForm<T extends IModel>(options: IOptions<T>) {
 
   const log = createLogger(options.enableWarnings ? 'info' : 'error');
 
+  function rerender(status: any) {
+    status = status || Date.now();
+    renderStatus({ status });
+  }
+
   function initSchema() {
 
     let schema: T & InferType<typeof options.validationSchema>;
@@ -64,10 +74,9 @@ export function initForm<T extends IModel>(options: IOptions<T>) {
       options.validationSchema = astToSchema(schemaAst.current, options.validationSchema as ObjectSchema<T>);
 
     // Create the validator.
-    validator.current = normalizeValidator(options.validationSchema);
+    validator.current = normalizeValidator(options.validationSchema as ObjectSchema<T>);
 
     schema = options.validationSchema as any;
-
 
     return schema;
 
@@ -91,7 +100,7 @@ export function initForm<T extends IModel>(options: IOptions<T>) {
     if (arguments.length >= 2) {
       if (value === '')
         value = undefined;
-      model.current = set({ ...model.current }, pathOrModel as K, value);
+      model.current = set({ ...model.current }, pathOrModel as string, value);
       if (setDefault)
         defaults.current = set({ ...defaults.current }, pathOrModel as string, value);
     }
@@ -102,6 +111,8 @@ export function initForm<T extends IModel>(options: IOptions<T>) {
 
   }
 
+  function getModel(path: string): any;
+  function getModel(): T;
   function getModel(path?: string) {
     if (!path)
       return model.current;
@@ -129,17 +140,20 @@ export function initForm<T extends IModel>(options: IOptions<T>) {
 
     opts = { abortEarly: false, ...opts };
 
-    if (typeof nameOrModel === 'string')
+    if (typeof nameOrModel === 'string') {
       return _validator
         .validateAt(path as string, value, opts)
         .catch(err => {
           setError(nameOrModel as ErrorKey<T>, err);
+          return Promise.reject(errors.current);
         });
+    }
 
     return _validator
       .validate(nameOrModel, opts)
       .catch(err => {
         setError(err, typeof nameOrModel === 'string');
+        return Promise.reject(errors.current);
       });
 
   }
@@ -191,8 +205,7 @@ export function initForm<T extends IModel>(options: IOptions<T>) {
       errors.current = { ...errors.current, [nameOrErrors as ErrorKey<T>]: value };
     else
       errors.current = { ...nameOrErrors as ErrorModel<T> };
-
-    render({});
+    rerender('seterror');
     return errors.current;
   }
 
@@ -240,10 +253,10 @@ export function initForm<T extends IModel>(options: IOptions<T>) {
 
   }
 
-  function reset(event?: SubmitResetEvent<T>) {
+  function reset(values?: T) {
 
     // Reset all states.
-    model.current = { ...defaults.current };
+    model.current = { ...defaults.current, ...values };
     clearDirty();
     clearTouched();
     clearError();
@@ -253,8 +266,51 @@ export function initForm<T extends IModel>(options: IOptions<T>) {
       e.resetElement();
     });
 
+    submitCount.current = 0;
+    submitting.current = false;
+    submitted.current = false;
+
     // Rerender the form
-    render({});
+    rerender('reset');
+
+  }
+
+  function handleReset(modelOrEvent?: ResetHandler<T> | BaseSyntheticEvent) {
+
+    if (typeof modelOrEvent === 'function') {
+      return (values?: T) => {
+        reset(values);
+      };
+    }
+
+    reset();
+    rerender('reset');
+
+  }
+
+  function handleSubmit(handler: SubmitHandler<T>) {
+
+    if (!handler) {
+      // Submit called but no handler!!
+      log.warn(`Cannot handleSubmit using submit handler of undefined.\n      Pass handler as "onSubmit={handleSubmit(your_submit_handler)}".\n      Or pass in options as "options.onSubmit".`);
+      return;
+    }
+
+    return async (event: FormEvent<HTMLFormElement>) => {
+      submitting.current = true;
+      if (event) {
+        event.preventDefault();
+        event.persist();
+      }
+      if (!options.validateSubmit)
+        return handler(model.current, {} as any, event);
+      const { err } = await me(validateModel(model.current));
+      await handler(model.current, err as any, event);
+      submitting.current = false;
+      submitted.current = true;
+      submitCount.current = submitCount.current + 1;
+      rerender('submit');
+    };
 
   }
 
@@ -267,10 +323,13 @@ export function initForm<T extends IModel>(options: IOptions<T>) {
     fields,
     unref,
     schemaAst,
+    rerender,
 
     // Form
     mounted,
-    reset,
+    reset: useCallback(reset, []),
+    handleReset: useCallback(handleReset, []),
+    handleSubmit: useCallback(handleSubmit, []),
 
     // Model
     getDefault,
@@ -282,20 +341,17 @@ export function initForm<T extends IModel>(options: IOptions<T>) {
     setTouched,
     removeTouched,
     clearTouched,
-    isTouchedPath: (name: ErrorKey<T>) => isTouched(name),
 
     // Dirty
     setDirty,
     removeDirty,
     clearDirty,
-    isDirtyPath: (name: ErrorKey<T>) => isDirty(name),
 
-    // Errors
+    // Errors,
     errors: errors.current,
     setError,
     removeError,
     clearError,
-    isValidPath: (name: ErrorKey<T>) => isValid(name),
 
     // Getters
 
@@ -318,76 +374,33 @@ export function initForm<T extends IModel>(options: IOptions<T>) {
  */
 export default function useForm<T extends IModel>(options?: IOptions<T>) {
 
-  options = { ...DEFAULTS, ...options };
+  const _options: IOptionsInternal<T> = { ...DEFAULTS, ...options };
 
-  const api = initForm(options);
-
-  const { getModel, reset, validateModel, clearError, log } = api;
-
-  function handleReset(handler: SubmitResetHandler<T>): (event?: SubmitResetEvent<T>) => void;
-  function handleReset(event: SubmitResetEvent<T>): void;
-  function handleReset(): void;
-  function handleReset(eventOrHandler?: SubmitResetEvent<T> | SubmitResetHandler<T>) {
-
-    if (typeof eventOrHandler === 'function')
-      return (event: FormEvent<HTMLFormElement>) => {
-        const fn = eventOrHandler as SubmitResetHandler<T>;
-        if (fn)
-          fn(getModel(), event, api as any);
-        else
-          reset(); // whoops should get here just in case reset for user.
-      };
-
-    if (options.onReset)
-      return options.onReset(getModel(), eventOrHandler, api as any);
-
-    // If we get here just use internal reset.
-    reset(eventOrHandler);
-
+  // Check if schema is object or ObjectSchema,
+  // if yes get the defaults.
+  if (typeof options.validationSchema === 'object') {
+    const schema = options.validationSchema as any;
+    const defaults = schema._nodes ? schema.cast() : schema;
+    _options.model = { ...defaults };
   }
 
-  function handleSubmit(handler: SubmitResetHandler<T>): (event?: SubmitResetEvent<T>) => void;
-  function handleSubmit(event: SubmitResetEvent<T>): void;
-  function handleSubmit(eventOrHandler: SubmitResetEvent<T> | SubmitResetHandler<T>) {
-
-    clearError();
-
-    const handleFinal = (handler: SubmitResetHandler<T>, event: SubmitResetEvent<T>) => {
-
-      if (!options.validateSubmit)
-        return handler(getModel(), event, api as any);
-
-      validateModel(getModel())
-        .finally(() => {
-          handler(getModel(), event, api as any);
-        });
-
-    };
-
-    if (typeof eventOrHandler === 'function')
-      return (event: FormEvent<HTMLFormElement>) => {
-        event.preventDefault();
-        handleFinal(eventOrHandler as SubmitResetHandler<T>, event);
-      };
-
-    const _event = eventOrHandler as FormEvent<HTMLFormElement>;
-    _event.preventDefault();
-
-    if (options.onSubmit) {
-      return handleFinal(options.onSubmit, _event);
-    }
-
-    // Submit called but no handler!!
-    log.warn(`Cannot handleSubmit using submit handler of undefined.\n      Pass handler as "onSubmit={handleSubmit(your_submit_handler)}".\n      Or pass in options as "options.onSubmit".`);
-
-  }
+  const api = initForm(_options);
 
   const extend = {
-    register: initElement<T>(api as any),
-    handleReset,
-    handleSubmit
+    register: useCallback(initElement<T>(api as any), []),
   };
 
   return merge(api, extend);
 
 }
+
+// register
+// unregister
+// renderBaseOnError
+// setValueInternal
+// executeValidation
+// executeSchemaValidation
+// triggerValidation
+// setValue
+// removeEventListenerAndRef
+// reset

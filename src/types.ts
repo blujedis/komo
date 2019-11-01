@@ -1,4 +1,4 @@
-import { FormEvent, ChangeEvent, MouseEvent } from 'react';
+import { FormEvent, ChangeEvent, MouseEvent, BaseSyntheticEvent } from 'react';
 import { ObjectSchema, ValidateOptions, ValidationError } from 'yup';
 import { FormApi } from './form';
 
@@ -53,11 +53,10 @@ export type ValidateFieldHandler<T extends IModel> =
   (value?: any, path?: string, name?: KeyOf<T> | string) =>
     ErrorModel<T> | Promise<T>;
 
-export type SubmitResetEvent<T extends IModel> =
-  FormEvent<HTMLFormElement> | SubmitResetHandler<T> | MouseEvent<HTMLInputElement>;
+export type SubmitHandler<T extends IModel> =
+  (model?: T, errors?: ErrorModel<T>, event?: BaseSyntheticEvent) => void;
 
-export type SubmitResetHandler<T extends IModel> =
-  (model: T, event?: SubmitResetEvent<T>, komo?: FormApi) => void;
+export type ResetHandler<T extends IModel> = (model?: T) => void;
 
 export interface IParsedPath<T extends IModel> {
   key?: KeyOf<T>;
@@ -71,14 +70,15 @@ export interface IParsedPath<T extends IModel> {
 // OPTIONS //
 
 export interface IOptions<T extends IModel> {
-  model?: T;
-  validationSchema?: ValidationSchema<T>;
+  validationSchema?: T | ValidationSchema<T>;
   validateChange?: boolean;
   validateBlur?: boolean;
   validateSubmit?: boolean;
   enableWarnings?: boolean;
-  onSubmit?: SubmitResetHandler<T>;
-  onReset?: SubmitResetHandler<T>;
+}
+
+export interface IOptionsInternal<T extends IModel> extends IOptions<T> {
+  model?: T;
 }
 
 // REGISTER //
@@ -127,9 +127,11 @@ export interface IRegisteredElement<T extends IModel> extends IRegisterElement {
 export interface IValidationError
   extends Pick<ValidationError, 'type' | 'name' | 'path' | 'value' | 'message'> { }
 
-export type ErrorModel<T extends IModel> = { [K in keyof T]: IValidationError[] };
+export type ErrorKeys<T extends IModel> = keyof T;
 
-export type ErrorKey<T> = KeyOf<ErrorModel<T>>;
+export type ErrorModel<T extends IModel> = { [K in ErrorKeys<T>]: IValidationError[] };
+
+export type ErrorKey<T extends IModel> = KeyOf<T>;
 
 // API //
 

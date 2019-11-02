@@ -452,7 +452,7 @@ export default function useForm<T extends IModel>(options?: IOptions<T>) {
 
     // Reset all fields.
     [...fields.current.values()].forEach(e => {
-      e.resetElement();
+      e.reset();
     });
 
     submitCount.current = 0;

@@ -7,15 +7,15 @@
   "author": "Blujedis <blujedicorp@gmail.com>",
   "license": "ISC",
   "scripts": {
-    "build": "tsc --project tsconfig.prod.json ",
-    "start": "webpack-dev-server --mode development --config ./build/webpack --watch",
+    "clean": "rimraf ./dist",
+    "build:ts": "tsc --project tsconfig.prod.json",
+    "build": "npm run clean && npm run build:ts",
+    "start": "webpack-dev-server --config ./build/webpack --watch",
     "docs": "typedoc ./src --options ./typedoc.json --out ./docs && touch ./docs/.nojekll"
   },
   "dependencies": {
     "dot-prop": "^5.1.0",
     "lodash.isequal": "^4.5.0",
-    "mixin-deep": "^2.0.1",
-    "react-hook-form": "^3.26.2",
     "yup": "^0.27.0"
   },
   "peerDependencies": {
@@ -23,6 +23,7 @@
     "react-dom": "^16.10.2"
   },
   "devDependencies": {
+    "rimraf": "^3.0.0",
     "@babel/core": "^7.6.3",
     "@babel/preset-env": "^7.6.3",
     "@babel/preset-react": "^7.6.3",
@@ -35,6 +36,7 @@
     "@types/react-dom": "^16.9.1",
     "@types/yup": "^0.26.24",
     "babel-loader": "^8.0.6",
+    "babel-preset-minify": "^0.5.1",
     "copy-webpack-plugin": "^5.0.4",
     "eslint": "^6.5.1",
     "html-webpack-plugin": "^3.2.0",

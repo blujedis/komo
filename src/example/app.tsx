@@ -15,7 +15,7 @@ const schema = object({
 
 const App: FC = () => {
 
-  const { register, handleSubmit, handleReset, errors } = useForm({
+  const { register, handleSubmit, handleReset, state } = useForm({
     // model: {
     //   firstName: 'bob',
     //   lastName: 'johnson',
@@ -25,18 +25,18 @@ const App: FC = () => {
     enableWarnings: true
   });
 
-  const onSubmit = (model, errors, event) => {
-    console.log(model);
+  const onSubmit = (model) => {
+    // console.log(model);
     // console.log(errors);
+    console.log(state.errors);
   };
 
   useRenderCount();
 
   const ErrComp = ({ name }) => {
-
-    if (!errors || typeof errors[name] === 'undefined')
+    if (!state.errors || typeof state.errors[name] === 'undefined')
       return null;
-    const err = errors[name][0];
+    const err = state.errors[name][0];
     return (<div style={{ color: 'red' }}>{err.message}</div>);
   };
 
@@ -92,6 +92,8 @@ const App: FC = () => {
         <input type="submit" value="Submit" />
 
       </form>
+
+
 
     </div>
   );

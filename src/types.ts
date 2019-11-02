@@ -1,6 +1,5 @@
-import { FormEvent, ChangeEvent, MouseEvent, BaseSyntheticEvent, MutableRefObject } from 'react';
+import { BaseSyntheticEvent, MutableRefObject } from 'react';
 import { ObjectSchema, ValidateOptions, ValidationError } from 'yup';
-import { FormApi } from './form';
 import { createLogger } from './utils';
 
 // HELPERS //
@@ -31,7 +30,7 @@ export type ValidationSchema<T extends IModel> = ObjectSchema<T> | ValidateModel
 
 export interface IValidator<T extends IModel> {
   validate(model: T, options?: ValidateOptions): Promise<T>;
-  validateAt?(path: string, value: any, options?: ValidateOptions): Promise<T>;
+  validateAt?(path: string, value: any, options?: ValidateOptions): Promise<Partial<T>>;
 }
 
 export interface INativeValidators {
@@ -97,8 +96,6 @@ export interface IRegisterElement extends Partial<HTMLElement> {
   pattern?: string | RegExp;
   minLength?: string | number;
   maxLength?: string | number;
-  onChange?: (e: ChangeEvent) => void;
-  onBlur?: (e: FocusEvent) => void;
 }
 
 export interface IRegisterOptions<T extends IModel> {
@@ -106,6 +103,12 @@ export interface IRegisterOptions<T extends IModel> {
   defaultValue?: any;
   defaultChecked?: boolean;
   onValidate?: ValidateFieldHandler<T>;
+  required?: boolean;
+  min?: number;
+  max?: number;
+  maxLength?: number;
+  minLength?: number;
+  pattern?: RegExp;
 }
 
 export interface IRegisteredElement<T extends IModel> extends IRegisterElement {
@@ -118,9 +121,10 @@ export interface IRegisteredElement<T extends IModel> extends IRegisterElement {
   validateChange?: boolean;
   validateBlur?: boolean;
   onValidate?: ValidateFieldHandler<T>;
+  validate?: () => Promise<any>;
   unbind?: () => void;
   unregister?: () => void;
-  resetElement?: () => void;
+  reset?: () => void;
 }
 
 // ERRORS //
@@ -132,8 +136,6 @@ export type ErrorKeys<T extends IModel> = keyof T;
 
 export type ErrorModel<T extends IModel> = { [K in ErrorKeys<T>]: IValidationError[] };
 
-export type ErrorKey<T extends IModel> = KeyOf<T>;
-
 // API //
 
 type Logger = ReturnType<typeof createLogger>;
@@ -143,24 +145,52 @@ export interface IBaseApi<T extends IModel> {
   log: Logger;
   fields: MutableRefObject<Set<IRegisteredElement<T>>>;
   schemaAst: MutableRefObject<ISchemaAst>;
+  defaults: MutableRefObject<T>;
+  model: MutableRefObject<T>;
+  errors: MutableRefObject<ErrorModel<T>>;
   mounted: MutableRefObject<boolean>;
+  submitCount: MutableRefObject<number>;
+  submitting: MutableRefObject<boolean>;
+  submitted: MutableRefObject<boolean>;
 
-  render(status?: string): void;
+  state: {
+    errors: ErrorModel<T>;
+    isSubmitting: boolean;
+    isSubmitted: boolean;
+    submitCount: number;
+    isValid: boolean;
+    isDirty: boolean;
+    isTouched: boolean;
+  };
+
+  render(status: string): void;
   render(): string;
 
   // Model
 
   getDefault(path?: string): any;
+
+  setDefault(path: string, value: any, extend?: boolean): void;
+  setDefault(model: T): void;
+
   getModel(path: string): any;
   getModel(): T;
 
-  setModel(path: string, value: any, setDefault?: boolean): void;
+  setModel(path: string, value: any, extend?: boolean): void;
   setModel(model: T): void;
 
   // Validation
 
-  isValidateable(): boolean;
-  validateModel(name: KeyOf<T>, path: string, value: object, opts?: ValidateOptions): Promise<any>;
+  validator: IValidator<T>;
+  isValidatable(): boolean;
+  isValidateChange(element: IRegisteredElement<T>): boolean;
+  isValidateChange(name: KeyOf<T>): boolean;
+
+  isValidateBlur(element: IRegisteredElement<T>): boolean;
+  isValidateBlur(name: KeyOf<T>): boolean;
+
+  validateModelAt(element: IRegisteredElement<T>, opts?: ValidateOptions): Promise<Partial<T>>;
+  validateModelAt(name: KeyOf<T>, opts?: ValidateOptions): Promise<Partial<T>>;
   validateModel(model: T, opts?: ValidateOptions): Promise<T>;
 
   // Touched
@@ -179,19 +209,16 @@ export interface IBaseApi<T extends IModel> {
 
   // Error
 
-  setError(name: ErrorKey<T>, value: any): ErrorModel<T>;
-  setError(errs: object): ErrorModel<T>;
-  removeError(name: ErrorKey<T>): boolean;
-  isError(name?: ErrorKey<T>): boolean;
+  setError(name: KeyOf<T>, value: any): ErrorModel<T>;
+  setError(errors: ErrorModel<T>, merge?: boolean): ErrorModel<T>;
+  removeError(name: KeyOf<T>): boolean;
+  isError(name?: KeyOf<T>): boolean;
+  clearError(): void;
 
   // Element
 
+  findField(element: IRegisteredElement<T>): IRegisteredElement<T>;
   findField(nameOrPath: string): IRegisteredElement<T>;
-  unref(element: string | IRegisteredElement<T>): void;
-  reset(values?: T): void;
+  unregister(element: string | IRegisteredElement<T>): void;
 
-  // Form
-
-  handleReset(modelOrEvent?: ResetHandler<T> | BaseSyntheticEvent<object, any, any>): (values?: T) => void;
-  handleSubmit(handler: SubmitHandler<T>): (event: BaseSyntheticEvent) => Promise<void>;
 }

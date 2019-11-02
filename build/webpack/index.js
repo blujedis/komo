@@ -1,5 +1,6 @@
 const base = require('./base');
+const env = process.env.NODE_ENV || 'development';
 const webpackMerge = require('webpack-merge');
-const activeConfig = require(`./${base.env}.js`);
+const activeConfig = require(`./${env}.js`);
 
-module.exports = webpackMerge(base.config, activeConfig);
+module.exports = webpackMerge(base, activeConfig);

@@ -1,11 +1,13 @@
 
-import { FormApi } from './form';
 import {
   isRadio, isCheckbox, addListener, isTextLike, removeListener,
-  initObserver, isBooleanLike, isEqual, parsePath, isString, isUndefined, isNullOrUndefined
+  initObserver, isBooleanLike, isEqual, isString, isUndefined, isNullOrUndefined, me
 } from './utils';
 import { getNativeValidators } from './validate';
-import { IRegisterElement, IRegisterOptions, IRegisteredElement, IModel, INativeValidators, KeyOf, IBaseApi } from './types';
+import {
+  IRegisterElement, IRegisterOptions, IRegisteredElement,
+  IModel, INativeValidators, KeyOf, IBaseApi, ErrorModel
+} from './types';
 import { LegacyRef } from 'react';
 
 type RegisterElement = (element: IRegisterElement) => LegacyRef<HTMLElement>;
@@ -13,12 +15,13 @@ type RegisterElement = (element: IRegisterElement) => LegacyRef<HTMLElement>;
 export function initElement<T extends IModel>(api?: IBaseApi<T>) {
 
   const {
-    log, schemaAst, fields, unref, mounted, setModel,
-    getModel, getDefault, isTouched, isDirty,
-    setDirty, setTouched, removeDirty, isValidateable
+    log, schemaAst, fields, unregister, mounted, setModel,
+    getModel, getDefault, isTouched, isDirty, setDefault,
+    setDirty, setTouched, removeDirty, isValidateBlur, isValidateChange,
+    validateModelAt, isValidatable, removeError, state, setError
   } = api;
 
-  function resetElement(element: IRegisteredElement<T>) {
+  function resetElement(element: IRegisteredElement<T>, isInit: boolean = false) {
 
     let value;
 
@@ -50,9 +53,11 @@ export function initElement<T extends IModel>(api?: IBaseApi<T>) {
       value = element.defaultValue;
     }
 
-    // Update the model and set defaults.
-    if (value)
-      setModel(element.path, value, true);
+    if (!isUndefined(value)) {
+      setModel(element.path, value);
+      if (isInit)
+        setDefault(element.path, value);
+    }
 
   }
 
@@ -60,8 +65,8 @@ export function initElement<T extends IModel>(api?: IBaseApi<T>) {
 
     // Previous value & flags.
     const defaultValue = getDefault(element.path);
-    const prevTouched = isTouched(element.path);
-    const prevDirty = isDirty(element.path);
+    const prevTouched = isTouched(element.name);
+    const prevDirty = isDirty(element.name);
 
     let value: any;
     let touched = false;
@@ -182,18 +187,9 @@ export function initElement<T extends IModel>(api?: IBaseApi<T>) {
       element.defaultValue = element.value || modelVal || '';
     }
 
-    element.validateChange = element.onChange ? false :
-      isUndefined(element.validateChange) ? true : element.validateChange;
-
-    element.validateBlur = element.onBlur ? false :
-      isUndefined(element.validateBlur) ? true : element.validateBlur;
-
     const nativeValidators = getNativeValidators(element);
 
     if (nativeValidators.length) {
-
-      if (isValidatedByUser)
-        throw new Error(`Field ${element.name} contains native validation keys ${nativeValidators.join(', ')}. Cannot use native validators with user defined schema function.`);
 
       schemaAst.current = schemaAst.current || {};
       schemaAst.current[element.path] = schemaAst.current[element.path] || [];
@@ -212,28 +208,27 @@ export function initElement<T extends IModel>(api?: IBaseApi<T>) {
 
     // Set the Initial Value.
 
-    resetElement(element);
+    resetElement(element, true);
 
-    // Bind events & add to fields
+    // Bind events
 
     let events = [];
 
-    const handleBlur = (e: Event) => { updateElement(element, true); };
-    const handleChange = (e: Event) => { updateElement(element); };
-
-    if (element.validateBlur) {
-      addListener(element, 'blur', handleBlur);
-      events = [['blur', handleBlur]];
-    }
-
-    if (element.validateChange) {
-      const changeEvent = isTextLike(element.type) ? 'input' : 'change';
-      addListener(element, changeEvent, handleChange);
-      events = [...events, [changeEvent, handleChange]];
-    }
+    element.validate = async () => {
+      const currentValue = getModel(element.path);
+      if (!isValidatable())
+        return Promise.resolve(currentValue);
+      const { err } = await me<Partial<T>, ErrorModel<T>>(validateModelAt(element));
+      if (err) {
+        setError(element.name, err[element.name]);
+        return Promise.reject(err);
+      }
+      removeError(element.name);
+      return Promise.resolve(currentValue);
+    };
 
     // Reset the element to initial values.
-    element.resetElement = () => {
+    element.reset = () => {
       resetElement(element);
     };
 
@@ -250,8 +245,31 @@ export function initElement<T extends IModel>(api?: IBaseApi<T>) {
     // Unbind any events and then unref
     // the lement from any collections.
     element.unregister = () => {
-      unref(element as IRegisteredElement<any>);
+      unregister(element as IRegisteredElement<any>);
     };
+
+    const handleBlur = async (e: Event) => {
+      updateElement(element, true);
+      // if (isValidateBlur(element)) {
+      //   const { err } = await me(element.validate());
+      // }
+    };
+
+    const handleChange = async (e: Event) => {
+      updateElement(element);
+      if (isValidateChange(element)) {
+        const { err } = await me(element.validate());
+      }
+    };
+
+    // Attach blur
+    addListener(element, 'blur', handleBlur);
+    events = [['blur', handleBlur]];
+
+    // Attach change.
+    const changeEvent = isTextLike(element.type) ? 'input' : 'change';
+    addListener(element, changeEvent, handleChange);
+    events = [...events, [changeEvent, handleChange]];
 
     // Bind mutation observer.
     initObserver(element as any, element.unregister.bind(element));
@@ -301,6 +319,15 @@ export function initElement<T extends IModel>(api?: IBaseApi<T>) {
         _element.initValue = options.defaultValue;
         _element.initChecked = options.defaultChecked;
         _element.onValidate = options.onValidate;
+        // _element.required = options.required || _element.required;
+        // _element.min = options.min || _element.min;
+        // _element.max = options.max || _element.max;
+        // _element.pattern = options.pattern || _element.pattern;
+
+        // const minLength = _element.minLength === -1 ? undefined : _element.minLength;
+        // const maxLength = _element.maxLength === -1 ? undefined : _element.maxLength;
+        // _element.minLength = options.minLength || minLength;
+        // _element.maxLength = options.maxLength || maxLength;
 
         bindElement(_element);
 

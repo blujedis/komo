@@ -30,10 +30,10 @@ function isTagType(tag: TagType, match: string) {
  * 
  * @param promise the promise to be executed.
  */
-export const me = <T>(promise: Promise<T>) => {
+export const me = <T, E = Error>(promise: Promise<T>) => {
   return promise
     .then(data => ({ err: null, data }))
-    .catch(err => ({ err })) as { err?: Error, data?: T };
+    .catch(err => ({ err })) as { err?: E, data?: T };
 };
 
 /**
@@ -223,27 +223,4 @@ export function isEmpty(value: unknown) {
     (Array.isArray(value) && !value.length) ||
     (isObject(value) &&
       !Object.entries(value).length);
-}
-
-export function parsePath<T extends IModel>(path: string): IParsedPath<T> {
-
-  if (!isString(path))
-    return {
-      segments: [],
-      valid: false
-    };
-
-  const segments = path.split('.');
-  const key = segments[0] as KeyOf<T>;
-  const suffix = segments.slice(1).join('.');
-
-  return {
-    key,
-    suffix,
-    segments,
-    path,
-    toPath: (k: KeyOf<T> = key, s: string = suffix) => [key, suffix].join('.'),
-    valid: !!segments.length
-  };
-
 }

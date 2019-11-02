@@ -1,6 +1,8 @@
 import { ValidationError, ValidateOptions, object, ObjectSchema, number, string, boolean } from 'yup';
 import { set } from 'dot-prop';
-import { IModel, ErrorModel, ValidationSchema, IValidator, IRegisteredElement, ISchemaAst, ErrorKey } from './types';
+import { IModel, ErrorModel, ValidationSchema, IValidator, IRegisteredElement, 
+  ISchemaAst, 
+  KeyOf} from './types';
 import { isPromise, isTruthy } from './utils/helpers';
 
 /**
@@ -8,13 +10,20 @@ import { isPromise, isTruthy } from './utils/helpers';
  * 
  * @param error the emitted yup error.
  */
-export function yupToErrors<T extends IModel>(error: ValidationError): ErrorModel<T> {
+export function yupToErrors<T extends IModel>(
+  error: ValidationError, getFields?: () => Set<IRegisteredElement<T>>): ErrorModel<T> {
 
   const errors: ErrorModel<T> = {} as any;
+  const values = [...getFields().values()];
+
+  const getKey = (path: string) => {
+    return values.find(e => e.path === path) || path;
+  };
 
   if (!error.inner || !error.inner.length) {
-    errors[error.path as ErrorKey<T>] = errors[error.path] || [];
-    errors[error.path].push({
+    const key = getKey(error.path) as KeyOf<T>;
+    errors[key] = errors[key] || [];
+    errors[key].push({
       type: error.type,
       name: error.name,
       path: error.path,
@@ -26,9 +35,9 @@ export function yupToErrors<T extends IModel>(error: ValidationError): ErrorMode
   else {
 
     for (const err of error.inner) {
-
-      errors[err.path as ErrorKey<T>] = errors[err.path] || [];
-      errors[err.path].push({
+      const key = getKey(error.path) as KeyOf<T>;
+      errors[key] = errors[key] || [];
+      errors[key].push({
         type: err.type,
         name: err.name,
         path: err.path,
@@ -101,10 +110,12 @@ export function astToSchema<T extends IModel>(ast: ISchemaAst, schema?: ObjectSc
 
 /**
  * Normalizes the schema into common interface.
+ * Always returns object of model or object of key value whe using validateAT.
  * 
  * @param schema the yup schema or user function for validation.
  */
-export function normalizeValidator<T extends IModel>(schema: ValidationSchema<T>): IValidator<T> {
+export function normalizeValidator<T extends IModel>(
+    schema: ValidationSchema<T>, getFields?: () => Set<IRegisteredElement<T>>): IValidator<T> {
 
   let validator: IValidator<T>;
 
@@ -116,11 +127,12 @@ export function normalizeValidator<T extends IModel>(schema: ValidationSchema<T>
       validate: (model: T) => {
         return new Promise((resolve, reject) => {
           const result = schema(model as any);
-          if (!isPromise(result))
-            return Promise.reject(result);
-          return (result as Promise<T>)
-            .then(res => resolve(res))
-            .catch(err => reject(err));
+          if (!isPromise(result)) {
+            if (result instanceof Error)              
+              return Promise.reject(result);
+            return Promise.resolve(result as T);
+          }
+          return (result as Promise<T>);
         });
       }
     };
@@ -142,17 +154,17 @@ export function normalizeValidator<T extends IModel>(schema: ValidationSchema<T>
           return res;
         })
         .catch(err => {
-          return Promise.reject(yupToErrors(err)) as any;
+          return Promise.reject(yupToErrors(err, getFields)) as any;
         });
     };
 
     validator.validateAt = (path: string, value: any, options?: ValidateOptions) => {
       return schema.validateAt(path, value, options)
         .then(res => {
-          return set({}, path, res) as T;
+          return set({}, path, res) as Partial<T>;
         })
         .catch(err => {
-          return Promise.reject(yupToErrors(err)) as any;
+          return Promise.reject(yupToErrors(err, getFields)) as any;
         });
     };
 

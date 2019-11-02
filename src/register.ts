@@ -18,7 +18,8 @@ export function initElement<T extends IModel>(api?: IBaseApi<T>) {
     log, schemaAst, fields, unregister, mounted, setModel,
     getModel, getDefault, isTouched, isDirty, setDefault,
     setDirty, setTouched, removeDirty, isValidateBlur, isValidateChange,
-    validateModelAt, isValidatable, removeError, state, setError
+    validateModelAt, isValidatable, removeError, state, setError, render,
+    errors
   } = api;
 
   function resetElement(element: IRegisteredElement<T>, isInit: boolean = false) {
@@ -218,13 +219,14 @@ export function initElement<T extends IModel>(api?: IBaseApi<T>) {
       const currentValue = getModel(element.path);
       if (!isValidatable())
         return Promise.resolve(currentValue);
-      const { err } = await me<Partial<T>, ErrorModel<T>>(validateModelAt(element));
+      const { err, data } = await me<Partial<T>, ErrorModel<T>>(validateModelAt(element));
       if (err) {
         setError(element.name, err[element.name]);
         return Promise.reject(err);
       }
       removeError(element.name);
-      return Promise.resolve(currentValue);
+      console.log(errors.current);
+      return Promise.resolve(data);
     };
 
     // Reset the element to initial values.
@@ -250,16 +252,14 @@ export function initElement<T extends IModel>(api?: IBaseApi<T>) {
 
     const handleBlur = async (e: Event) => {
       updateElement(element, true);
-      // if (isValidateBlur(element)) {
-      //   const { err } = await me(element.validate());
-      // }
+      if (isValidateBlur(element))
+        await me(element.validate());
     };
 
     const handleChange = async (e: Event) => {
       updateElement(element);
-      if (isValidateChange(element)) {
-        const { err } = await me(element.validate());
-      }
+      if (isValidateChange(element))
+        await me(element.validate());
     };
 
     // Attach blur

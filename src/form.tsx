@@ -229,9 +229,9 @@ export function initForm<T extends IModel>(options: IOptionsInternal<T>) {
   }, [options.validationSchema]);
 
   const removeError = (name: KeyOf<T>) => {
-    if (isUndefined(errors.current[name]))
-      return false;
-    const clone = { [name]: undefined, ...errors.current };
+    setError(name, undefined); // this just causes a render to trigger.
+    const clone = { ...errors.current };
+    delete clone[name];
     errors.current = clone;
     return true;
   };
@@ -507,6 +507,7 @@ export default function useForm<T extends IModel>(options?: IOptions<T>) {
       }
 
       const model = getModel();
+      clearError();
 
       if (!isValidatable()) {
         await handleCallback(model, {} as any, event);

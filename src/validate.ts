@@ -1,8 +1,10 @@
 import { ValidationError, ValidateOptions, object, ObjectSchema, number, string, boolean } from 'yup';
 import { set } from 'dot-prop';
-import { IModel, ErrorModel, ValidationSchema, IValidator, IRegisteredElement, 
-  ISchemaAst, 
-  KeyOf} from './types';
+import {
+  IModel, ErrorModel, ValidationSchema, IValidator, IRegisteredElement,
+  ISchemaAst,
+  KeyOf
+} from './types';
 import { isPromise, isTruthy } from './utils/helpers';
 
 /**
@@ -17,7 +19,8 @@ export function yupToErrors<T extends IModel>(
   const values = [...getFields().values()];
 
   const getKey = (path: string) => {
-    return values.find(e => e.path === path) || path;
+    const element = values.find(e => e.path === path);
+    return element && element.name || path;
   };
 
   if (!error.inner || !error.inner.length) {
@@ -35,7 +38,7 @@ export function yupToErrors<T extends IModel>(
   else {
 
     for (const err of error.inner) {
-      const key = getKey(error.path) as KeyOf<T>;
+      const key = getKey(err.path) as KeyOf<T>;
       errors[key] = errors[key] || [];
       errors[key].push({
         type: err.type,
@@ -115,7 +118,7 @@ export function astToSchema<T extends IModel>(ast: ISchemaAst, schema?: ObjectSc
  * @param schema the yup schema or user function for validation.
  */
 export function normalizeValidator<T extends IModel>(
-    schema: ValidationSchema<T>, getFields?: () => Set<IRegisteredElement<T>>): IValidator<T> {
+  schema: ValidationSchema<T>, getFields?: () => Set<IRegisteredElement<T>>): IValidator<T> {
 
   let validator: IValidator<T>;
 
@@ -128,7 +131,7 @@ export function normalizeValidator<T extends IModel>(
         return new Promise((resolve, reject) => {
           const result = schema(model as any);
           if (!isPromise(result)) {
-            if (result instanceof Error)              
+            if (result instanceof Error)
               return Promise.reject(result);
             return Promise.resolve(result as T);
           }
@@ -159,7 +162,7 @@ export function normalizeValidator<T extends IModel>(
     };
 
     validator.validateAt = (path: string, value: any, options?: ValidateOptions) => {
-      return schema.validateAt(path, value, options)
+      return schema.validateAt(path, { [path]: value } as any, options)
         .then(res => {
           return set({}, path, res) as Partial<T>;
         })

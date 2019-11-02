@@ -34,7 +34,7 @@ const App: FC = () => {
   useRenderCount();
 
   const ErrComp = ({ name }) => {
-    if (!state.errors || typeof state.errors[name] === 'undefined')
+    if (!state.errors || typeof state.errors[name] === 'undefined' || !state.errors[name].length)
       return null;
     const err = state.errors[name][0];
     return (<div style={{ color: 'red' }}>{err.message}</div>);

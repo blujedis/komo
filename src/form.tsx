@@ -8,9 +8,10 @@ import {
   ISchemaAst,
   ResetHandler,
   IOptionsInternal,
-  IBaseApi
+  IBaseApi,
+  PromiseStrict
 } from './types';
-import { createLogger, isString, me, isUndefined } from './utils';
+import { createLogger, isString, me, isUndefined, isFunction } from './utils';
 import { normalizeValidator, astToSchema } from './validate';
 import { ValidateOptions, ObjectSchema, InferType } from 'yup';
 
@@ -20,10 +21,13 @@ import { ValidateOptions, ObjectSchema, InferType } from 'yup';
  */
 
 const DEFAULTS: IOptions<any> = {
-  model: {},
+  defaults: {},
   validateSubmit: true,
   validateBlur: true,
-  validateChange: true
+  validateChange: true,
+  validateInit: false,
+  enableNativeValidation: true,
+  enableWarnings: true
 };
 
 // export function initForm<T extends IModel>(options: IOptions<T>) {
@@ -48,6 +52,15 @@ export function initForm<T extends IModel>(options: IOptionsInternal<T>) {
     mounted.current = true;
     initSchema();
 
+    // validate form before touched.
+    if (options.validateInit) {
+      validateModel()
+        .catch(err => {
+          if (err)
+            setError(err);
+        });
+    }
+
     return () => {
       mounted.current = false;
       [...fields.current.values()].forEach(e => unregister);
@@ -65,6 +78,12 @@ export function initForm<T extends IModel>(options: IOptionsInternal<T>) {
     renderStatus({ status });
   };
 
+  const findField = (namePathOrElement: string | IRegisteredElement<T>) => {
+    if (typeof namePathOrElement === 'object')
+      return namePathOrElement;
+    return [...fields.current.values()].find(e => e.name === namePathOrElement || e.path === namePathOrElement);
+  };
+
   const initSchema = () => {
 
     let schema: T & InferType<typeof options.validationSchema>;
@@ -73,20 +92,12 @@ export function initForm<T extends IModel>(options: IOptionsInternal<T>) {
       options.validationSchema = astToSchema(schemaAst.current, options.validationSchema as ObjectSchema<T>);
 
     // Create the validator.
-    validator.current = normalizeValidator(options.validationSchema as ObjectSchema<T>, () => {
-      return fields.current;
-    });
+    validator.current = normalizeValidator(options.validationSchema as ObjectSchema<T>, findField);
 
     schema = options.validationSchema as any;
 
     return schema;
 
-  };
-
-  const findField = (namePathOrElement: string | IRegisteredElement<T>) => {
-    if (typeof namePathOrElement === 'object')
-      return namePathOrElement;
-    return [...fields.current.values()].find(e => e.name === namePathOrElement || e.path === namePathOrElement);
   };
 
   // MODEL //
@@ -97,7 +108,7 @@ export function initForm<T extends IModel>(options: IOptionsInternal<T>) {
     return get(defaults.current, path);
   };
 
-  const setDefault = (pathOrModel: string | T, value?: any, extend: boolean = false) => {
+  const setDefault = (pathOrModel: string | T, value?: any) => {
 
     if (!pathOrModel) {
       log.error(`Cannot set default value using key or model of undefined.`);
@@ -118,7 +129,7 @@ export function initForm<T extends IModel>(options: IOptionsInternal<T>) {
 
     else {
 
-      if (extend)
+      if (value)
         current = { ...current, ...pathOrModel as T };
       else
         current = pathOrModel as T;
@@ -129,7 +140,7 @@ export function initForm<T extends IModel>(options: IOptionsInternal<T>) {
 
   };
 
-  const setModel = useCallback((pathOrModel: string | T, value?: any, extend: boolean = false) => {
+  const setModel = useCallback((pathOrModel: string | T, value?: any) => {
 
     if (!pathOrModel) {
       log.error(`Cannot set default value using key or model of undefined.`);
@@ -150,7 +161,7 @@ export function initForm<T extends IModel>(options: IOptionsInternal<T>) {
 
     else {
 
-      if (extend)
+      if (value)
         current = { ...current, ...pathOrModel as T };
       else
         current = pathOrModel as T;
@@ -248,7 +259,7 @@ export function initForm<T extends IModel>(options: IOptionsInternal<T>) {
 
   // VALIDATION //
 
-  const validateModel = useCallback((opts?: ValidateOptions) => {
+  const validateModel = useCallback((opts?: ValidateOptions): PromiseStrict<T, ErrorModel<T>> => {
 
     const _validator = validator.current;
 
@@ -261,7 +272,9 @@ export function initForm<T extends IModel>(options: IOptionsInternal<T>) {
 
   }, [options.validationSchema, setError]);
 
-  const validateModelAt = useCallback((nameOrElement: KeyOf<T> | IRegisteredElement<T>, opts?: ValidateOptions) => {
+  const validateModelAt = useCallback((
+    nameOrElement: KeyOf<T> | IRegisteredElement<T>,
+    opts?: ValidateOptions): PromiseStrict<Partial<T>, Partial<ErrorModel<T>>> => {
 
     const _validator = validator.current;
     const element = isString(nameOrElement) ?
@@ -275,9 +288,12 @@ export function initForm<T extends IModel>(options: IOptionsInternal<T>) {
     const currentValue = getModel(element.path);
 
     if (!_validator)
-      return Promise.resolve(currentValue);
+      return Promise.resolve(currentValue) as Promise<Partial<T>>;
 
     opts = { abortEarly: false, ...opts };
+
+    if (isFunction(options.validationSchema))
+      return _validator.validateAt(element.path, model.current);
 
     return _validator.validateAt(element.path, currentValue, opts);
 
@@ -330,6 +346,10 @@ export function initForm<T extends IModel>(options: IOptionsInternal<T>) {
 
   const state = {
 
+    get isMounted() {
+      return mounted.current;
+    },
+
     get errors() {
       return errors.current;
     },
@@ -363,6 +383,7 @@ export function initForm<T extends IModel>(options: IOptionsInternal<T>) {
   const api: IBaseApi<T> = {
 
     // Common
+    options,
     log,
     defaults,
     fields,
@@ -424,7 +445,7 @@ export function initForm<T extends IModel>(options: IOptionsInternal<T>) {
  */
 export default function useForm<T extends IModel>(options?: IOptions<T>) {
 
-  const _options: IOptionsInternal<T> = { ...DEFAULTS, ...options };
+  const _options: IOptionsInternal<T> = { ...DEFAULTS, ...options as any };
 
   // Check if schema is object or ObjectSchema,
   // if yes get the defaults.
@@ -434,10 +455,13 @@ export default function useForm<T extends IModel>(options?: IOptions<T>) {
     _options.model = { ..._defaults };
   }
 
+  if (_options.defaults)
+    _options.model = { ..._options.defaults, ..._options.model };
+
   const base = initForm(_options);
 
   const {
-    log, defaults, render, clearDirty, clearTouched, clearError, setModel,
+    options: formOptions, log, defaults, render, clearDirty, clearTouched, clearError, setModel,
     fields, submitCount, submitting, submitted, validateModel, getModel,
     isValidatable, errors, setError
   } = base;
@@ -445,7 +469,7 @@ export default function useForm<T extends IModel>(options?: IOptions<T>) {
   const reset = useCallback((values: T = {} as any) => {
 
     // Reset all states.
-    setModel({ ...defaults.current, ...values });
+    setModel({ ...defaults.current, ...values }, true);
     clearDirty();
     clearTouched();
     clearError();
@@ -509,14 +533,17 @@ export default function useForm<T extends IModel>(options?: IOptions<T>) {
       const model = getModel();
       clearError();
 
-      if (!isValidatable()) {
+      // Can't validate or is disabled.
+      if (!isValidatable() || !formOptions.validateSubmit) {
         await handleCallback(model, {} as any, event);
         return;
       }
 
       const { err } = await me<T, ErrorModel<T>>(validateModel(model));
+
       if (err)
         setError(err);
+
       await handleCallback(model, err as any, event);
 
     };

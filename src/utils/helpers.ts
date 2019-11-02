@@ -1,6 +1,5 @@
 import isEqual from 'lodash.isequal';
-import { IModel, IParsedPath, KeyOf } from '../types';
-
+import { PromiseStrict } from 'src/types';
 export { isEqual };
 
 // PRIVATE //
@@ -30,7 +29,7 @@ function isTagType(tag: TagType, match: string) {
  * 
  * @param promise the promise to be executed.
  */
-export const me = <T, E = Error>(promise: Promise<T>) => {
+export const me = <T, E = Error>(promise: PromiseStrict<T, E>) => {
   return promise
     .then(data => ({ err: null, data }))
     .catch(err => ({ err })) as { err?: E, data?: T };
@@ -194,14 +193,34 @@ export function isNullOrUndefined(value: unknown) {
 }
 
 /**
+ * Checks if value is an array.
+ * 
+ * @param value the value to inspect.
+ */
+export function isArray(value: unknown) {
+  return Array.isArray(value);
+}
+
+/**
  * Checks if is an object.
  * 
  * @param value the value to inspect.
  */
 export function isObject(value: unknown) {
-  return (!isNullOrUndefined(value) &&
+  return !isNullOrUndefined(value) &&
+    typeof value === 'object';
+}
+
+/**
+ * Checks if is a plain object.
+ * 
+ * @param value the value to inspect.
+ */
+export function isPlainObject(value: unknown) {
+  return isObject(value) &&
     value.constructor &&
-    value.constructor === Object);
+    value.constructor === Object &&
+    Object.prototype.toString.call(value) === '[object Object]';
 }
 
 /**
@@ -211,6 +230,15 @@ export function isObject(value: unknown) {
  */
 export function isString(value: unknown) {
   return typeof value === 'string';
+}
+
+/**
+ * Checks if is a function.
+ * 
+ * @param value the value to inspect.
+ */
+export function isFunction(value: unknown) {
+  return typeof value === 'function';
 }
 
 /**

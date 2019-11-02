@@ -1,27 +1,43 @@
 
 import {
   isRadio, isCheckbox, addListener, isTextLike, removeListener,
-  initObserver, isBooleanLike, isEqual, isString, isUndefined, isNullOrUndefined, me
+  initObserver, isBooleanLike, isEqual, isString, isUndefined, isNullOrUndefined, me, isFunction,
+  isObject
 } from './utils';
-import { getNativeValidators } from './validate';
+import { getNativeValidators, getNativeValidatorTypes } from './validate';
 import {
   IRegisterElement, IRegisterOptions, IRegisteredElement,
-  IModel, INativeValidators, KeyOf, IBaseApi, ErrorModel
+  IModel, INativeValidators, KeyOf, IBaseApi, RegisterElement
 } from './types';
-import { LegacyRef } from 'react';
 
-type RegisterElement = (element: IRegisterElement) => LegacyRef<HTMLElement>;
+const typeMap = {
+  range: 'number',
+  number: 'number',
+  email: 'string',
+  url: 'string',
+  checkbox: 'boolean'
+};
 
+/**
+ * Creates initialized methods for binding and registering an element.
+ * 
+ * @param api the base form api.
+ */
 export function initElement<T extends IModel>(api?: IBaseApi<T>) {
 
   const {
-    log, schemaAst, fields, unregister, mounted, setModel,
+    options: formOptions, log, schemaAst, fields, unregister, mounted, setModel,
     getModel, getDefault, isTouched, isDirty, setDefault,
     setDirty, setTouched, removeDirty, isValidateBlur, isValidateChange,
-    validateModelAt, isValidatable, removeError, state, setError, render,
-    errors
+    validateModelAt, isValidatable, removeError, setError
   } = api;
 
+  /**
+   * Resets the element to its defaults.
+   * 
+   * @param element the element to be reset.
+   * @param isInit when true is setting initial defaults.
+   */
   function resetElement(element: IRegisteredElement<T>, isInit: boolean = false) {
 
     let value;
@@ -62,6 +78,12 @@ export function initElement<T extends IModel>(api?: IBaseApi<T>) {
 
   }
 
+  /**
+   * Updates the element on event changes.
+   * 
+   * @param element the registered element to be updated.
+   * @param isBlur indicates the update event is of type blur.
+   */
   function updateElement(element: IRegisteredElement<T>, isBlur: boolean = false) {
 
     // Previous value & flags.
@@ -129,7 +151,11 @@ export function initElement<T extends IModel>(api?: IBaseApi<T>) {
 
   }
 
-  // Binds to events, sets initial values.
+  /**
+   * Binds and element and attaches specified event listeners.
+   * 
+   * @param element the element to be bound.
+   */
   function bindElement(element: IRegisteredElement<T>) {
 
     if (!element || fields.current.has(element as IRegisteredElement<any>)) return;
@@ -188,22 +214,39 @@ export function initElement<T extends IModel>(api?: IBaseApi<T>) {
       element.defaultValue = element.value || modelVal || '';
     }
 
-    const nativeValidators = getNativeValidators(element);
+    const allowNative = !isUndefined(element.enableNativeValidation) ?
+      element.enableNativeValidation : formOptions.enableNativeValidation;
 
-    if (nativeValidators.length) {
+    // NOTE: This should probably be refactored to
+    // own file for greater flexibility/options.
+    if (allowNative && !isFunction(formOptions.validationSchema)) {
 
-      schemaAst.current = schemaAst.current || {};
-      schemaAst.current[element.path] = schemaAst.current[element.path] || [];
-      const type = element.type === 'number' || element.type === 'range' ? 'number' : 'string';
+      const nativeValidators = getNativeValidators(element);
+      const nativeValidatorTypes = getNativeValidatorTypes(element);
 
-      // Set the type.
-      schemaAst.current[element.path] = [[type, undefined]];
+      if (nativeValidators.length || nativeValidatorTypes.length) {
 
-      // Extend AST with each native validator.
-      nativeValidators.forEach(k => {
-        schemaAst.current[element.path] = [...schemaAst.current[element.path],
-        [k as KeyOf<INativeValidators>, element[k]]];
-      });
+        schemaAst.current = schemaAst.current || {};
+        schemaAst.current[element.path] = schemaAst.current[element.path] || [];
+
+        const baseType = typeMap[element.type];
+
+        // Set the type.
+        schemaAst.current[element.path] = [[baseType || 'string', undefined]];
+
+        // These are basically sub types of string
+        // like email or string.
+        if (nativeValidatorTypes.length) {
+          schemaAst.current[element.path].push([element.type as any, undefined]);
+        }
+
+        // Extend AST with each native validator.
+        if (nativeValidators.length)
+          nativeValidators.forEach(k => {
+            schemaAst.current[element.path].push([k as KeyOf<INativeValidators>, element[k]]);
+          });
+
+      }
 
     }
 
@@ -216,17 +259,22 @@ export function initElement<T extends IModel>(api?: IBaseApi<T>) {
     let events = [];
 
     element.validate = async () => {
+
       const currentValue = getModel(element.path);
+
       if (!isValidatable())
         return Promise.resolve(currentValue);
-      const { err, data } = await me<Partial<T>, ErrorModel<T>>(validateModelAt(element));
+
+      const { err, data } = await me(validateModelAt(element));
+
       if (err) {
         setError(element.name, err[element.name]);
         return Promise.reject(err);
       }
+
       removeError(element.name);
-      console.log(errors.current);
       return Promise.resolve(data);
+
     };
 
     // Reset the element to initial values.
@@ -279,24 +327,32 @@ export function initElement<T extends IModel>(api?: IBaseApi<T>) {
 
   }
 
-  function registerElement(path: string, options?: IRegisterOptions<T>): RegisterElement;
-  function registerElement(options: IRegisterOptions<T>): RegisterElement;
+  /**
+   * Registers and element with Komo context returning function which receive the element to be registered.
+   * 
+   * @param options options to register element with.
+   */
+  function registerElement(options: IRegisterOptions): RegisterElement;
+
+  /**
+   * Registers an element with Komo context.
+   */
   function registerElement(element: IRegisterElement): void;
   function registerElement(
-    pathElementOrOptions: string | IRegisterElement | IRegisterOptions<T>,
-    options?: IRegisterOptions<T>) {
+    pathElementOrOptions: string | IRegisterElement | IRegisterOptions,
+    options?: IRegisterOptions) {
 
     if (isNullOrUndefined(pathElementOrOptions))
       return;
 
-    const hasElement = arguments.length === 1 && typeof pathElementOrOptions === 'object' &&
+    const hasElement = arguments.length === 1 && isObject(pathElementOrOptions) &&
       (pathElementOrOptions as any).nodeName ? pathElementOrOptions as IRegisterElement : null;
 
     // No element just config return callback to get element.
     if (!hasElement) {
 
       if (!isString(pathElementOrOptions)) {
-        options = pathElementOrOptions as IRegisterOptions<T>;
+        options = pathElementOrOptions as IRegisterOptions;
         pathElementOrOptions = undefined;
       }
 
@@ -318,16 +374,25 @@ export function initElement<T extends IModel>(api?: IBaseApi<T>) {
         _element.path = options.path || _element.name;
         _element.initValue = options.defaultValue;
         _element.initChecked = options.defaultChecked;
-        _element.onValidate = options.onValidate;
-        // _element.required = options.required || _element.required;
-        // _element.min = options.min || _element.min;
-        // _element.max = options.max || _element.max;
-        // _element.pattern = options.pattern || _element.pattern;
+        _element.required = options.required || _element.required;
+        _element.min = options.min || _element.min;
+        _element.max = options.max || _element.max;
+        _element.pattern = options.pattern || _element.pattern;
+        _element.validateChange = options.validateChange;
+        _element.validateBlur = options.validateBlur;
+        _element.enableNativeValidation = options.enableNativeValidation;
 
-        // const minLength = _element.minLength === -1 ? undefined : _element.minLength;
-        // const maxLength = _element.maxLength === -1 ? undefined : _element.maxLength;
-        // _element.minLength = options.minLength || minLength;
-        // _element.maxLength = options.maxLength || maxLength;
+        let minLength = _element.minLength === -1 ? undefined : _element.minLength;
+        minLength = options.minLength || minLength;
+
+        let maxLength = _element.maxLength === -1 ? undefined : _element.maxLength;
+        maxLength = options.maxLength || maxLength;
+
+        if (minLength)
+          _element.minLength = minLength;
+
+        if (maxLength)
+          _element.maxLength = maxLength;
 
         bindElement(_element);
 

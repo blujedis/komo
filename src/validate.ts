@@ -1,11 +1,41 @@
 import { ValidationError, ValidateOptions, object, ObjectSchema, number, string, boolean } from 'yup';
-import { set } from 'dot-prop';
+import { set, get } from 'dot-prop';
 import {
   IModel, ErrorModel, ValidationSchema, IValidator, IRegisteredElement,
   ISchemaAst,
-  KeyOf
+  KeyOf,
+  IFindField,
+  ValidateModelHandler,
+  ErrorMessageModel,
+  IValidationError
 } from './types';
-import { isPromise, isTruthy } from './utils/helpers';
+import { isPromise, isTruthy, isString, isFunction, me, isNullOrUndefined, isEmpty, isPlainObject } from './utils/helpers';
+
+
+
+/**
+ * Lookup helper for element or prop in element.
+ * 
+ * @param findField the core lookup helper for finding elements.
+ */
+export function lookup<T extends IModel>(findField: IFindField<T>) {
+
+  const getElement = (pathOrElement: string | IRegisteredElement<T>) => {
+    if (!isString(pathOrElement))
+      return pathOrElement as IRegisteredElement<T>;
+    return findField(pathOrElement as string);
+  };
+
+  return {
+    element: (pathOrElement: string | IRegisteredElement<T>) => getElement(pathOrElement),
+    at: <K extends KeyOf<IRegisteredElement<T>>>(
+      pathOrElement: string | IRegisteredElement<T>, prop: K) => {
+      const element = getElement(pathOrElement);
+      return element[prop];
+    }
+  };
+
+}
 
 /**
  * Parses yup error to friendly form errors.
@@ -13,18 +43,12 @@ import { isPromise, isTruthy } from './utils/helpers';
  * @param error the emitted yup error.
  */
 export function yupToErrors<T extends IModel>(
-  error: ValidationError, getFields?: () => Set<IRegisteredElement<T>>): ErrorModel<T> {
+  error: ValidationError, findField?: IFindField<T>): ErrorModel<T> {
 
   const errors: ErrorModel<T> = {} as any;
-  const values = [...getFields().values()];
-
-  const getKey = (path: string) => {
-    const element = values.find(e => e.path === path);
-    return element && element.name || path;
-  };
 
   if (!error.inner || !error.inner.length) {
-    const key = getKey(error.path) as KeyOf<T>;
+    const key = lookup(findField).at(error.path, 'name');
     errors[key] = errors[key] || [];
     errors[key].push({
       type: error.type,
@@ -38,7 +62,7 @@ export function yupToErrors<T extends IModel>(
   else {
 
     for (const err of error.inner) {
-      const key = getKey(err.path) as KeyOf<T>;
+      const key = lookup(findField).at(err.path, 'name');
       errors[key] = errors[key] || [];
       errors[key].push({
         type: err.type,
@@ -87,6 +111,7 @@ export function astToSchema<T extends IModel>(ast: ISchemaAst, schema?: ObjectSc
       if (a.out) {
         a.out = a.out[type](opts);
       }
+
       else {
         let fn: any = string;
         if (type === 'boolean')
@@ -112,37 +137,77 @@ export function astToSchema<T extends IModel>(ast: ISchemaAst, schema?: ObjectSc
 }
 
 /**
+ * Converts error message model to standard error model.
+ * 
+ * @param errors the collection of errors as ErrorModel or ErrorMessageModel.
+ */
+export function ensureErrorModel<T extends IModel>(
+  errors: ErrorModel<T> | ErrorMessageModel<T>) {
+  if (isNullOrUndefined(errors) || isEmpty(errors))
+    return ({} as any) as ErrorModel<T>;
+  const keys = Object.keys(errors);
+  const first = errors[keys[0]];
+  if (isPlainObject(first[0]))
+    return errors as ErrorModel<T>;
+  for (const k in errors) {
+    if (!errors.hasOwnProperty(k)) continue;
+    const errs = errors as ErrorMessageModel<T>;
+    const val = (!Array.isArray(errs[k]) ? [errs] : errs[k]) as string[];
+    const mapped = val.map(message => {
+      // tslint:disable-next-line: no-object-literal-type-assertion
+      return {
+        message
+      } as IValidationError;
+    });
+    (errors as ErrorModel<T>)[k] = mapped;
+  }
+  return errors as ErrorModel<T>;
+}
+
+/**
  * Normalizes the schema into common interface.
  * Always returns object of model or object of key value whe using validateAT.
  * 
  * @param schema the yup schema or user function for validation.
  */
 export function normalizeValidator<T extends IModel>(
-  schema: ValidationSchema<T>, getFields?: () => Set<IRegisteredElement<T>>): IValidator<T> {
+  schema: ValidationSchema<T>, findField?: IFindField<T>): IValidator<T> {
 
   let validator: IValidator<T>;
 
   // User supplied custom validation script
   // map to same interface as yup.
-  if (typeof schema === 'function') {
+  if (isFunction(schema)) {
 
     validator = {
       validate: (model: T) => {
-        return new Promise((resolve, reject) => {
-          const result = schema(model as any);
-          if (!isPromise(result)) {
-            if (result instanceof Error)
-              return Promise.reject(result);
-            return Promise.resolve(result as T);
-          }
-          return (result as Promise<T>);
-        });
+
+        const result = (schema as ValidateModelHandler<T>)(model);
+
+        if (isPromise(result))
+          return (result as Promise<T>)
+            .catch(err => {
+              Promise.reject(ensureErrorModel(err as ErrorModel<T> | ErrorMessageModel<T>));
+            });
+
+        // convert empty result set.
+        const isErr = isEmpty(result) ? null : result;
+
+        if (isErr)
+          return Promise
+            .reject(ensureErrorModel(result as ErrorModel<T> | ErrorMessageModel<T>)) as any;
+
+        return Promise.resolve(model);
+
       }
+
     };
 
-    validator.validateAt = (path: string, value: any) => {
-      const model = set({}, path, value) as T;
-      return validator.validate(model);
+    validator.validateAt = async (path: string, model: T) => {
+      const { err, data } = await me(validator.validate(model));
+      if (err)
+        return Promise.reject(err);
+      Promise.resolve(data);
     };
 
   }
@@ -152,23 +217,27 @@ export function normalizeValidator<T extends IModel>(
     validator = {} as any;
 
     validator.validate = (model: T, options?: ValidateOptions) => {
-      return schema.validate(model, options)
+
+      return (schema as ObjectSchema<T>).validate(model, options)
         .then(res => {
           return res;
         })
         .catch(err => {
-          return Promise.reject(yupToErrors(err, getFields)) as any;
+          return Promise.reject(yupToErrors(err, findField));
         });
+
     };
 
     validator.validateAt = (path: string, value: any, options?: ValidateOptions) => {
-      return schema.validateAt(path, { [path]: value } as any, options)
+
+      return (schema as ObjectSchema<T>).validateAt(path, { [path]: value } as any, options)
         .then(res => {
           return set({}, path, res) as Partial<T>;
         })
         .catch(err => {
-          return Promise.reject(yupToErrors(err, getFields)) as any;
+          return Promise.reject(yupToErrors(err, findField));
         });
+
     };
 
   }
@@ -186,8 +255,18 @@ export function normalizeValidator<T extends IModel>(
  * @param element the element to be inspected.
  */
 export function getNativeValidators(element: IRegisteredElement<any>) {
-  const valKeys = ['required', 'min', 'max', 'maxLength', 'minLength', 'pattern'];
-  return valKeys.filter(k => isTruthy(element[k]));
+  return ['required', 'min', 'max', 'maxLength', 'minLength', 'pattern']
+    .filter(k => isTruthy(element[k]));
+}
+
+/**
+ * Gets list of validatable types.
+ * 
+ * @param element the element to be inpsected.
+ */
+export function getNativeValidatorTypes(element: IRegisteredElement<any>) {
+  return ['email', 'url', 'checkbox']
+    .filter(k => isTruthy(element.type === k));
 }
 
 /**
@@ -196,5 +275,5 @@ export function getNativeValidators(element: IRegisteredElement<any>) {
  * @param element the element to be inspected.
  */
 export function hasNativeValidators(element: IRegisteredElement<any>) {
-  return !!getNativeValidators(element).length;
+  return !!getNativeValidators(element).length || !!getNativeValidatorTypes(element).length;
 }

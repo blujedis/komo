@@ -70,76 +70,41 @@
 				<h2>Index</h2>
 				<section class="tsd-panel tsd-index-panel">
 					<div class="tsd-index-content">
-						<section class="tsd-index-section tsd-is-not-exported">
-							<h3>Type aliases</h3>
-							<ul class="tsd-index-list">
-								<li class="tsd-kind-type-alias tsd-parent-kind-external-module tsd-is-not-exported"><a href="_register_.html#registerelement" class="tsd-kind-icon">Register<wbr>Element</a></li>
-							</ul>
-						</section>
 						<section class="tsd-index-section ">
 							<h3>Functions</h3>
 							<ul class="tsd-index-list">
-								<li class="tsd-kind-function tsd-parent-kind-external-module tsd-has-type-parameter"><a href="_register_.html#initregister" class="tsd-kind-icon">init<wbr>Register</a></li>
+								<li class="tsd-kind-function tsd-parent-kind-external-module tsd-has-type-parameter"><a href="_register_.html#initelement" class="tsd-kind-icon">init<wbr>Element</a></li>
 							</ul>
 						</section>
 						<section class="tsd-index-section tsd-is-not-exported">
 							<h3>Object literals</h3>
 							<ul class="tsd-index-list">
-								<li class="tsd-kind-object-literal tsd-parent-kind-external-module tsd-is-not-exported"><a href="_register_.html#defaults" class="tsd-kind-icon">DEFAULTS</a></li>
+								<li class="tsd-kind-object-literal tsd-parent-kind-external-module tsd-is-not-exported"><a href="_register_.html#typemap" class="tsd-kind-icon">type<wbr>Map</a></li>
 							</ul>
 						</section>
-					</div>
-				</section>
-			</section>
-			<section class="tsd-panel-group tsd-member-group tsd-is-not-exported">
-				<h2>Type aliases</h2>
-				<section class="tsd-panel tsd-member tsd-kind-type-alias tsd-parent-kind-external-module tsd-is-not-exported">
-					<a name="registerelement" class="tsd-anchor"></a>
-					<h3>Register<wbr>Element</h3>
-					<div class="tsd-signature tsd-kind-icon">Register<wbr>Element<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">function</span></div>
-					<aside class="tsd-sources">
-						<ul>
-							<li>Defined in <a href="https://github.com/blujedis/komo/blob/52240c1/src/register.ts#L7">register.ts:7</a></li>
-						</ul>
-					</aside>
-					<div class="tsd-type-declaration">
-						<h4>Type declaration</h4>
-						<ul class="tsd-parameters">
-							<li class="tsd-parameter-siganture">
-								<ul class="tsd-signatures tsd-kind-type-literal tsd-parent-kind-type-alias tsd-is-not-exported">
-									<li class="tsd-signature tsd-kind-icon"><span class="tsd-signature-symbol">(</span>element<span class="tsd-signature-symbol">: </span><a href="../interfaces/_types_.iregisterelement.html" class="tsd-signature-type">IRegisterElement</a><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">void</span></li>
-								</ul>
-								<ul class="tsd-descriptions">
-									<li class="tsd-description">
-										<h4 class="tsd-parameters-title">Parameters</h4>
-										<ul class="tsd-parameters">
-											<li>
-												<h5>element: <a href="../interfaces/_types_.iregisterelement.html" class="tsd-signature-type">IRegisterElement</a></h5>
-											</li>
-										</ul>
-										<h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">void</span></h4>
-									</li>
-								</ul>
-							</li>
-						</ul>
 					</div>
 				</section>
 			</section>
 			<section class="tsd-panel-group tsd-member-group ">
 				<h2>Functions</h2>
 				<section class="tsd-panel tsd-member tsd-kind-function tsd-parent-kind-external-module tsd-has-type-parameter">
-					<a name="initregister" class="tsd-anchor"></a>
-					<h3>init<wbr>Register</h3>
+					<a name="initelement" class="tsd-anchor"></a>
+					<h3>init<wbr>Element</h3>
 					<ul class="tsd-signatures tsd-kind-function tsd-parent-kind-external-module tsd-has-type-parameter">
-						<li class="tsd-signature tsd-kind-icon">init<wbr>Register&lt;T&gt;<span class="tsd-signature-symbol">(</span>api<span class="tsd-signature-symbol">: </span><a href="_form_.html#formapi" class="tsd-signature-type">FormApi</a><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">registerElement</span></li>
+						<li class="tsd-signature tsd-kind-icon">init<wbr>Element&lt;T&gt;<span class="tsd-signature-symbol">(</span>api<span class="tsd-signature-symbol">?: </span><a href="../interfaces/_types_.ibaseapi.html" class="tsd-signature-type">IBaseApi</a><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">T</span><span class="tsd-signature-symbol">&gt;</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">registerElement</span></li>
 					</ul>
 					<ul class="tsd-descriptions">
 						<li class="tsd-description">
 							<aside class="tsd-sources">
 								<ul>
-									<li>Defined in <a href="https://github.com/blujedis/komo/blob/52240c1/src/register.ts#L13">register.ts:13</a></li>
+									<li>Defined in <a href="https://github.com/blujedis/komo/blob/40b1cbd/src/register.ts#L26">register.ts:26</a></li>
 								</ul>
 							</aside>
+							<div class="tsd-comment tsd-typography">
+								<div class="lead">
+									<p>Creates initialized methods for binding and registering an element.</p>
+								</div>
+							</div>
 							<h4 class="tsd-type-parameters-title">Type parameters</h4>
 							<ul class="tsd-type-parameters">
 								<li>
@@ -149,7 +114,10 @@
 							<h4 class="tsd-parameters-title">Parameters</h4>
 							<ul class="tsd-parameters">
 								<li>
-									<h5>api: <a href="_form_.html#formapi" class="tsd-signature-type">FormApi</a></h5>
+									<h5><span class="tsd-flag ts-flagOptional">Optional</span> api: <a href="../interfaces/_types_.ibaseapi.html" class="tsd-signature-type">IBaseApi</a><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">T</span><span class="tsd-signature-symbol">&gt;</span></h5>
+									<div class="tsd-comment tsd-typography">
+										<p>the base form api.</p>
+									</div>
 								</li>
 							</ul>
 							<h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">registerElement</span></h4>
@@ -160,21 +128,61 @@
 			<section class="tsd-panel-group tsd-member-group tsd-is-not-exported">
 				<h2>Object literals</h2>
 				<section class="tsd-panel tsd-member tsd-kind-object-literal tsd-parent-kind-external-module tsd-is-not-exported">
-					<a name="defaults" class="tsd-anchor"></a>
-					<h3><span class="tsd-flag ts-flagConst">Const</span> DEFAULTS</h3>
-					<div class="tsd-signature tsd-kind-icon">DEFAULTS<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">object</span></div>
+					<a name="typemap" class="tsd-anchor"></a>
+					<h3><span class="tsd-flag ts-flagConst">Const</span> type<wbr>Map</h3>
+					<div class="tsd-signature tsd-kind-icon">type<wbr>Map<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">object</span></div>
 					<aside class="tsd-sources">
 						<ul>
-							<li>Defined in <a href="https://github.com/blujedis/komo/blob/52240c1/src/register.ts#L9">register.ts:9</a></li>
+							<li>Defined in <a href="https://github.com/blujedis/komo/blob/40b1cbd/src/register.ts#L13">register.ts:13</a></li>
 						</ul>
 					</aside>
 					<section class="tsd-panel tsd-member tsd-kind-variable tsd-parent-kind-object-literal tsd-is-not-exported">
-						<a name="defaults.name" class="tsd-anchor"></a>
-						<h3>name</h3>
-						<div class="tsd-signature tsd-kind-icon">name<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">string</span><span class="tsd-signature-symbol"> =&nbsp;&quot;&quot;</span></div>
+						<a name="typemap.checkbox" class="tsd-anchor"></a>
+						<h3>checkbox</h3>
+						<div class="tsd-signature tsd-kind-icon">checkbox<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">string</span><span class="tsd-signature-symbol"> =&nbsp;&quot;boolean&quot;</span></div>
 						<aside class="tsd-sources">
 							<ul>
-								<li>Defined in <a href="https://github.com/blujedis/komo/blob/52240c1/src/register.ts#L10">register.ts:10</a></li>
+								<li>Defined in <a href="https://github.com/blujedis/komo/blob/40b1cbd/src/register.ts#L18">register.ts:18</a></li>
+							</ul>
+						</aside>
+					</section>
+					<section class="tsd-panel tsd-member tsd-kind-variable tsd-parent-kind-object-literal tsd-is-not-exported">
+						<a name="typemap.email" class="tsd-anchor"></a>
+						<h3>email</h3>
+						<div class="tsd-signature tsd-kind-icon">email<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">string</span><span class="tsd-signature-symbol"> =&nbsp;&quot;string&quot;</span></div>
+						<aside class="tsd-sources">
+							<ul>
+								<li>Defined in <a href="https://github.com/blujedis/komo/blob/40b1cbd/src/register.ts#L16">register.ts:16</a></li>
+							</ul>
+						</aside>
+					</section>
+					<section class="tsd-panel tsd-member tsd-kind-variable tsd-parent-kind-object-literal tsd-is-not-exported">
+						<a name="typemap.number" class="tsd-anchor"></a>
+						<h3>number</h3>
+						<div class="tsd-signature tsd-kind-icon">number<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">string</span><span class="tsd-signature-symbol"> =&nbsp;&quot;number&quot;</span></div>
+						<aside class="tsd-sources">
+							<ul>
+								<li>Defined in <a href="https://github.com/blujedis/komo/blob/40b1cbd/src/register.ts#L15">register.ts:15</a></li>
+							</ul>
+						</aside>
+					</section>
+					<section class="tsd-panel tsd-member tsd-kind-variable tsd-parent-kind-object-literal tsd-is-not-exported">
+						<a name="typemap.range" class="tsd-anchor"></a>
+						<h3>range</h3>
+						<div class="tsd-signature tsd-kind-icon">range<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">string</span><span class="tsd-signature-symbol"> =&nbsp;&quot;number&quot;</span></div>
+						<aside class="tsd-sources">
+							<ul>
+								<li>Defined in <a href="https://github.com/blujedis/komo/blob/40b1cbd/src/register.ts#L14">register.ts:14</a></li>
+							</ul>
+						</aside>
+					</section>
+					<section class="tsd-panel tsd-member tsd-kind-variable tsd-parent-kind-object-literal tsd-is-not-exported">
+						<a name="typemap.url" class="tsd-anchor"></a>
+						<h3>url</h3>
+						<div class="tsd-signature tsd-kind-icon">url<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">string</span><span class="tsd-signature-symbol"> =&nbsp;&quot;string&quot;</span></div>
+						<aside class="tsd-sources">
+							<ul>
+								<li>Defined in <a href="https://github.com/blujedis/komo/blob/40b1cbd/src/register.ts#L17">register.ts:17</a></li>
 							</ul>
 						</aside>
 					</section>
@@ -188,7 +196,7 @@
 						<a href="../globals.html"><em>Globals</em></a>
 					</li>
 					<li class=" tsd-kind-external-module">
-						<a href="_events_.html">"events"</a>
+						<a href="_constants_.html">"constants"</a>
 					</li>
 					<li class=" tsd-kind-external-module">
 						<a href="_example_app_.html">"example/app"</a>
@@ -212,6 +220,9 @@
 						<a href="_utils_events_.html">"utils/events"</a>
 					</li>
 					<li class=" tsd-kind-external-module">
+						<a href="_utils_helpers_.html">"utils/helpers"</a>
+					</li>
+					<li class=" tsd-kind-external-module">
 						<a href="_utils_index_.html">"utils/index"</a>
 					</li>
 					<li class=" tsd-kind-external-module">
@@ -224,23 +235,17 @@
 						<a href="_utils_renders_.html">"utils/renders"</a>
 					</li>
 					<li class=" tsd-kind-external-module">
-						<a href="_utils_types_.html">"utils/types"</a>
-					</li>
-					<li class=" tsd-kind-external-module">
-						<a href="_utils_validate_.html">"utils/validate"</a>
+						<a href="_validate_.html">"validate"</a>
 					</li>
 				</ul>
 			</nav>
 			<nav class="tsd-navigation secondary menu-sticky">
 				<ul class="before-current">
-					<li class=" tsd-kind-type-alias tsd-parent-kind-external-module tsd-is-not-exported">
-						<a href="_register_.html#registerelement" class="tsd-kind-icon">Register<wbr>Element</a>
-					</li>
 					<li class=" tsd-kind-function tsd-parent-kind-external-module tsd-has-type-parameter">
-						<a href="_register_.html#initregister" class="tsd-kind-icon">init<wbr>Register</a>
+						<a href="_register_.html#initelement" class="tsd-kind-icon">init<wbr>Element</a>
 					</li>
 					<li class=" tsd-kind-object-literal tsd-parent-kind-external-module tsd-is-not-exported">
-						<a href="_register_.html#defaults" class="tsd-kind-icon">DEFAULTS</a>
+						<a href="_register_.html#typemap" class="tsd-kind-icon">type<wbr>Map</a>
 					</li>
 				</ul>
 			</nav>

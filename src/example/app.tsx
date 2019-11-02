@@ -3,6 +3,8 @@ import useForm from '../';
 import { useRenderCount } from '../utils/renders';
 import { string, object, boolean } from 'yup';
 
+// Example using Yup Schema //
+
 const schema = object({
   firstName: string(),
   lastName: string(),
@@ -13,21 +15,39 @@ const schema = object({
   })
 });
 
+// Example using Custom Function //
+
+const schemaFunc = (model) => {
+
+  const errors = {};
+
+  const add = (key: string, msg: string | string[]) => {
+    errors[key] = errors[key] || [];
+    msg = !Array.isArray(msg) ? [msg] : msg;
+    errors[key] = [...errors[key], ...msg];
+  };
+
+  if (typeof model.message === 'undefined') {
+    add('message', 'Message is required.');
+  }
+
+  if (model.message && model.message.length < 5) {
+    add('message', 'Message must be at least 5 characters in length.');
+  }
+
+  return errors;
+
+};
+
 const App: FC = () => {
 
   const { register, handleSubmit, handleReset, state } = useForm({
-    // model: {
-    //   firstName: 'bob',
-    //   lastName: 'johnson',
-    //   urgent: false
-    // },
     validationSchema: schema,
     enableWarnings: true
   });
 
   const onSubmit = (model) => {
-    // console.log(model);
-    // console.log(errors);
+    console.log(model);
     console.log(state.errors);
   };
 
@@ -52,7 +72,7 @@ const App: FC = () => {
         <input name="firstName" type="text" ref={register} defaultValue="Jim" /><br /><br />
 
         <label htmlFor="lastName">Last Name: </label>
-        <input name="lastName" ref={register} /><br /><br />
+        <input type="email" name="lastName" ref={register} /><br /><br />
 
         <label htmlFor="urgent">Urgent: </label>
         <input name="urgent" type="checkbox" ref={register({ defaultValue: true })} /><br /><br />
@@ -62,7 +82,7 @@ const App: FC = () => {
         Email <input name="method" type="radio" value="Email" ref={register} /><br /><br />
 
         <label htmlFor="reason">Reason: </label>
-        <select name="reason" ref={register} defaultValue="Sales">
+        <select name="reason" ref={register} required defaultValue="Sales">
           <option value="">Please Select</option>
           <option>Support</option>
           <option>Sales</option>
@@ -81,7 +101,7 @@ const App: FC = () => {
         <input type="file" name="filename" ref={register} /><br /><br />
 
         <label htmlFor="message">Message: </label>
-        <textarea name="message" ref={register} required minLength={5}>
+        <textarea name="message" ref={register({ required: true, minLength: 5 })} >
         </textarea><ErrComp name="message" /><br /><br />
 
         <input name="csrf" type="hidden" defaultValue="UYNL7_MMNG8_WRRV2_LIOP4" ref={register}></input>

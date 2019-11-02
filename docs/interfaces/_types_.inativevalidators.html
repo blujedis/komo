@@ -3,7 +3,7 @@
 <head>
 	<meta charset="utf-8">
 	<meta http-equiv="X-UA-Compatible" content="IE=edge">
-	<title>IOptions | Komo</title>
+	<title>INativeValidators | Komo</title>
 	<meta name="description" content="">
 	<meta name="viewport" content="width=device-width, initial-scale=1">
 	<link rel="stylesheet" href="../assets/css/main.css">
@@ -59,34 +59,28 @@
 					<a href="../modules/_types_.html">&quot;types&quot;</a>
 				</li>
 				<li>
-					<a href="_types_.ioptions.html">IOptions</a>
+					<a href="_types_.inativevalidators.html">INativeValidators</a>
 				</li>
 			</ul>
-			<h1>Interface IOptions&lt;T&gt;</h1>
+			<h1>Interface INativeValidators</h1>
 		</div>
 	</div>
 </header>
 <div class="container container-main">
 	<div class="row">
 		<div class="col-8 col-content">
-			<section class="tsd-panel tsd-type-parameters">
-				<h3>Type parameters</h3>
-				<ul class="tsd-type-parameters">
-					<li>
-						<h4>T<span class="tsd-signature-symbol">: </span><a href="_types_.imodel.html" class="tsd-signature-type">IModel</a></h4>
-					</li>
-				</ul>
+			<section class="tsd-panel tsd-comment">
+				<div class="tsd-comment tsd-typography">
+					<div class="lead">
+						<p>HTML5 Native validation properties to convert to yup ObjectSchema.</p>
+					</div>
+				</div>
 			</section>
 			<section class="tsd-panel tsd-hierarchy">
 				<h3>Hierarchy</h3>
 				<ul class="tsd-hierarchy">
 					<li>
-						<span class="target">IOptions</span>
-						<ul class="tsd-hierarchy">
-							<li>
-								<a href="_types_.ioptionsinternal.html" class="tsd-signature-type">IOptionsInternal</a>
-							</li>
-						</ul>
+						<span class="target">INativeValidators</span>
 					</li>
 				</ul>
 			</section>
@@ -97,14 +91,17 @@
 						<section class="tsd-index-section ">
 							<h3>Properties</h3>
 							<ul class="tsd-index-list">
-								<li class="tsd-kind-property tsd-parent-kind-interface"><a href="_types_.ioptions.html#defaults" class="tsd-kind-icon">defaults</a></li>
-								<li class="tsd-kind-property tsd-parent-kind-interface"><a href="_types_.ioptions.html#enablenativevalidation" class="tsd-kind-icon">enable<wbr>Native<wbr>Validation</a></li>
-								<li class="tsd-kind-property tsd-parent-kind-interface"><a href="_types_.ioptions.html#enablewarnings" class="tsd-kind-icon">enable<wbr>Warnings</a></li>
-								<li class="tsd-kind-property tsd-parent-kind-interface"><a href="_types_.ioptions.html#validateblur" class="tsd-kind-icon">validate<wbr>Blur</a></li>
-								<li class="tsd-kind-property tsd-parent-kind-interface"><a href="_types_.ioptions.html#validatechange" class="tsd-kind-icon">validate<wbr>Change</a></li>
-								<li class="tsd-kind-property tsd-parent-kind-interface"><a href="_types_.ioptions.html#validateinit" class="tsd-kind-icon">validate<wbr>Init</a></li>
-								<li class="tsd-kind-property tsd-parent-kind-interface"><a href="_types_.ioptions.html#validatesubmit" class="tsd-kind-icon">validate<wbr>Submit</a></li>
-								<li class="tsd-kind-property tsd-parent-kind-interface"><a href="_types_.ioptions.html#validationschema" class="tsd-kind-icon">validation<wbr>Schema</a></li>
+								<li class="tsd-kind-property tsd-parent-kind-interface"><a href="_types_.inativevalidators.html#boolean" class="tsd-kind-icon">boolean</a></li>
+								<li class="tsd-kind-property tsd-parent-kind-interface"><a href="_types_.inativevalidators.html#email" class="tsd-kind-icon">email</a></li>
+								<li class="tsd-kind-property tsd-parent-kind-interface"><a href="_types_.inativevalidators.html#max" class="tsd-kind-icon">max</a></li>
+								<li class="tsd-kind-property tsd-parent-kind-interface"><a href="_types_.inativevalidators.html#maxlength" class="tsd-kind-icon">max<wbr>Length</a></li>
+								<li class="tsd-kind-property tsd-parent-kind-interface"><a href="_types_.inativevalidators.html#min" class="tsd-kind-icon">min</a></li>
+								<li class="tsd-kind-property tsd-parent-kind-interface"><a href="_types_.inativevalidators.html#minlength" class="tsd-kind-icon">min<wbr>Length</a></li>
+								<li class="tsd-kind-property tsd-parent-kind-interface"><a href="_types_.inativevalidators.html#number" class="tsd-kind-icon">number</a></li>
+								<li class="tsd-kind-property tsd-parent-kind-interface"><a href="_types_.inativevalidators.html#pattern" class="tsd-kind-icon">pattern</a></li>
+								<li class="tsd-kind-property tsd-parent-kind-interface"><a href="_types_.inativevalidators.html#required" class="tsd-kind-icon">required</a></li>
+								<li class="tsd-kind-property tsd-parent-kind-interface"><a href="_types_.inativevalidators.html#string" class="tsd-kind-icon">string</a></li>
+								<li class="tsd-kind-property tsd-parent-kind-interface"><a href="_types_.inativevalidators.html#url" class="tsd-kind-icon">url</a></li>
 							</ul>
 						</section>
 					</div>
@@ -113,124 +110,114 @@
 			<section class="tsd-panel-group tsd-member-group ">
 				<h2>Properties</h2>
 				<section class="tsd-panel tsd-member tsd-kind-property tsd-parent-kind-interface">
-					<a name="defaults" class="tsd-anchor"></a>
-					<h3><span class="tsd-flag ts-flagOptional">Optional</span> defaults</h3>
-					<div class="tsd-signature tsd-kind-icon">defaults<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">T</span></div>
+					<a name="boolean" class="tsd-anchor"></a>
+					<h3><span class="tsd-flag ts-flagOptional">Optional</span> boolean</h3>
+					<div class="tsd-signature tsd-kind-icon">boolean<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">undefined</span></div>
 					<aside class="tsd-sources">
 						<ul>
-							<li>Defined in <a href="https://github.com/blujedis/komo/blob/40b1cbd/src/types.ts#L166">types.ts:166</a></li>
+							<li>Defined in <a href="https://github.com/blujedis/komo/blob/40b1cbd/src/types.ts#L109">types.ts:109</a></li>
 						</ul>
 					</aside>
-					<div class="tsd-comment tsd-typography">
-						<div class="lead">
-							<p>Default model values (default: {})</p>
-						</div>
-					</div>
 				</section>
 				<section class="tsd-panel tsd-member tsd-kind-property tsd-parent-kind-interface">
-					<a name="enablenativevalidation" class="tsd-anchor"></a>
-					<h3><span class="tsd-flag ts-flagOptional">Optional</span> enable<wbr>Native<wbr>Validation</h3>
-					<div class="tsd-signature tsd-kind-icon">enable<wbr>Native<wbr>Validation<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">boolean</span></div>
+					<a name="email" class="tsd-anchor"></a>
+					<h3><span class="tsd-flag ts-flagOptional">Optional</span> email</h3>
+					<div class="tsd-signature tsd-kind-icon">email<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">undefined</span></div>
 					<aside class="tsd-sources">
 						<ul>
-							<li>Defined in <a href="https://github.com/blujedis/komo/blob/40b1cbd/src/types.ts#L201">types.ts:201</a></li>
+							<li>Defined in <a href="https://github.com/blujedis/komo/blob/40b1cbd/src/types.ts#L110">types.ts:110</a></li>
 						</ul>
 					</aside>
-					<div class="tsd-comment tsd-typography">
-						<div class="lead">
-							<p>When true and validationSchema is NOT user function native validation converted to yup ObjectSchema (default: true)</p>
-						</div>
-					</div>
 				</section>
 				<section class="tsd-panel tsd-member tsd-kind-property tsd-parent-kind-interface">
-					<a name="enablewarnings" class="tsd-anchor"></a>
-					<h3><span class="tsd-flag ts-flagOptional">Optional</span> enable<wbr>Warnings</h3>
-					<div class="tsd-signature tsd-kind-icon">enable<wbr>Warnings<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">boolean</span></div>
+					<a name="max" class="tsd-anchor"></a>
+					<h3><span class="tsd-flag ts-flagOptional">Optional</span> max</h3>
+					<div class="tsd-signature tsd-kind-icon">max<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">number</span><span class="tsd-signature-symbol"> | </span><span class="tsd-signature-type">string</span></div>
 					<aside class="tsd-sources">
 						<ul>
-							<li>Defined in <a href="https://github.com/blujedis/komo/blob/40b1cbd/src/types.ts#L196">types.ts:196</a></li>
+							<li>Defined in <a href="https://github.com/blujedis/komo/blob/40b1cbd/src/types.ts#L114">types.ts:114</a></li>
 						</ul>
 					</aside>
-					<div class="tsd-comment tsd-typography">
-						<div class="lead">
-							<p>When true internal warnings are logged to console (default: true)</p>
-						</div>
-					</div>
 				</section>
 				<section class="tsd-panel tsd-member tsd-kind-property tsd-parent-kind-interface">
-					<a name="validateblur" class="tsd-anchor"></a>
-					<h3><span class="tsd-flag ts-flagOptional">Optional</span> validate<wbr>Blur</h3>
-					<div class="tsd-signature tsd-kind-icon">validate<wbr>Blur<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">boolean</span></div>
+					<a name="maxlength" class="tsd-anchor"></a>
+					<h3><span class="tsd-flag ts-flagOptional">Optional</span> max<wbr>Length</h3>
+					<div class="tsd-signature tsd-kind-icon">max<wbr>Length<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">number</span><span class="tsd-signature-symbol"> | </span><span class="tsd-signature-type">string</span></div>
 					<aside class="tsd-sources">
 						<ul>
-							<li>Defined in <a href="https://github.com/blujedis/komo/blob/40b1cbd/src/types.ts#L181">types.ts:181</a></li>
+							<li>Defined in <a href="https://github.com/blujedis/komo/blob/40b1cbd/src/types.ts#L115">types.ts:115</a></li>
 						</ul>
 					</aside>
-					<div class="tsd-comment tsd-typography">
-						<div class="lead">
-							<p>When true validation is triggered on blur (default: true)</p>
-						</div>
-					</div>
 				</section>
 				<section class="tsd-panel tsd-member tsd-kind-property tsd-parent-kind-interface">
-					<a name="validatechange" class="tsd-anchor"></a>
-					<h3><span class="tsd-flag ts-flagOptional">Optional</span> validate<wbr>Change</h3>
-					<div class="tsd-signature tsd-kind-icon">validate<wbr>Change<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">boolean</span></div>
+					<a name="min" class="tsd-anchor"></a>
+					<h3><span class="tsd-flag ts-flagOptional">Optional</span> min</h3>
+					<div class="tsd-signature tsd-kind-icon">min<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">number</span><span class="tsd-signature-symbol"> | </span><span class="tsd-signature-type">string</span></div>
 					<aside class="tsd-sources">
 						<ul>
-							<li>Defined in <a href="https://github.com/blujedis/komo/blob/40b1cbd/src/types.ts#L176">types.ts:176</a></li>
+							<li>Defined in <a href="https://github.com/blujedis/komo/blob/40b1cbd/src/types.ts#L113">types.ts:113</a></li>
 						</ul>
 					</aside>
-					<div class="tsd-comment tsd-typography">
-						<div class="lead">
-							<p>When true validation is triggered on change (default: false)</p>
-						</div>
-					</div>
 				</section>
 				<section class="tsd-panel tsd-member tsd-kind-property tsd-parent-kind-interface">
-					<a name="validateinit" class="tsd-anchor"></a>
-					<h3><span class="tsd-flag ts-flagOptional">Optional</span> validate<wbr>Init</h3>
-					<div class="tsd-signature tsd-kind-icon">validate<wbr>Init<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">boolean</span></div>
+					<a name="minlength" class="tsd-anchor"></a>
+					<h3><span class="tsd-flag ts-flagOptional">Optional</span> min<wbr>Length</h3>
+					<div class="tsd-signature tsd-kind-icon">min<wbr>Length<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">number</span><span class="tsd-signature-symbol"> | </span><span class="tsd-signature-type">string</span></div>
 					<aside class="tsd-sources">
 						<ul>
-							<li>Defined in <a href="https://github.com/blujedis/komo/blob/40b1cbd/src/types.ts#L191">types.ts:191</a></li>
+							<li>Defined in <a href="https://github.com/blujedis/komo/blob/40b1cbd/src/types.ts#L116">types.ts:116</a></li>
 						</ul>
 					</aside>
-					<div class="tsd-comment tsd-typography">
-						<div class="lead">
-							<p>When true validation is triggered when form is first initialized (default: false)</p>
-						</div>
-					</div>
 				</section>
 				<section class="tsd-panel tsd-member tsd-kind-property tsd-parent-kind-interface">
-					<a name="validatesubmit" class="tsd-anchor"></a>
-					<h3><span class="tsd-flag ts-flagOptional">Optional</span> validate<wbr>Submit</h3>
-					<div class="tsd-signature tsd-kind-icon">validate<wbr>Submit<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">boolean</span></div>
+					<a name="number" class="tsd-anchor"></a>
+					<h3><span class="tsd-flag ts-flagOptional">Optional</span> number</h3>
+					<div class="tsd-signature tsd-kind-icon">number<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">undefined</span></div>
 					<aside class="tsd-sources">
 						<ul>
-							<li>Defined in <a href="https://github.com/blujedis/komo/blob/40b1cbd/src/types.ts#L186">types.ts:186</a></li>
+							<li>Defined in <a href="https://github.com/blujedis/komo/blob/40b1cbd/src/types.ts#L108">types.ts:108</a></li>
 						</ul>
 					</aside>
-					<div class="tsd-comment tsd-typography">
-						<div class="lead">
-							<p>When true validation is triggered on submit (default: true)</p>
-						</div>
-					</div>
 				</section>
 				<section class="tsd-panel tsd-member tsd-kind-property tsd-parent-kind-interface">
-					<a name="validationschema" class="tsd-anchor"></a>
-					<h3><span class="tsd-flag ts-flagOptional">Optional</span> validation<wbr>Schema</h3>
-					<div class="tsd-signature tsd-kind-icon">validation<wbr>Schema<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">T</span><span class="tsd-signature-symbol"> | </span><a href="../modules/_types_.html#validationschema" class="tsd-signature-type">ValidationSchema</a><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">T</span><span class="tsd-signature-symbol">&gt;</span></div>
+					<a name="pattern" class="tsd-anchor"></a>
+					<h3><span class="tsd-flag ts-flagOptional">Optional</span> pattern</h3>
+					<div class="tsd-signature tsd-kind-icon">pattern<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">string</span><span class="tsd-signature-symbol"> | </span><span class="tsd-signature-type">RegExp</span></div>
 					<aside class="tsd-sources">
 						<ul>
-							<li>Defined in <a href="https://github.com/blujedis/komo/blob/40b1cbd/src/types.ts#L171">types.ts:171</a></li>
+							<li>Defined in <a href="https://github.com/blujedis/komo/blob/40b1cbd/src/types.ts#L117">types.ts:117</a></li>
 						</ul>
 					</aside>
-					<div class="tsd-comment tsd-typography">
-						<div class="lead">
-							<p>A Yup ObjectSchema or custom function for validating form (default: undefined)</p>
-						</div>
-					</div>
+				</section>
+				<section class="tsd-panel tsd-member tsd-kind-property tsd-parent-kind-interface">
+					<a name="required" class="tsd-anchor"></a>
+					<h3><span class="tsd-flag ts-flagOptional">Optional</span> required</h3>
+					<div class="tsd-signature tsd-kind-icon">required<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">boolean</span><span class="tsd-signature-symbol"> | </span><span class="tsd-signature-type">string</span></div>
+					<aside class="tsd-sources">
+						<ul>
+							<li>Defined in <a href="https://github.com/blujedis/komo/blob/40b1cbd/src/types.ts#L112">types.ts:112</a></li>
+						</ul>
+					</aside>
+				</section>
+				<section class="tsd-panel tsd-member tsd-kind-property tsd-parent-kind-interface">
+					<a name="string" class="tsd-anchor"></a>
+					<h3><span class="tsd-flag ts-flagOptional">Optional</span> string</h3>
+					<div class="tsd-signature tsd-kind-icon">string<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">undefined</span></div>
+					<aside class="tsd-sources">
+						<ul>
+							<li>Defined in <a href="https://github.com/blujedis/komo/blob/40b1cbd/src/types.ts#L107">types.ts:107</a></li>
+						</ul>
+					</aside>
+				</section>
+				<section class="tsd-panel tsd-member tsd-kind-property tsd-parent-kind-interface">
+					<a name="url" class="tsd-anchor"></a>
+					<h3><span class="tsd-flag ts-flagOptional">Optional</span> url</h3>
+					<div class="tsd-signature tsd-kind-icon">url<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">undefined</span></div>
+					<aside class="tsd-sources">
+						<ul>
+							<li>Defined in <a href="https://github.com/blujedis/komo/blob/40b1cbd/src/types.ts#L111">types.ts:111</a></li>
+						</ul>
+					</aside>
 				</section>
 			</section>
 		</div>
@@ -295,42 +282,51 @@
 					<li class=" tsd-kind-interface tsd-parent-kind-external-module">
 						<a href="_types_.imodel.html" class="tsd-kind-icon">IModel</a>
 					</li>
-					<li class=" tsd-kind-interface tsd-parent-kind-external-module">
-						<a href="_types_.inativevalidators.html" class="tsd-kind-icon">INative<wbr>Validators</a>
-					</li>
 				</ul>
 				<ul class="current">
-					<li class="current tsd-kind-interface tsd-parent-kind-external-module tsd-has-type-parameter">
-						<a href="_types_.ioptions.html" class="tsd-kind-icon">IOptions</a>
+					<li class="current tsd-kind-interface tsd-parent-kind-external-module">
+						<a href="_types_.inativevalidators.html" class="tsd-kind-icon">INative<wbr>Validators</a>
 						<ul>
 							<li class=" tsd-kind-property tsd-parent-kind-interface">
-								<a href="_types_.ioptions.html#defaults" class="tsd-kind-icon">defaults</a>
+								<a href="_types_.inativevalidators.html#boolean" class="tsd-kind-icon">boolean</a>
 							</li>
 							<li class=" tsd-kind-property tsd-parent-kind-interface">
-								<a href="_types_.ioptions.html#enablenativevalidation" class="tsd-kind-icon">enable<wbr>Native<wbr>Validation</a>
+								<a href="_types_.inativevalidators.html#email" class="tsd-kind-icon">email</a>
 							</li>
 							<li class=" tsd-kind-property tsd-parent-kind-interface">
-								<a href="_types_.ioptions.html#enablewarnings" class="tsd-kind-icon">enable<wbr>Warnings</a>
+								<a href="_types_.inativevalidators.html#max" class="tsd-kind-icon">max</a>
 							</li>
 							<li class=" tsd-kind-property tsd-parent-kind-interface">
-								<a href="_types_.ioptions.html#validateblur" class="tsd-kind-icon">validate<wbr>Blur</a>
+								<a href="_types_.inativevalidators.html#maxlength" class="tsd-kind-icon">max<wbr>Length</a>
 							</li>
 							<li class=" tsd-kind-property tsd-parent-kind-interface">
-								<a href="_types_.ioptions.html#validatechange" class="tsd-kind-icon">validate<wbr>Change</a>
+								<a href="_types_.inativevalidators.html#min" class="tsd-kind-icon">min</a>
 							</li>
 							<li class=" tsd-kind-property tsd-parent-kind-interface">
-								<a href="_types_.ioptions.html#validateinit" class="tsd-kind-icon">validate<wbr>Init</a>
+								<a href="_types_.inativevalidators.html#minlength" class="tsd-kind-icon">min<wbr>Length</a>
 							</li>
 							<li class=" tsd-kind-property tsd-parent-kind-interface">
-								<a href="_types_.ioptions.html#validatesubmit" class="tsd-kind-icon">validate<wbr>Submit</a>
+								<a href="_types_.inativevalidators.html#number" class="tsd-kind-icon">number</a>
 							</li>
 							<li class=" tsd-kind-property tsd-parent-kind-interface">
-								<a href="_types_.ioptions.html#validationschema" class="tsd-kind-icon">validation<wbr>Schema</a>
+								<a href="_types_.inativevalidators.html#pattern" class="tsd-kind-icon">pattern</a>
+							</li>
+							<li class=" tsd-kind-property tsd-parent-kind-interface">
+								<a href="_types_.inativevalidators.html#required" class="tsd-kind-icon">required</a>
+							</li>
+							<li class=" tsd-kind-property tsd-parent-kind-interface">
+								<a href="_types_.inativevalidators.html#string" class="tsd-kind-icon">string</a>
+							</li>
+							<li class=" tsd-kind-property tsd-parent-kind-interface">
+								<a href="_types_.inativevalidators.html#url" class="tsd-kind-icon">url</a>
 							</li>
 						</ul>
 					</li>
 				</ul>
 				<ul class="after-current">
+					<li class=" tsd-kind-interface tsd-parent-kind-external-module tsd-has-type-parameter">
+						<a href="_types_.ioptions.html" class="tsd-kind-icon">IOptions</a>
+					</li>
 					<li class=" tsd-kind-interface tsd-parent-kind-external-module tsd-has-type-parameter">
 						<a href="_types_.ioptionsinternal.html" class="tsd-kind-icon">IOptions<wbr>Internal</a>
 					</li>

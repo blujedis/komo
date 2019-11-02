@@ -79,15 +79,13 @@
 						<section class="tsd-index-section ">
 							<h3>Functions</h3>
 							<ul class="tsd-index-list">
-								<li class="tsd-kind-function tsd-parent-kind-external-module tsd-is-not-exported"><a href="_utils_logger_.html#colorize" class="tsd-kind-icon">colorize</a></li>
-								<li class="tsd-kind-function tsd-parent-kind-external-module"><a href="_utils_logger_.html#log" class="tsd-kind-icon">log</a></li>
-								<li class="tsd-kind-function tsd-parent-kind-external-module tsd-is-not-exported"><a href="_utils_logger_.html#logger" class="tsd-kind-icon">logger</a></li>
+								<li class="tsd-kind-function tsd-parent-kind-external-module"><a href="_utils_logger_.html#createlogger" class="tsd-kind-icon">create<wbr>Logger</a></li>
 							</ul>
 						</section>
 						<section class="tsd-index-section tsd-is-not-exported">
 							<h3>Object literals</h3>
 							<ul class="tsd-index-list">
-								<li class="tsd-kind-object-literal tsd-parent-kind-external-module tsd-is-not-exported"><a href="_utils_logger_.html#logtype" class="tsd-kind-icon">log<wbr>Type</a></li>
+								<li class="tsd-kind-object-literal tsd-parent-kind-external-module tsd-is-not-exported"><a href="_utils_logger_.html#levels" class="tsd-kind-icon">levels</a></li>
 							</ul>
 						</section>
 					</div>
@@ -95,86 +93,26 @@
 			</section>
 			<section class="tsd-panel-group tsd-member-group ">
 				<h2>Functions</h2>
-				<section class="tsd-panel tsd-member tsd-kind-function tsd-parent-kind-external-module tsd-is-not-exported">
-					<a name="colorize" class="tsd-anchor"></a>
-					<h3>colorize</h3>
-					<ul class="tsd-signatures tsd-kind-function tsd-parent-kind-external-module tsd-is-not-exported">
-						<li class="tsd-signature tsd-kind-icon">colorize<span class="tsd-signature-symbol">(</span>value<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">any</span>, styles<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">string</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">string</span><span class="tsd-signature-symbol">[]</span></li>
-					</ul>
-					<ul class="tsd-descriptions">
-						<li class="tsd-description">
-							<aside class="tsd-sources">
-								<ul>
-									<li>Defined in <a href="https://github.com/blujedis/komo/blob/52240c1/src/utils/logger.ts#L7">utils/logger.ts:7</a></li>
-								</ul>
-							</aside>
-							<h4 class="tsd-parameters-title">Parameters</h4>
-							<ul class="tsd-parameters">
-								<li>
-									<h5>value: <span class="tsd-signature-type">any</span></h5>
-								</li>
-								<li>
-									<h5>styles: <span class="tsd-signature-type">string</span></h5>
-								</li>
-							</ul>
-							<h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">string</span><span class="tsd-signature-symbol">[]</span></h4>
-						</li>
-					</ul>
-				</section>
 				<section class="tsd-panel tsd-member tsd-kind-function tsd-parent-kind-external-module">
-					<a name="log" class="tsd-anchor"></a>
-					<h3>log</h3>
+					<a name="createlogger" class="tsd-anchor"></a>
+					<h3>create<wbr>Logger</h3>
 					<ul class="tsd-signatures tsd-kind-function tsd-parent-kind-external-module">
-						<li class="tsd-signature tsd-kind-icon">log<span class="tsd-signature-symbol">(</span><span class="tsd-signature-symbol">...</span>args<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">any</span><span class="tsd-signature-symbol">[]</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><a href="../interfaces/_utils_logger_.ilogger.html" class="tsd-signature-type">ILogger</a></li>
+						<li class="tsd-signature tsd-kind-icon">create<wbr>Logger<span class="tsd-signature-symbol">(</span>level<span class="tsd-signature-symbol">?: </span><span class="tsd-signature-type">"error"</span><span class="tsd-signature-symbol"> | </span><span class="tsd-signature-type">"warn"</span><span class="tsd-signature-symbol"> | </span><span class="tsd-signature-type">"info"</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">log</span></li>
 					</ul>
 					<ul class="tsd-descriptions">
 						<li class="tsd-description">
 							<aside class="tsd-sources">
 								<ul>
-									<li>Defined in <a href="https://github.com/blujedis/komo/blob/52240c1/src/utils/logger.ts#L40">utils/logger.ts:40</a></li>
-								</ul>
-							</aside>
-							<div class="tsd-comment tsd-typography">
-								<div class="lead">
-									<p>Simpler logger with colorized types.</p>
-								</div>
-							</div>
-							<h4 class="tsd-parameters-title">Parameters</h4>
-							<ul class="tsd-parameters">
-								<li>
-									<h5><span class="tsd-flag ts-flagRest">Rest</span> <span class="tsd-signature-symbol">...</span>args: <span class="tsd-signature-type">any</span><span class="tsd-signature-symbol">[]</span></h5>
-									<div class="tsd-comment tsd-typography">
-										<p>arguments to be logged.</p>
-									</div>
-								</li>
-							</ul>
-							<h4 class="tsd-returns-title">Returns <a href="../interfaces/_utils_logger_.ilogger.html" class="tsd-signature-type">ILogger</a></h4>
-						</li>
-					</ul>
-				</section>
-				<section class="tsd-panel tsd-member tsd-kind-function tsd-parent-kind-external-module tsd-is-not-exported">
-					<a name="logger" class="tsd-anchor"></a>
-					<h3>logger</h3>
-					<ul class="tsd-signatures tsd-kind-function tsd-parent-kind-external-module tsd-is-not-exported">
-						<li class="tsd-signature tsd-kind-icon">logger<span class="tsd-signature-symbol">(</span>type<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">"log"</span><span class="tsd-signature-symbol"> | </span><span class="tsd-signature-type">"error"</span><span class="tsd-signature-symbol"> | </span><span class="tsd-signature-type">"warn"</span><span class="tsd-signature-symbol"> | </span><span class="tsd-signature-type">"info"</span>, <span class="tsd-signature-symbol">...</span>args<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">any</span><span class="tsd-signature-symbol">[]</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><a href="../interfaces/_utils_logger_.ilogger.html" class="tsd-signature-type">ILogger</a></li>
-					</ul>
-					<ul class="tsd-descriptions">
-						<li class="tsd-description">
-							<aside class="tsd-sources">
-								<ul>
-									<li>Defined in <a href="https://github.com/blujedis/komo/blob/52240c1/src/utils/logger.ts#L11">utils/logger.ts:11</a></li>
+									<li>Defined in <a href="https://github.com/blujedis/komo/blob/40b1cbd/src/utils/logger.ts#L15">utils/logger.ts:15</a></li>
 								</ul>
 							</aside>
 							<h4 class="tsd-parameters-title">Parameters</h4>
 							<ul class="tsd-parameters">
 								<li>
-									<h5>type: <span class="tsd-signature-type">"log"</span><span class="tsd-signature-symbol"> | </span><span class="tsd-signature-type">"error"</span><span class="tsd-signature-symbol"> | </span><span class="tsd-signature-type">"warn"</span><span class="tsd-signature-symbol"> | </span><span class="tsd-signature-type">"info"</span></h5>
-								</li>
-								<li>
-									<h5><span class="tsd-flag ts-flagRest">Rest</span> <span class="tsd-signature-symbol">...</span>args: <span class="tsd-signature-type">any</span><span class="tsd-signature-symbol">[]</span></h5>
+									<h5><span class="tsd-flag ts-flagDefault value">Default value</span> level: <span class="tsd-signature-type">"error"</span><span class="tsd-signature-symbol"> | </span><span class="tsd-signature-type">"warn"</span><span class="tsd-signature-symbol"> | </span><span class="tsd-signature-type">"info"</span><span class="tsd-signature-symbol"> =&nbsp;&quot;info&quot;</span></h5>
 								</li>
 							</ul>
-							<h4 class="tsd-returns-title">Returns <a href="../interfaces/_utils_logger_.ilogger.html" class="tsd-signature-type">ILogger</a></h4>
+							<h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">log</span></h4>
 						</li>
 					</ul>
 				</section>
@@ -182,41 +120,41 @@
 			<section class="tsd-panel-group tsd-member-group tsd-is-not-exported">
 				<h2>Object literals</h2>
 				<section class="tsd-panel tsd-member tsd-kind-object-literal tsd-parent-kind-external-module tsd-is-not-exported">
-					<a name="logtype" class="tsd-anchor"></a>
-					<h3><span class="tsd-flag ts-flagConst">Const</span> log<wbr>Type</h3>
-					<div class="tsd-signature tsd-kind-icon">log<wbr>Type<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">object</span></div>
+					<a name="levels" class="tsd-anchor"></a>
+					<h3><span class="tsd-flag ts-flagConst">Const</span> levels</h3>
+					<div class="tsd-signature tsd-kind-icon">levels<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">object</span></div>
 					<aside class="tsd-sources">
 						<ul>
-							<li>Defined in <a href="https://github.com/blujedis/komo/blob/52240c1/src/utils/logger.ts#L1">utils/logger.ts:1</a></li>
+							<li>Defined in <a href="https://github.com/blujedis/komo/blob/40b1cbd/src/utils/logger.ts#L1">utils/logger.ts:1</a></li>
 						</ul>
 					</aside>
 					<section class="tsd-panel tsd-member tsd-kind-variable tsd-parent-kind-object-literal tsd-is-not-exported">
-						<a name="logtype.error" class="tsd-anchor"></a>
+						<a name="levels.error" class="tsd-anchor"></a>
 						<h3>error</h3>
-						<div class="tsd-signature tsd-kind-icon">error<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">string</span><span class="tsd-signature-symbol"> =&nbsp;&quot;&quot;</span></div>
+						<div class="tsd-signature tsd-kind-icon">error<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">string</span><span class="tsd-signature-symbol"> =&nbsp;&quot;font-weight: bold; color: #8B0000;&quot;</span></div>
 						<aside class="tsd-sources">
 							<ul>
-								<li>Defined in <a href="https://github.com/blujedis/komo/blob/52240c1/src/utils/logger.ts#L2">utils/logger.ts:2</a></li>
+								<li>Defined in <a href="https://github.com/blujedis/komo/blob/40b1cbd/src/utils/logger.ts#L2">utils/logger.ts:2</a></li>
 							</ul>
 						</aside>
 					</section>
 					<section class="tsd-panel tsd-member tsd-kind-variable tsd-parent-kind-object-literal tsd-is-not-exported">
-						<a name="logtype.info" class="tsd-anchor"></a>
+						<a name="levels.info" class="tsd-anchor"></a>
 						<h3>info</h3>
-						<div class="tsd-signature tsd-kind-icon">info<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">string</span><span class="tsd-signature-symbol"> =&nbsp;&quot;&quot;</span></div>
+						<div class="tsd-signature tsd-kind-icon">info<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">string</span><span class="tsd-signature-symbol"> =&nbsp;&quot;color: #2B65EC;&quot;</span></div>
 						<aside class="tsd-sources">
 							<ul>
-								<li>Defined in <a href="https://github.com/blujedis/komo/blob/52240c1/src/utils/logger.ts#L4">utils/logger.ts:4</a></li>
+								<li>Defined in <a href="https://github.com/blujedis/komo/blob/40b1cbd/src/utils/logger.ts#L4">utils/logger.ts:4</a></li>
 							</ul>
 						</aside>
 					</section>
 					<section class="tsd-panel tsd-member tsd-kind-variable tsd-parent-kind-object-literal tsd-is-not-exported">
-						<a name="logtype.warn" class="tsd-anchor"></a>
+						<a name="levels.warn" class="tsd-anchor"></a>
 						<h3>warn</h3>
-						<div class="tsd-signature tsd-kind-icon">warn<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">string</span><span class="tsd-signature-symbol"> =&nbsp;&quot;&quot;</span></div>
+						<div class="tsd-signature tsd-kind-icon">warn<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">string</span><span class="tsd-signature-symbol"> =&nbsp;&quot;color: #CCCC00;&quot;</span></div>
 						<aside class="tsd-sources">
 							<ul>
-								<li>Defined in <a href="https://github.com/blujedis/komo/blob/52240c1/src/utils/logger.ts#L3">utils/logger.ts:3</a></li>
+								<li>Defined in <a href="https://github.com/blujedis/komo/blob/40b1cbd/src/utils/logger.ts#L3">utils/logger.ts:3</a></li>
 							</ul>
 						</aside>
 					</section>
@@ -230,7 +168,7 @@
 						<a href="../globals.html"><em>Globals</em></a>
 					</li>
 					<li class=" tsd-kind-external-module">
-						<a href="_events_.html">"events"</a>
+						<a href="_constants_.html">"constants"</a>
 					</li>
 					<li class=" tsd-kind-external-module">
 						<a href="_example_app_.html">"example/app"</a>
@@ -254,6 +192,9 @@
 						<a href="_utils_events_.html">"utils/events"</a>
 					</li>
 					<li class=" tsd-kind-external-module">
+						<a href="_utils_helpers_.html">"utils/helpers"</a>
+					</li>
+					<li class=" tsd-kind-external-module">
 						<a href="_utils_index_.html">"utils/index"</a>
 					</li>
 					<li class="current tsd-kind-external-module">
@@ -266,10 +207,7 @@
 						<a href="_utils_renders_.html">"utils/renders"</a>
 					</li>
 					<li class=" tsd-kind-external-module">
-						<a href="_utils_types_.html">"utils/types"</a>
-					</li>
-					<li class=" tsd-kind-external-module">
-						<a href="_utils_validate_.html">"utils/validate"</a>
+						<a href="_validate_.html">"validate"</a>
 					</li>
 				</ul>
 			</nav>
@@ -278,17 +216,11 @@
 					<li class=" tsd-kind-interface tsd-parent-kind-external-module tsd-is-not-exported">
 						<a href="../interfaces/_utils_logger_.ilogger.html" class="tsd-kind-icon">ILogger</a>
 					</li>
-					<li class=" tsd-kind-function tsd-parent-kind-external-module tsd-is-not-exported">
-						<a href="_utils_logger_.html#colorize" class="tsd-kind-icon">colorize</a>
-					</li>
 					<li class=" tsd-kind-function tsd-parent-kind-external-module">
-						<a href="_utils_logger_.html#log" class="tsd-kind-icon">log</a>
-					</li>
-					<li class=" tsd-kind-function tsd-parent-kind-external-module tsd-is-not-exported">
-						<a href="_utils_logger_.html#logger" class="tsd-kind-icon">logger</a>
+						<a href="_utils_logger_.html#createlogger" class="tsd-kind-icon">create<wbr>Logger</a>
 					</li>
 					<li class=" tsd-kind-object-literal tsd-parent-kind-external-module tsd-is-not-exported">
-						<a href="_utils_logger_.html#logtype" class="tsd-kind-icon">log<wbr>Type</a>
+						<a href="_utils_logger_.html#levels" class="tsd-kind-icon">levels</a>
 					</li>
 				</ul>
 			</nav>

@@ -1,5 +1,5 @@
 import { BaseSyntheticEvent, MutableRefObject, LegacyRef } from 'react';
-import { ObjectSchema, ValidateOptions } from 'yup';
+import { ObjectSchema, ValidateOptions, InferType } from 'yup';
 import { createLogger } from './utils';
 
 // HELPERS //
@@ -131,12 +131,6 @@ export type SubmitHandler<T extends IModel> =
   (model?: T, errors?: ErrorModel<T>, event?: BaseSyntheticEvent) => void;
 
 /**
- * Reset form handler function, optionally accepts new values
- * to populate the form with. Must match current form model.
- */
-export type ResetHandler<T extends IModel> = (values?: T) => void;
-
-/**
  * Interface for finding elements.
  */
 export interface IFindField<T extends IModel> {
@@ -158,17 +152,19 @@ export interface IFindField<T extends IModel> {
 
 // OPTIONS //
 
-export interface IOptions<T extends IModel> {
+export type Defaults<T> = { [K in keyof T]: any };
+
+export interface IOptions<T extends IModel, D extends Defaults<T>> {
 
   /**
    * Default model values (default: {})
    */
-  defaults?: T;
+  defaults?: D;
 
   /**
    * A Yup ObjectSchema or custom function for validating form (default: undefined)
    */
-  validationSchema?: T | ValidationSchema<T>;
+  validationSchema?: ValidationSchema<T>;
 
   /**
    * When true validation is triggered on change (default: false)
@@ -205,7 +201,7 @@ export interface IOptions<T extends IModel> {
 /**
  * Internal options interface.
  */
-export interface IOptionsInternal<T extends IModel> extends IOptions<T> {
+export interface IOptionsInternal<T extends IModel, D extends Defaults<T>> extends IOptions<T, D> {
 
   /**
    * Komo populates initial model from defaults, or cast schema defaults.
@@ -290,7 +286,12 @@ export interface IRegisterElement extends Partial<HTMLElement> {
 /**
  * Interface for custom registrations of an element.
  */
-export interface IRegisterOptions {
+export interface IRegisterOptions<T extends IModel> {
+
+  /**
+   * The name of the element.
+   */
+  name?: KeyOf<T>;
 
   /**
    * Alertnate path in model to get/set data from for element value.
@@ -390,6 +391,18 @@ export interface IRegisteredElement<T extends IModel> extends IRegisterElement {
   defaultChecked?: boolean;
 
   /**
+   * Same as defaultValue but some libs
+   * override defaultValue.
+   */
+  defaultValuePersist?: any;
+
+  /**
+   * Same as defaultChecked but some libs
+   * override defaultChecked.
+   */
+  defaultCheckedPersist?: boolean;
+
+  /**
    * Whether element should validate on change overrides main options.
    */
   validateChange?: boolean;
@@ -486,7 +499,7 @@ type Logger = ReturnType<typeof createLogger>;
 /**
  * The base API interface used by form field elements and form submit, reset handlers.
  */
-export interface IBaseApi<T extends IModel> {
+export interface IBaseApi<T extends IModel, D extends Defaults<T>> {
 
   /**
    * Simple internal logger.
@@ -541,12 +554,18 @@ export interface IBaseApi<T extends IModel> {
   /**
    * Komo initialization options.
    */
-  options: IOptions<T>;
+  options: IOptions<T, D>;
 
   /**
    * Object containing active state of the form.
    */
   state: {
+
+    /**
+     * The data model.
+     */
+
+    model: T;
 
     /**
      * Object containing current error model.
@@ -589,6 +608,11 @@ export interface IBaseApi<T extends IModel> {
     isTouched: boolean;
 
   };
+
+  /**
+   * Initializes and normalizes the schema.
+   */
+  initSchema(): T;
 
   /**
    * Triggers rerendering of the form.
@@ -715,10 +739,9 @@ export interface IBaseApi<T extends IModel> {
   /**
    * Validates the specified model.
    * 
-   * @param model the model to be validated.
    * @param options the yup validation options if any to pass.
    */
-  validateModel(model: T, options?: ValidateOptions): PromiseStrict<T, ErrorModel<T>>;
+  validateModel(options?: ValidateOptions): PromiseStrict<T, ErrorModel<T>>;
 
   // Touched
 

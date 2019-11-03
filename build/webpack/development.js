@@ -13,9 +13,14 @@ module.exports = {
   devtool: 'cheap-module-eval-source-map',
   entry: `${entry}`,
 
+  devServer: {
+    historyApiFallback: true,
+  },
+
   output: {
     path: resolve(`${dist}`),
-    filename: `bundle.[hash].js`
+    filename: `bundle.[hash].js`,
+    publicPath: '/'
   },
 
   plugins: [

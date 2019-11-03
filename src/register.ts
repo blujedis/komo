@@ -2,12 +2,14 @@
 import {
   isRadio, isCheckbox, addListener, isTextLike, removeListener,
   initObserver, isBooleanLike, isEqual, isString, isUndefined, isNullOrUndefined, me, isFunction,
-  isObject
+  isObject,
+  toDefault,
+  isArray
 } from './utils';
 import { getNativeValidators, getNativeValidatorTypes } from './validate';
 import {
   IRegisterElement, IRegisterOptions, IRegisteredElement,
-  IModel, INativeValidators, KeyOf, IBaseApi, RegisterElement
+  IModel, INativeValidators, KeyOf, IBaseApi, RegisterElement, Defaults
 } from './types';
 
 const typeMap = {
@@ -23,10 +25,10 @@ const typeMap = {
  * 
  * @param api the base form api.
  */
-export function initElement<T extends IModel>(api?: IBaseApi<T>) {
+export function initElement<T extends IModel, D extends Defaults<T>>(api?: IBaseApi<T, D>) {
 
   const {
-    options: formOptions, log, schemaAst, fields, unregister, mounted, setModel,
+    options: formOptions, log, schemaAst, fields, unregister, setModel,
     getModel, getDefault, isTouched, isDirty, setDefault,
     setDirty, setTouched, removeDirty, isValidateBlur, isValidateChange,
     validateModelAt, isValidatable, removeError, setError
@@ -43,38 +45,40 @@ export function initElement<T extends IModel>(api?: IBaseApi<T>) {
     let value;
 
     if (isRadio(element.type)) {
-      element.checked = element.defaultChecked;
+      element.checked = element.defaultCheckedPersist;
       if (element.checked)
         value = element.value;
-
     }
 
     else if (isCheckbox(element.type)) {
-      value = element.defaultChecked = isBooleanLike(element.defaultChecked);
+      value = element.defaultChecked = isBooleanLike(element.defaultCheckedPersist);
       element.checked = value;
     }
 
     else if (element.multiple) {
 
-      value = [...element.defaultValue];
+      value = [...element.defaultValuePersist];
 
       for (let i = 0; i < element.options.length; i++) {
         const opt = element.options[i];
-        if (value.includes(opt.value || opt.text))
+        if (value.includes(opt.value || opt.text)) {
           opt.setAttribute('selected', 'true');
+          opt.selected = true;
+        }
+
       }
 
     }
 
     else {
-      value = element.defaultValue;
+      value = element.defaultValuePersist;
+      element.value = value;
     }
 
-    if (!isUndefined(value)) {
-      setModel(element.path, value);
-      if (isInit)
-        setDefault(element.path, value);
-    }
+    setModel(element.path, value);
+
+    if (isInit)
+      setDefault(element.path, value);
 
   }
 
@@ -107,10 +111,13 @@ export function initElement<T extends IModel>(api?: IBaseApi<T>) {
 
       const checked = radios.find(e => e.checked);
       value = (checked && checked.value) || '';
+
+      value = toDefault(value, defaultValue);
+
     }
 
     else if (isCheckbox(element.type)) {
-      value = element.checked;
+      value = toDefault(element.checked, defaultValue);
     }
 
     else if (element.multiple) {
@@ -124,13 +131,17 @@ export function initElement<T extends IModel>(api?: IBaseApi<T>) {
           value.push(opt.value || opt.text);
       }
 
+      value = toDefault(value, defaultValue);
+
     }
 
     else {
-      value = element.value;
+      value = toDefault(element.value, defaultValue);
     }
 
-    dirty = !isEqual(defaultValue + '', value + '');
+    dirty = isArray(defaultValue)
+      ? !isEqual(defaultValue, value)
+      : !isEqual(defaultValue + '', value + '');
 
     // If is dirty on blur then
     // it is also touched.
@@ -177,14 +188,16 @@ export function initElement<T extends IModel>(api?: IBaseApi<T>) {
     const modelVal = getModel(element.path);
 
     if (isRadio(element.type)) {
-      element.defaultValue = element.initValue || element.value || modelVal || '';
-      element.defaultChecked = element.initChecked || element.checked || modelVal === element.value;
+      element.defaultValue = element.defaultValuePersist =
+        element.initValue || element.value || modelVal || '';
+      element.defaultChecked = element.defaultCheckedPersist =
+        element.initChecked || element.checked || modelVal === element.value;
     }
 
     else if (isCheckbox(element.type)) {
-      element.defaultValue = element.initValue || element.value || element.checked || modelVal || false;
-      element.defaultChecked = element.defaultValue || false;
-
+      element.defaultValue = element.defaultValuePersist =
+        element.initValue || element.value || element.checked || modelVal || false;
+      element.defaultChecked = element.defaultCheckedPersist = element.defaultValue || false;
     }
 
     else if (element.multiple) {
@@ -206,12 +219,12 @@ export function initElement<T extends IModel>(api?: IBaseApi<T>) {
         }
       }
 
-      element.defaultValue = arr;
+      element.defaultValue = element.defaultValuePersist = arr;
 
     }
 
     else {
-      element.defaultValue = element.value || modelVal || '';
+      element.defaultValue = element.defaultValuePersist = element.value || modelVal || '';
     }
 
     const allowNative = !isUndefined(element.enableNativeValidation) ?
@@ -282,6 +295,8 @@ export function initElement<T extends IModel>(api?: IBaseApi<T>) {
       resetElement(element);
     };
 
+    element.reset.bind(element);
+
     // Unbind events helper.
     element.unbind = () => {
       if (!events.length)
@@ -332,38 +347,37 @@ export function initElement<T extends IModel>(api?: IBaseApi<T>) {
    * 
    * @param options options to register element with.
    */
-  function registerElement(options: IRegisterOptions): RegisterElement;
+  function registerElement(options: IRegisterOptions<T>): RegisterElement;
 
   /**
    * Registers an element with Komo context.
    */
   function registerElement(element: IRegisterElement): void;
   function registerElement(
-    pathElementOrOptions: string | IRegisterElement | IRegisterOptions,
-    options?: IRegisterOptions) {
+    elementOrOptions: string | IRegisterElement | IRegisterOptions<T>,
+    options?: IRegisterOptions<T>) {
 
-    if (isNullOrUndefined(pathElementOrOptions))
+    if (isNullOrUndefined(elementOrOptions))
       return;
 
-    const hasElement = arguments.length === 1 && isObject(pathElementOrOptions) &&
-      (pathElementOrOptions as any).nodeName ? pathElementOrOptions as IRegisterElement : null;
+    const hasElement = arguments.length === 1 && isObject(elementOrOptions) &&
+      (elementOrOptions as any).nodeName ? elementOrOptions as IRegisterElement : null;
 
     // No element just config return callback to get element.
     if (!hasElement) {
 
-      if (!isString(pathElementOrOptions)) {
-        options = pathElementOrOptions as IRegisterOptions;
-        pathElementOrOptions = undefined;
+      if (!isString(elementOrOptions)) {
+        options = elementOrOptions as IRegisterOptions<T>;
+        elementOrOptions = undefined;
       }
 
       options = options || {};
-      options.path = pathElementOrOptions as string;
 
       return (element: IRegisterElement) => {
 
         if (!element) {
-          if (!mounted.current) // only show warning if not mounted.
-            log.warn(`Failed to register unknown element using options ${JSON.stringify(options)}.`);
+          // if (!mounted.current) // only show warning if not mounted.
+          //   log.warn(`Failed to register unknown element using options ${JSON.stringify(options)}.`);
           return;
         }
 
@@ -371,6 +385,7 @@ export function initElement<T extends IModel>(api?: IBaseApi<T>) {
 
         const _element = element as IRegisteredElement<T>;
 
+        _element.name = options.name || _element.name;
         _element.path = options.path || _element.name;
         _element.initValue = options.defaultValue;
         _element.initChecked = options.defaultChecked;
@@ -401,7 +416,7 @@ export function initElement<T extends IModel>(api?: IBaseApi<T>) {
     }
 
     // ONLY element was passed.
-    bindElement(pathElementOrOptions as IRegisteredElement<T>);
+    bindElement(elementOrOptions as IRegisteredElement<T>);
 
   }
 

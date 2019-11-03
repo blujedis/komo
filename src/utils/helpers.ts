@@ -252,3 +252,15 @@ export function isEmpty(value: unknown) {
     (isObject(value) &&
       !Object.entries(value).length);
 }
+
+/**
+ * Ensures value or fallsback to default.
+ * 
+ * @param value the value to inspect.
+ * @param def the default if value is undefined.
+ */
+export function toDefault(value: any, def: any) {
+  if (isUndefined(value))
+    return def;
+  return value;
+}

@@ -9,9 +9,10 @@ import {
   ResetHandler,
   IOptionsInternal,
   IBaseApi,
-  PromiseStrict
+  PromiseStrict,
+  Defaults
 } from './types';
-import { createLogger, isString, me, isUndefined, isFunction } from './utils';
+import { createLogger, isString, me, isUndefined, isFunction, isObject } from './utils';
 import { normalizeValidator, astToSchema } from './validate';
 import { ValidateOptions, ObjectSchema, InferType } from 'yup';
 
@@ -20,18 +21,18 @@ import { ValidateOptions, ObjectSchema, InferType } from 'yup';
  * @see https://www.html5rocks.com/en/tutorials/forms/constraintvalidation/
  */
 
-const DEFAULTS: IOptions<any> = {
+const DEFAULTS: IOptions<any, any> = {
   defaults: {},
   validateSubmit: true,
   validateBlur: true,
-  validateChange: true,
+  validateChange: false,
   validateInit: false,
-  enableNativeValidation: true,
+  enableNativeValidation: false,
   enableWarnings: true
 };
 
 // export function initForm<T extends IModel>(options: IOptions<T>) {
-export function initForm<T extends IModel>(options: IOptionsInternal<T>) {
+export function initForm<T extends IModel, D extends Defaults<T>>(options: IOptionsInternal<T, D>) {
 
   const defaults = useRef<T>({ ...options.model });
   const model = useRef<T>({ ...options.model });
@@ -46,27 +47,6 @@ export function initForm<T extends IModel>(options: IOptionsInternal<T>) {
   const submitting = useRef(false);
   const submitted = useRef(false);
   const [getStatus, renderStatus] = useState({ status: 'init' });
-
-  useEffect(() => {
-
-    mounted.current = true;
-    initSchema();
-
-    // validate form before touched.
-    if (options.validateInit) {
-      validateModel()
-        .catch(err => {
-          if (err)
-            setError(err);
-        });
-    }
-
-    return () => {
-      mounted.current = false;
-      [...fields.current.values()].forEach(e => unregister);
-    };
-
-  }, []);
 
   // HELPERS //
 
@@ -321,6 +301,10 @@ export function initForm<T extends IModel>(options: IOptionsInternal<T>) {
 
   const unregister = useCallback((element: KeyOf<T> | IRegisteredElement<T>) => {
 
+    // Nothing to unregister.
+    if (!fields.current.size)
+      return;
+
     // If string find the element in fields.
     const _element = typeof element === 'string' ?
       findField(element as string) :
@@ -345,6 +329,10 @@ export function initForm<T extends IModel>(options: IOptionsInternal<T>) {
   }, []);
 
   const state = {
+
+    get model() {
+      return model.current;
+    },
 
     get isMounted() {
       return mounted.current;
@@ -380,7 +368,7 @@ export function initForm<T extends IModel>(options: IOptionsInternal<T>) {
 
   };
 
-  const api: IBaseApi<T> = {
+  const api: IBaseApi<T, D> = {
 
     // Common
     options,
@@ -391,6 +379,7 @@ export function initForm<T extends IModel>(options: IOptionsInternal<T>) {
     schemaAst,
     render,
     findField,
+    initSchema,
 
     // Form
     mounted,
@@ -443,9 +432,9 @@ export function initForm<T extends IModel>(options: IOptionsInternal<T>) {
  * 
  * @param options form api options.
  */
-export default function useForm<T extends IModel>(options?: IOptions<T>) {
+export default function useForm<T extends IModel, D extends Defaults<T>>(options?: IOptions<T, D>) {
 
-  const _options: IOptionsInternal<T> = { ...DEFAULTS, ...options as any };
+  const _options: IOptionsInternal<T, D> = { ...DEFAULTS, ...options as any };
 
   // Check if schema is object or ObjectSchema,
   // if yes get the defaults.
@@ -455,21 +444,44 @@ export default function useForm<T extends IModel>(options?: IOptions<T>) {
     _options.model = { ..._defaults };
   }
 
-  if (_options.defaults)
-    _options.model = { ..._options.defaults, ..._options.model };
+  if ((_options as any).defaults)
+    _options.model = { ...(_options as any).defaults, ..._options.model };
 
   const base = initForm(_options);
 
   const {
     options: formOptions, log, defaults, render, clearDirty, clearTouched, clearError, setModel,
     fields, submitCount, submitting, submitted, validateModel, getModel,
-    isValidatable, errors, setError
+    isValidatable, errors, setError, unregister, mounted, initSchema, model
   } = base;
+
+  useEffect(() => {
+
+    mounted.current = true;
+    initSchema();
+
+    // validate form before touched.
+    if (options.validateInit) {
+      validateModel()
+        .catch(err => {
+          if (err)
+            setError(err);
+        });
+    }
+
+    return () => {
+      mounted.current = false;
+      [...fields.current.values()].forEach(e => {
+        unregister(e);
+      });
+    };
+
+  }, [unregister]);
 
   const reset = useCallback((values: T = {} as any) => {
 
     // Reset all states.
-    setModel({ ...defaults.current, ...values }, true);
+    setModel({ ...defaults.current, ...values });
     clearDirty();
     clearTouched();
     clearError();
@@ -488,18 +500,28 @@ export default function useForm<T extends IModel>(options?: IOptions<T>) {
 
   }, []);
 
-  const handleReset = useCallback((modelOrEvent?: ResetHandler<T> | BaseSyntheticEvent) => {
+  function _handleReset(event: BaseSyntheticEvent): Promise<void>;
+  function _handleReset(values: T): (event: BaseSyntheticEvent) => Promise<void>;
+  function _handleReset(valuesOrEvent?: T | BaseSyntheticEvent) {
 
-    if (typeof modelOrEvent === 'function') {
-      return (values?: T) => {
-        reset(values);
+    const handleCallback = async (event, values?: T) => {
+      if (event) {
+        event.preventDefault();
+        event.persist();
+      }
+      await reset(values);
+    };
+
+    if (typeof valuesOrEvent === 'function')
+      return (event: BaseSyntheticEvent) => {
+        return handleCallback(event, valuesOrEvent as T);
       };
-    }
 
-    reset();
-    render('reset');
+    return handleCallback(valuesOrEvent);
 
-  }, []);
+  }
+
+  const handleReset = useCallback(_handleReset, []);
 
   const handleSubmit = useCallback((handler: SubmitHandler<T>) => {
 
@@ -530,7 +552,7 @@ export default function useForm<T extends IModel>(options?: IOptions<T>) {
         event.persist();
       }
 
-      const model = getModel();
+      const _model = getModel();
       clearError();
 
       // Can't validate or is disabled.
@@ -539,12 +561,12 @@ export default function useForm<T extends IModel>(options?: IOptions<T>) {
         return;
       }
 
-      const { err } = await me<T, ErrorModel<T>>(validateModel(model));
+      const { err } = await me<T, ErrorModel<T>>(validateModel(_model));
 
       if (err)
         setError(err);
 
-      await handleCallback(model, err as any, event);
+      await handleCallback(_model, err as any, event);
 
     };
 
@@ -553,7 +575,7 @@ export default function useForm<T extends IModel>(options?: IOptions<T>) {
   return {
 
     // Elements
-    register: useCallback(initElement<T>(base as any), []),
+    register: useCallback(initElement<T, D>(base as any), []),
     unregister: base.unregister,
 
     // Form

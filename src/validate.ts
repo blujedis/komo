@@ -265,7 +265,7 @@ export function getNativeValidators(element: IRegisteredElement<any>) {
  * @param element the element to be inpsected.
  */
 export function getNativeValidatorTypes(element: IRegisteredElement<any>) {
-  return ['email', 'url', 'checkbox']
+  return ['email', 'url']
     .filter(k => isTruthy(element.type === k));
 }
 

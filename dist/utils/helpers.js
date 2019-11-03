@@ -190,16 +190,36 @@ function isNullOrUndefined(value) {
 }
 exports.isNullOrUndefined = isNullOrUndefined;
 /**
+ * Checks if value is an array.
+ *
+ * @param value the value to inspect.
+ */
+function isArray(value) {
+    return Array.isArray(value);
+}
+exports.isArray = isArray;
+/**
  * Checks if is an object.
  *
  * @param value the value to inspect.
  */
 function isObject(value) {
-    return (!isNullOrUndefined(value) &&
-        value.constructor &&
-        value.constructor === Object);
+    return !isNullOrUndefined(value) &&
+        typeof value === 'object';
 }
 exports.isObject = isObject;
+/**
+ * Checks if is a plain object.
+ *
+ * @param value the value to inspect.
+ */
+function isPlainObject(value) {
+    return isObject(value) &&
+        value.constructor &&
+        value.constructor === Object &&
+        Object.prototype.toString.call(value) === '[object Object]';
+}
+exports.isPlainObject = isPlainObject;
 /**
  * Checks if is a string.
  *
@@ -209,6 +229,15 @@ function isString(value) {
     return typeof value === 'string';
 }
 exports.isString = isString;
+/**
+ * Checks if is a function.
+ *
+ * @param value the value to inspect.
+ */
+function isFunction(value) {
+    return typeof value === 'function';
+}
+exports.isFunction = isFunction;
 /**
  * Checks if string, object or array are empty.
  *
@@ -221,23 +250,16 @@ function isEmpty(value) {
             !Object.entries(value).length);
 }
 exports.isEmpty = isEmpty;
-function parsePath(path) {
-    if (!isString(path))
-        return {
-            segments: [],
-            valid: false
-        };
-    const segments = path.split('.');
-    const key = segments[0];
-    const suffix = segments.slice(1).join('.');
-    return {
-        key,
-        suffix,
-        segments,
-        path,
-        toPath: (k = key, s = suffix) => [key, suffix].join('.'),
-        valid: !!segments.length
-    };
+/**
+ * Ensures value or fallsback to default.
+ *
+ * @param value the value to inspect.
+ * @param def the default if value is undefined.
+ */
+function toDefault(value, def) {
+    if (isUndefined(value))
+        return def;
+    return value;
 }
-exports.parsePath = parsePath;
+exports.toDefault = toDefault;
 //# sourceMappingURL=helpers.js.map

@@ -4,15 +4,36 @@ const yup_1 = require("yup");
 const dot_prop_1 = require("dot-prop");
 const helpers_1 = require("./utils/helpers");
 /**
+ * Lookup helper for element or prop in element.
+ *
+ * @param findField the core lookup helper for finding elements.
+ */
+function lookup(findField) {
+    const getElement = (pathOrElement) => {
+        if (!helpers_1.isString(pathOrElement))
+            return pathOrElement;
+        return findField(pathOrElement);
+    };
+    return {
+        element: (pathOrElement) => getElement(pathOrElement),
+        at: (pathOrElement, prop) => {
+            const element = getElement(pathOrElement);
+            return element[prop];
+        }
+    };
+}
+exports.lookup = lookup;
+/**
  * Parses yup error to friendly form errors.
  *
  * @param error the emitted yup error.
  */
-function yupToErrors(error) {
+function yupToErrors(error, findField) {
     const errors = {};
     if (!error.inner || !error.inner.length) {
-        errors[error.path] = errors[error.path] || [];
-        errors[error.path].push({
+        const key = lookup(findField).at(error.path, 'name');
+        errors[key] = errors[key] || [];
+        errors[key].push({
             type: error.type,
             name: error.name,
             path: error.path,
@@ -22,8 +43,9 @@ function yupToErrors(error) {
     }
     else {
         for (const err of error.inner) {
-            errors[err.path] = errors[err.path] || [];
-            errors[err.path].push({
+            const key = lookup(findField).at(err.path, 'name');
+            errors[key] = errors[key] || [];
+            errors[key].push({
                 type: err.type,
                 name: err.name,
                 path: err.path,
@@ -78,30 +100,65 @@ function astToSchema(ast, schema) {
 }
 exports.astToSchema = astToSchema;
 /**
+ * Converts error message model to standard error model.
+ *
+ * @param errors the collection of errors as ErrorModel or ErrorMessageModel.
+ */
+function ensureErrorModel(errors) {
+    if (helpers_1.isNullOrUndefined(errors) || helpers_1.isEmpty(errors))
+        return {};
+    const keys = Object.keys(errors);
+    const first = errors[keys[0]];
+    if (helpers_1.isPlainObject(first[0]))
+        return errors;
+    for (const k in errors) {
+        if (!errors.hasOwnProperty(k))
+            continue;
+        const errs = errors;
+        const val = (!Array.isArray(errs[k]) ? [errs] : errs[k]);
+        const mapped = val.map(message => {
+            // tslint:disable-next-line: no-object-literal-type-assertion
+            return {
+                message
+            };
+        });
+        errors[k] = mapped;
+    }
+    return errors;
+}
+exports.ensureErrorModel = ensureErrorModel;
+/**
  * Normalizes the schema into common interface.
+ * Always returns object of model or object of key value whe using validateAT.
  *
  * @param schema the yup schema or user function for validation.
  */
-function normalizeValidator(schema) {
+function normalizeValidator(schema, findField) {
     let validator;
     // User supplied custom validation script
     // map to same interface as yup.
-    if (typeof schema === 'function') {
+    if (helpers_1.isFunction(schema)) {
         validator = {
             validate: (model) => {
-                return new Promise((resolve, reject) => {
-                    const result = schema(model);
-                    if (!helpers_1.isPromise(result))
-                        return Promise.reject(result);
+                const result = schema(model);
+                if (helpers_1.isPromise(result))
                     return result
-                        .then(res => resolve(res))
-                        .catch(err => reject(err));
-                });
+                        .catch(err => {
+                        Promise.reject(ensureErrorModel(err));
+                    });
+                // convert empty result set.
+                const isErr = helpers_1.isEmpty(result) ? null : result;
+                if (isErr)
+                    return Promise
+                        .reject(ensureErrorModel(result));
+                return Promise.resolve(model);
             }
         };
-        validator.validateAt = (path, value) => {
-            const model = dot_prop_1.set({}, path, value);
-            return validator.validate(model);
+        validator.validateAt = async (path, model) => {
+            const { err, data } = await helpers_1.me(validator.validate(model));
+            if (err)
+                return Promise.reject(err);
+            Promise.resolve(data);
         };
     }
     else if (schema) {
@@ -112,16 +169,16 @@ function normalizeValidator(schema) {
                 return res;
             })
                 .catch(err => {
-                return Promise.reject(yupToErrors(err));
+                return Promise.reject(yupToErrors(err, findField));
             });
         };
         validator.validateAt = (path, value, options) => {
-            return schema.validateAt(path, value, options)
+            return schema.validateAt(path, { [path]: value }, options)
                 .then(res => {
                 return dot_prop_1.set({}, path, res);
             })
                 .catch(err => {
-                return Promise.reject(yupToErrors(err));
+                return Promise.reject(yupToErrors(err, findField));
             });
         };
     }
@@ -136,17 +193,27 @@ exports.normalizeValidator = normalizeValidator;
  * @param element the element to be inspected.
  */
 function getNativeValidators(element) {
-    const valKeys = ['required', 'min', 'max', 'maxLength', 'minLength', 'pattern'];
-    return valKeys.filter(k => helpers_1.isTruthy(element[k]));
+    return ['required', 'min', 'max', 'maxLength', 'minLength', 'pattern']
+        .filter(k => helpers_1.isTruthy(element[k]));
 }
 exports.getNativeValidators = getNativeValidators;
+/**
+ * Gets list of validatable types.
+ *
+ * @param element the element to be inpsected.
+ */
+function getNativeValidatorTypes(element) {
+    return ['email', 'url']
+        .filter(k => helpers_1.isTruthy(element.type === k));
+}
+exports.getNativeValidatorTypes = getNativeValidatorTypes;
 /**
  * Checks if element has native validation keys.
  *
  * @param element the element to be inspected.
  */
 function hasNativeValidators(element) {
-    return !!getNativeValidators(element).length;
+    return !!getNativeValidators(element).length || !!getNativeValidatorTypes(element).length;
 }
 exports.hasNativeValidators = hasNativeValidators;
 //# sourceMappingURL=validate.js.map

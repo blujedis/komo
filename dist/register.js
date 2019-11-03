@@ -2,39 +2,66 @@
 Object.defineProperty(exports, "__esModule", { value: true });
 const utils_1 = require("./utils");
 const validate_1 = require("./validate");
+const typeMap = {
+    range: 'number',
+    number: 'number',
+    email: 'string',
+    url: 'string',
+    checkbox: 'boolean'
+};
+/**
+ * Creates initialized methods for binding and registering an element.
+ *
+ * @param api the base form api.
+ */
 function initElement(api) {
-    const { log, schemaAst, fields, unref, mounted, setModel, getModel, getDefault, isTouched, isDirty, setDirty, setTouched, removeDirty, isValidateable } = api;
-    function resetElement(element) {
+    const { options: formOptions, log, schemaAst, fields, unregister, setModel, getModel, getDefault, isTouched, isDirty, setDefault, setDirty, setTouched, removeDirty, isValidateBlur, isValidateChange, validateModelAt, isValidatable, removeError, setError } = api;
+    /**
+     * Resets the element to its defaults.
+     *
+     * @param element the element to be reset.
+     * @param isInit when true is setting initial defaults.
+     */
+    function resetElement(element, isInit = false) {
         let value;
         if (utils_1.isRadio(element.type)) {
-            element.checked = element.defaultChecked;
+            element.checked = element.defaultCheckedPersist;
             if (element.checked)
                 value = element.value;
         }
         else if (utils_1.isCheckbox(element.type)) {
-            value = element.defaultChecked = utils_1.isBooleanLike(element.defaultChecked);
+            value = element.defaultChecked = utils_1.isBooleanLike(element.defaultCheckedPersist);
             element.checked = value;
         }
         else if (element.multiple) {
-            value = [...element.defaultValue];
+            value = [...element.defaultValuePersist];
             for (let i = 0; i < element.options.length; i++) {
                 const opt = element.options[i];
-                if (value.includes(opt.value || opt.text))
+                if (value.includes(opt.value || opt.text)) {
                     opt.setAttribute('selected', 'true');
+                    opt.selected = true;
+                }
             }
         }
         else {
-            value = element.defaultValue;
+            value = element.defaultValuePersist;
+            element.value = value;
         }
-        // Update the model and set defaults.
-        if (value)
-            setModel(element.path, value, true);
+        setModel(element.path, value);
+        if (isInit)
+            setDefault(element.path, value);
     }
+    /**
+     * Updates the element on event changes.
+     *
+     * @param element the registered element to be updated.
+     * @param isBlur indicates the update event is of type blur.
+     */
     function updateElement(element, isBlur = false) {
         // Previous value & flags.
         const defaultValue = getDefault(element.path);
-        const prevTouched = isTouched(element.path);
-        const prevDirty = isDirty(element.path);
+        const prevTouched = isTouched(element.name);
+        const prevDirty = isDirty(element.name);
         let value;
         let touched = false;
         let dirty = false;
@@ -46,9 +73,10 @@ function initElement(api) {
                 .filter(e => utils_1.isRadio(e.type) && e.name === element.name);
             const checked = radios.find(e => e.checked);
             value = (checked && checked.value) || '';
+            value = utils_1.toDefault(value, defaultValue);
         }
         else if (utils_1.isCheckbox(element.type)) {
-            value = element.checked;
+            value = utils_1.toDefault(element.checked, defaultValue);
         }
         else if (element.multiple) {
             value = [];
@@ -58,11 +86,14 @@ function initElement(api) {
                 if (opt.selected)
                     value.push(opt.value || opt.text);
             }
+            value = utils_1.toDefault(value, defaultValue);
         }
         else {
-            value = element.value;
+            value = utils_1.toDefault(element.value, defaultValue);
         }
-        dirty = !utils_1.isEqual(defaultValue + '', value + '');
+        dirty = utils_1.isArray(defaultValue)
+            ? !utils_1.isEqual(defaultValue, value)
+            : !utils_1.isEqual(defaultValue + '', value + '');
         // If is dirty on blur then
         // it is also touched.
         if (isBlur)
@@ -76,7 +107,11 @@ function initElement(api) {
         // Set the model value.
         setModel(element.path, value);
     }
-    // Binds to events, sets initial values.
+    /**
+     * Binds and element and attaches specified event listeners.
+     *
+     * @param element the element to be bound.
+     */
     function bindElement(element) {
         if (!element || fields.current.has(element))
             return;
@@ -91,12 +126,15 @@ function initElement(api) {
         // Get the model by key.
         const modelVal = getModel(element.path);
         if (utils_1.isRadio(element.type)) {
-            element.defaultValue = element.initValue || element.value || modelVal || '';
-            element.defaultChecked = element.initChecked || element.checked || modelVal === element.value;
+            element.defaultValue = element.defaultValuePersist =
+                element.initValue || element.value || modelVal || '';
+            element.defaultChecked = element.defaultCheckedPersist =
+                element.initChecked || element.checked || modelVal === element.value;
         }
         else if (utils_1.isCheckbox(element.type)) {
-            element.defaultValue = element.initValue || element.value || element.checked || modelVal || false;
-            element.defaultChecked = element.defaultValue || false;
+            element.defaultValue = element.defaultValuePersist =
+                element.initValue || element.value || element.checked || modelVal || false;
+            element.defaultChecked = element.defaultCheckedPersist = element.defaultValue || false;
         }
         else if (element.multiple) {
             let arr = element.defaultValue = element.initValue || element.value || modelVal || [];
@@ -112,49 +150,57 @@ function initElement(api) {
                         arr.push(opt.value || opt.text);
                 }
             }
-            element.defaultValue = arr;
+            element.defaultValue = element.defaultValuePersist = arr;
         }
         else {
-            element.defaultValue = element.value || modelVal || '';
+            element.defaultValue = element.defaultValuePersist = element.value || modelVal || '';
         }
-        element.validateChange = element.onChange ? false :
-            utils_1.isUndefined(element.validateChange) ? true : element.validateChange;
-        element.validateBlur = element.onBlur ? false :
-            utils_1.isUndefined(element.validateBlur) ? true : element.validateBlur;
-        const nativeValidators = validate_1.getNativeValidators(element);
-        if (nativeValidators.length) {
-            if (isValidatedByUser)
-                throw new Error(`Field ${element.name} contains native validation keys ${nativeValidators.join(', ')}. Cannot use native validators with user defined schema function.`);
-            schemaAst.current = schemaAst.current || {};
-            schemaAst.current[element.path] = schemaAst.current[element.path] || [];
-            const type = element.type === 'number' || element.type === 'range' ? 'number' : 'string';
-            // Set the type.
-            schemaAst.current[element.path] = [[type, undefined]];
-            // Extend AST with each native validator.
-            nativeValidators.forEach(k => {
-                schemaAst.current[element.path] = [...schemaAst.current[element.path],
-                    [k, element[k]]];
-            });
+        const allowNative = !utils_1.isUndefined(element.enableNativeValidation) ?
+            element.enableNativeValidation : formOptions.enableNativeValidation;
+        // NOTE: This should probably be refactored to
+        // own file for greater flexibility/options.
+        if (allowNative && !utils_1.isFunction(formOptions.validationSchema)) {
+            const nativeValidators = validate_1.getNativeValidators(element);
+            const nativeValidatorTypes = validate_1.getNativeValidatorTypes(element);
+            if (nativeValidators.length || nativeValidatorTypes.length) {
+                schemaAst.current = schemaAst.current || {};
+                schemaAst.current[element.path] = schemaAst.current[element.path] || [];
+                const baseType = typeMap[element.type];
+                // Set the type.
+                schemaAst.current[element.path] = [[baseType || 'string', undefined]];
+                // These are basically sub types of string
+                // like email or string.
+                if (nativeValidatorTypes.length) {
+                    schemaAst.current[element.path].push([element.type, undefined]);
+                }
+                // Extend AST with each native validator.
+                if (nativeValidators.length)
+                    nativeValidators.forEach(k => {
+                        schemaAst.current[element.path].push([k, element[k]]);
+                    });
+            }
         }
         // Set the Initial Value.
-        resetElement(element);
-        // Bind events & add to fields
+        resetElement(element, true);
+        // Bind events
         let events = [];
-        const handleBlur = (e) => { updateElement(element, true); };
-        const handleChange = (e) => { updateElement(element); };
-        if (element.validateBlur) {
-            utils_1.addListener(element, 'blur', handleBlur);
-            events = [['blur', handleBlur]];
-        }
-        if (element.validateChange) {
-            const changeEvent = utils_1.isTextLike(element.type) ? 'input' : 'change';
-            utils_1.addListener(element, changeEvent, handleChange);
-            events = [...events, [changeEvent, handleChange]];
-        }
+        element.validate = async () => {
+            const currentValue = getModel(element.path);
+            if (!isValidatable())
+                return Promise.resolve(currentValue);
+            const { err, data } = await utils_1.me(validateModelAt(element));
+            if (err) {
+                setError(element.name, err[element.name]);
+                return Promise.reject(err);
+            }
+            removeError(element.name);
+            return Promise.resolve(data);
+        };
         // Reset the element to initial values.
-        element.resetElement = () => {
+        element.reset = () => {
             resetElement(element);
         };
+        element.reset.bind(element);
         // Unbind events helper.
         element.unbind = () => {
             if (!events.length)
@@ -167,43 +213,74 @@ function initElement(api) {
         // Unbind any events and then unref
         // the lement from any collections.
         element.unregister = () => {
-            unref(element);
+            unregister(element);
         };
+        const handleBlur = async (e) => {
+            updateElement(element, true);
+            if (isValidateBlur(element))
+                await utils_1.me(element.validate());
+        };
+        const handleChange = async (e) => {
+            updateElement(element);
+            if (isValidateChange(element))
+                await utils_1.me(element.validate());
+        };
+        if (element.enableModelUpdate !== false) {
+            // Attach blur
+            utils_1.addListener(element, 'blur', handleBlur);
+            events = [['blur', handleBlur]];
+            // Attach change.
+            const changeEvent = utils_1.isTextLike(element.type) ? 'input' : 'change';
+            utils_1.addListener(element, changeEvent, handleChange);
+            events = [...events, [changeEvent, handleChange]];
+        }
         // Bind mutation observer.
         utils_1.initObserver(element, element.unregister.bind(element));
         // Add to current fields collection.
         fields.current.add(element);
     }
-    function registerElement(pathElementOrOptions, options) {
-        if (utils_1.isNullOrUndefined(pathElementOrOptions))
+    function registerElement(elementOrOptions, options) {
+        if (utils_1.isNullOrUndefined(elementOrOptions))
             return;
-        const hasElement = arguments.length === 1 && typeof pathElementOrOptions === 'object' &&
-            pathElementOrOptions.nodeName ? pathElementOrOptions : null;
+        const hasElement = arguments.length === 1 && utils_1.isObject(elementOrOptions) &&
+            elementOrOptions.nodeName ? elementOrOptions : null;
         // No element just config return callback to get element.
         if (!hasElement) {
-            if (!utils_1.isString(pathElementOrOptions)) {
-                options = pathElementOrOptions;
-                pathElementOrOptions = undefined;
+            if (!utils_1.isString(elementOrOptions)) {
+                options = elementOrOptions;
+                elementOrOptions = undefined;
             }
             options = options || {};
-            options.path = pathElementOrOptions;
             return (element) => {
-                if (!element) {
-                    if (!mounted.current) // only show warning if not mounted.
-                        log.warn(`Failed to register unknown element using options ${JSON.stringify(options)}.`);
+                if (!element)
                     return;
-                }
                 // Extend element with options.
                 const _element = element;
+                _element.name = options.name || _element.name;
                 _element.path = options.path || _element.name;
                 _element.initValue = options.defaultValue;
                 _element.initChecked = options.defaultChecked;
-                _element.onValidate = options.onValidate;
+                _element.required = options.required || _element.required;
+                _element.min = options.min || _element.min;
+                _element.max = options.max || _element.max;
+                _element.pattern = options.pattern || _element.pattern;
+                _element.validateChange = options.validateChange;
+                _element.validateBlur = options.validateBlur;
+                _element.enableNativeValidation = options.enableNativeValidation;
+                _element.enableModelUpdate = options.enableModelUpdate;
+                let minLength = _element.minLength === -1 ? undefined : _element.minLength;
+                minLength = options.minLength || minLength;
+                let maxLength = _element.maxLength === -1 ? undefined : _element.maxLength;
+                maxLength = options.maxLength || maxLength;
+                if (minLength)
+                    _element.minLength = minLength;
+                if (maxLength)
+                    _element.maxLength = maxLength;
                 bindElement(_element);
             };
         }
         // ONLY element was passed.
-        bindElement(pathElementOrOptions);
+        bindElement(elementOrOptions);
     }
     return registerElement;
 }

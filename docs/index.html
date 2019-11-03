@@ -75,6 +75,198 @@
 				<pre><code class="language-sh">$ npm install komo -s</code></pre>
 				<p>OR</p>
 				<pre><code class="language-sh">$ yarn add komo</code></pre>
+				<a href="#the-basics" id="the-basics" style="color: inherit; text-decoration: none;">
+					<h2>The Basics</h2>
+				</a>
+				<p>Below we import react and komo then initialize the useForm hook.
+				We create our <code>form</code> element and the elements we need for our form inputs. We&#39;ll do a more complete example below but let&#39;s take it in steps so it&#39;s easier to make sense of.</p>
+				<pre><code class="language-jsx"><span class="hljs-keyword">import</span> React, { FC } <span class="hljs-keyword">from</span> <span class="hljs-string">'react'</span>;
+<span class="hljs-keyword">import</span> useForm <span class="hljs-keyword">from</span> <span class="hljs-string">'komo'</span>;
+
+<span class="hljs-keyword">const</span> MyForm: FC = <span class="hljs-function"><span class="hljs-params">()</span> =&gt;</span> {
+
+  <span class="hljs-keyword">const</span> { register } = useForm();
+
+  <span class="hljs-keyword">return</span> (
+    <span class="xml"><span class="hljs-tag">&lt;<span class="hljs-name">form</span> <span class="hljs-attr">noValidate</span>&gt;</span>
+        <span class="hljs-tag">&lt;<span class="hljs-name">label</span> <span class="hljs-attr">htmlFor</span>=<span class="hljs-string">"firstName"</span>&gt;</span>First Name: <span class="hljs-tag">&lt;/<span class="hljs-name">label</span>&gt;</span>
+        <span class="hljs-tag">&lt;<span class="hljs-name">input</span> <span class="hljs-attr">name</span>=<span class="hljs-string">"firstName"</span> <span class="hljs-attr">type</span>=<span class="hljs-string">"text"</span> <span class="hljs-attr">ref</span>=<span class="hljs-string">{register}</span> /&gt;</span>
+    <span class="hljs-tag">&lt;/<span class="hljs-name">form</span>&gt;</span>
+  );
+
+};
+export default MyForm;</span></code></pre>
+				<a href="#error-component" id="error-component" style="color: inherit; text-decoration: none;">
+					<h3>Error Component</h3>
+				</a>
+				<p>This is just a simple example of what you can do watching our error state to display feedback to the user. The sky is really the limit but this will give you the idea.</p>
+				<pre><code class="language-jsx">  <span class="hljs-keyword">const</span> <span class="hljs-built_in">Error</span> = <span class="hljs-function">(<span class="hljs-params">{ name }</span>) =&gt;</span> {
+
+    <span class="hljs-keyword">const</span> prop = state.errors &amp;&amp; state.errors[name];
+
+    <span class="hljs-comment">// No error at this key just return null.</span>
+    <span class="hljs-keyword">if</span> (!prop || !prop.length)
+      <span class="hljs-keyword">return</span> <span class="hljs-literal">null</span>;
+
+    <span class="hljs-keyword">const</span> err = prop[<span class="hljs-number">0</span>];
+
+    <span class="hljs-comment">// Simply return a div colored red with the error message.</span>
+    <span class="hljs-comment">// See below for error object properties.</span>
+    <span class="hljs-keyword">return</span> (<span class="xml"><span class="hljs-tag">&lt;<span class="hljs-name">div</span> <span class="hljs-attr">style</span>=<span class="hljs-string">{{</span> <span class="hljs-attr">color:</span> '<span class="hljs-attr">red</span>' }}&gt;</span>{err.message}<span class="hljs-tag">&lt;/<span class="hljs-name">div</span>&gt;</span></span>);
+
+  };</code></pre>
+				<a href="#form-submission" id="form-submission" style="color: inherit; text-decoration: none;">
+					<h3>Form Submission</h3>
+				</a>
+				<p>We&#39;ll create a simple handler, it won&#39;t do much, that&#39;s up to you but let&#39;s how to wire up the handle submit function so that you can submit your form.</p>
+				<pre><code class="language-jsx"><span class="hljs-keyword">const</span> onSubmit = <span class="hljs-function">(<span class="hljs-params">model</span>) =&gt;</span> {
+  <span class="hljs-keyword">if</span> (state.isSubmitted) <span class="hljs-comment">// no need to submit again.</span>
+    <span class="hljs-keyword">return</span>; 
+  <span class="hljs-built_in">console</span>.log(model); <span class="hljs-comment">// display our model data.</span>
+};</code></pre>
+				<a href="#complete-form" id="complete-form" style="color: inherit; text-decoration: none;">
+					<h3>Complete Form</h3>
+				</a>
+				<p>Not let&#39;s put it all together so you can see it in one place. </p>
+				<pre><code class="language-jsx"><span class="hljs-keyword">import</span> React, { FC } <span class="hljs-keyword">from</span> <span class="hljs-string">'react'</span>;
+<span class="hljs-keyword">import</span> useForm <span class="hljs-keyword">from</span> <span class="hljs-string">'komo'</span>;
+
+<span class="hljs-keyword">const</span> MyForm: FC = <span class="hljs-function"><span class="hljs-params">()</span> =&gt;</span> {
+
+  <span class="hljs-comment">// Import the Use Form Hook //</span>
+
+  <span class="hljs-keyword">const</span> { register, handleSubmit, handleReset, state } = useForm({
+
+    <span class="hljs-comment">// Simple function to validate our schema.</span>
+    <span class="hljs-comment">// If our function returns null/undefined or </span>
+    <span class="hljs-comment">// an empty object there is no error.</span>
+    <span class="hljs-comment">// if an object with keys and error messages is </span>
+    <span class="hljs-comment">// returned your form state will be updated and </span>
+    <span class="hljs-comment">// you can use those errors to display messages etc.</span>
+
+    <span class="hljs-comment">// NOTE you can also return a promise. In order for errors</span>
+    <span class="hljs-comment">// to be triggered the must be returned as a rejection.</span>
+
+    <span class="hljs-comment">// Could be as simple as Promise.reject(errors);</span>
+
+    validationSchema: <span class="hljs-function">(<span class="hljs-params">model</span>) =&gt;</span> {
+      <span class="hljs-keyword">const</span> errors = {};
+      <span class="hljs-keyword">if</span> (message.length &lt; <span class="hljs-number">10</span>) 
+        errors.message = [<span class="hljs-string">'Message must be at least 10 characters'</span>];
+      <span class="hljs-keyword">return</span> errors;
+    },
+
+    <span class="hljs-comment">// Enable native validation like required, min, max etc...</span>
+    <span class="hljs-comment">// <span class="hljs-doctag">NOTE:</span> Not all native validation types are supported</span>
+    <span class="hljs-comment">// but the majority of what you need is there!</span>
+    enableNativeValidation: <span class="hljs-literal">true</span>
+
+  });
+
+  <span class="hljs-comment">// This will handle when a user submits the form.</span>
+  <span class="hljs-keyword">const</span> onSubmit = <span class="hljs-function">(<span class="hljs-params">model</span>) =&gt;</span> {
+    <span class="hljs-keyword">if</span> (state.isSubmitted) <span class="hljs-comment">// no need to submit again.</span>
+      <span class="hljs-keyword">return</span>; 
+    <span class="hljs-built_in">console</span>.log(model); <span class="hljs-comment">// display our model data.</span>
+  };
+
+  <span class="hljs-comment">// This will dispaly an error if one is present for the provided key/name.</span>
+  <span class="hljs-keyword">const</span> <span class="hljs-built_in">Error</span> = <span class="hljs-function">(<span class="hljs-params">{ name }</span>) =&gt;</span> {
+    <span class="hljs-keyword">const</span> prop = state.errors &amp;&amp; state.errors[name];
+    <span class="hljs-keyword">if</span> (!prop || !prop.length)<span class="hljs-comment">// No error at this key just return null.</span>
+      <span class="hljs-keyword">return</span> <span class="hljs-literal">null</span>;
+    <span class="hljs-keyword">const</span> err = prop[<span class="hljs-number">0</span>];
+    <span class="hljs-keyword">return</span> (<span class="xml"><span class="hljs-tag">&lt;<span class="hljs-name">div</span> <span class="hljs-attr">style</span>=<span class="hljs-string">{{</span> <span class="hljs-attr">color:</span> '<span class="hljs-attr">red</span>' }}&gt;</span>{err.message}<span class="hljs-tag">&lt;/<span class="hljs-name">div</span>&gt;</span></span>); <span class="hljs-comment">// return our err message.</span>
+
+  };
+
+  <span class="hljs-keyword">return</span> (
+    &lt;div&gt;
+
+      &lt;h2&gt;My Form&lt;/h2&gt;
+      &lt;hr /&gt;&lt;br /&gt;
+
+       &lt;form noValidate onSubmit={handleSubmit(onSubmit)} onReset={handleReset}&gt;
+
+        &lt;label htmlFor="firstName"&gt;First Name: &lt;/label&gt;
+        &lt;input name="firstName" type="text" ref={register} defaultValue="Peter" /&gt;&lt;br /&gt;&lt;br /&gt;
+
+        &lt;label htmlFor="lastName"&gt;Last Name: &lt;/label&gt;
+        &lt;input type="text" name="lastName" ref={register} defaultValue="Gibbons" /&gt;&lt;br /&gt;&lt;br /&gt;
+
+        &lt;label htmlFor="email"&gt;Email: &lt;/label&gt;
+        &lt;input name="email" type="email" ref={register} required /&gt;&lt;br /&gt;&lt;br /&gt;
+
+        &lt;label htmlFor="message"&gt;Message: &lt;/label&gt;
+        &lt;textarea name="message" ref={register} defaultValue="too short" &gt;
+        &lt;/textarea&gt;&lt;Error name="message" /&gt;&lt;br /&gt;&lt;br /&gt;
+
+        &lt;hr /&gt;
+        &lt;br /&gt;
+
+        &lt;input type="reset" value="Reset" /&gt;&amp;nbsp;
+        &lt;input type="submit" value="Submit" /&gt;
+
+      &lt;/form&gt;
+
+    &lt;/div&gt;
+  );
+
+};
+export default MyForm;</code></pre>
+				<a href="#defaults-amp-options" id="defaults-amp-options" style="color: inherit; text-decoration: none;">
+					<h3>Defaults &amp; Options</h3>
+				</a>
+				<p>There are three ways to set defaults for an element. You can usse the traditional <code>defaultValue</code> prop or <code>defaultChecked</code> in the case of a checkbox. Additionally you can set defaults in your defaults object, lastly you can set defaults in your <code>yup schema</code>.</p>
+				<a href="#using-a-prop" id="using-a-prop" style="color: inherit; text-decoration: none;">
+					<h4>Using a Prop</h4>
+				</a>
+				<pre><code class="language-jsx">   &lt;input name=<span class="hljs-string">"firstName"</span> type=<span class="hljs-string">"text"</span> ref={register} defaultValue=<span class="hljs-string">"Your_Name_Here"</span> /&gt;</code></pre>
+				<a href="#using-defaults-options" id="using-defaults-options" style="color: inherit; text-decoration: none;">
+					<h4>Using Defaults Options</h4>
+				</a>
+				<pre><code class="language-jsx">  <span class="hljs-keyword">const</span> { register } = useForm({
+    <span class="hljs-attr">defaults</span>: {
+      <span class="hljs-attr">firstName</span>: <span class="hljs-string">'Your_Name_Here'</span>
+    }
+  });</code></pre>
+				<a href="#using-yup-schema" id="using-yup-schema" style="color: inherit; text-decoration: none;">
+					<h4>Using Yup Schema</h4>
+				</a>
+				<p>When using a yup schema for your <code>validationSchema</code>, Komo will grab the defaults and use them for your form model.</p>
+				<pre><code class="language-jsx"><span class="hljs-keyword">import</span> * <span class="hljs-keyword">as</span> yup <span class="hljs-keyword">from</span> <span class="hljs-string">'yup'</span>;
+
+<span class="hljs-keyword">const</span> schema = yup.object({
+  <span class="hljs-attr">firstName</span>: string().default(<span class="hljs-string">'Your_Name_Here'</span>)
+});
+
+<span class="hljs-keyword">const</span> { register } = useForm({
+  <span class="hljs-attr">validationSchema</span>: schema
+});</code></pre>
+				<a href="#registering-with-options" id="registering-with-options" style="color: inherit; text-decoration: none;">
+					<h4>Registering with Options</h4>
+				</a>
+				<p>Komo allows you to register with options as well. For example perhaps you wish to disable ALL validation triggers on a given element. </p>
+				<pre><code class="language-jsx">&lt;input name=<span class="hljs-string">"firstName"</span> type=<span class="hljs-string">"text"</span> ref={register({ <span class="hljs-attr">validateChange</span>: <span class="hljs-literal">false</span>, <span class="hljs-attr">validateBlur</span>: <span class="hljs-literal">false</span>})} /&gt;</code></pre>
+				<a href="#nested-data" id="nested-data" style="color: inherit; text-decoration: none;">
+					<h4>Nested Data</h4>
+				</a>
+				<p>Komo allows models with nested data. Any form field can have a mapped path enabling getting and setting from a nested prop.</p>
+				<p>The below will map errors in our error model <code>{ firstName: [ error objects here ] }</code> but it&#39;s model data will get/set from the nested path of <code>user.name.first</code>.</p>
+				<pre><code class="language-jsx">&lt;input name=<span class="hljs-string">"firstName"</span> type=<span class="hljs-string">"text"</span> ref={register({ <span class="hljs-attr">path</span>: <span class="hljs-string">'user.name.first'</span> })} /&gt;</code></pre>
+				<a href="#ui-libraries" id="ui-libraries" style="color: inherit; text-decoration: none;">
+					<h2>UI Libraries</h2>
+				</a>
+				<p>You can of course use Komo with most UI libraries although they may differ in configuration. Komo aims to give you granular control. It&#39;s up to use to create your own Component wrappers and things to make life easier. This is by design. Otherwise too many opinions get in the way.</p>
+				<a href="#material-ui" id="material-ui" style="color: inherit; text-decoration: none;">
+					<h3>Material UI</h3>
+				</a>
+				<p>We&#39;ll show just the form and one input for brevity/clarity but using with Matieral is as simple as passing our register function to Material&#39;s <code>inputRef</code> prop.</p>
+				<p><a href="https://material-ui.com/api/text-field/">See More From Material-UI Docs</a></p>
+				<pre><code class="language-jsx"><span class="hljs-keyword">import</span> Input <span class="hljs-keyword">from</span> <span class="hljs-string">'@material-ui/core/Input'</span>;
+<span class="xml"><span class="hljs-tag">&lt;<span class="hljs-name">form</span>&gt;</span>
+    <span class="hljs-tag">&lt;<span class="hljs-name">Input</span> <span class="hljs-attr">name</span>=<span class="hljs-string">"phone"</span> <span class="hljs-attr">inputRef</span>=<span class="hljs-string">{register({</span> <span class="hljs-attr">path:</span> '<span class="hljs-attr">numbers.home</span>' })} <span class="hljs-attr">placeholder</span>=<span class="hljs-string">"Phone"</span> /&gt;</span>
+<span class="hljs-tag">&lt;/<span class="hljs-name">form</span>&gt;</span></span></code></pre>
 				<a href="#docs" id="docs" style="color: inherit; text-decoration: none;">
 					<h2>Docs</h2>
 				</a>
@@ -102,7 +294,19 @@
 						<a href="modules/_example_app_.html">"example/app"</a>
 					</li>
 					<li class=" tsd-kind-external-module">
+						<a href="modules/_example_default_.html">"example/default"</a>
+					</li>
+					<li class=" tsd-kind-external-module">
 						<a href="modules/_example_index_.html">"example/index"</a>
+					</li>
+					<li class=" tsd-kind-external-module">
+						<a href="modules/_example_material_.html">"example/material"</a>
+					</li>
+					<li class=" tsd-kind-external-module">
+						<a href="modules/_example_menu_.html">"example/menu"</a>
+					</li>
+					<li class=" tsd-kind-external-module">
+						<a href="modules/_example_user_.html">"example/user"</a>
 					</li>
 					<li class=" tsd-kind-external-module">
 						<a href="modules/_form_.html">"form"</a>

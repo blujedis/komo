@@ -19,7 +19,7 @@ OR
 $ yarn add komo
 ```
 
-## Form
+## The Basics
 
 Below we import react and komo then initialize the useForm hook.
 We create our <code>form</code> element and the elements we need for our form inputs. We'll do a more complete example below but let's take it in steps so it's easier to make sense of.
@@ -222,6 +222,23 @@ The below will map errors in our error model <code>{ firstName: [ error objects 
 
 ```jsx
 <input name="firstName" type="text" ref={register({ path: 'user.name.first' })} />
+```
+
+## UI Libraries
+
+You can of course use Komo with most UI libraries although they may differ in configuration. Komo aims to give you granular control. It's up to use to create your own Component wrappers and things to make life easier. This is by design. Otherwise too many opinions get in the way.
+
+### Material UI
+
+We'll show just the form and one input for brevity/clarity but using with Matieral is as simple as passing our register function to Material's <code>inputRef</code> prop.
+
+[See More From Material-UI Docs](https://material-ui.com/api/text-field/)
+
+```jsx
+import Input from '@material-ui/core/Input';
+<form>
+    <Input name="phone" inputRef={register({ path: 'numbers.home' })} placeholder="Phone" />
+</form>
 ```
 
 ## Docs

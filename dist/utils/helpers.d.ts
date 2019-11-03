@@ -1,5 +1,5 @@
 import isEqual from 'lodash.isequal';
-import { IModel, IParsedPath } from '../types';
+import { PromiseStrict } from 'src/types';
 export { isEqual };
 declare type TagType = string | Partial<{
     type: string;
@@ -13,8 +13,8 @@ declare type TagType = string | Partial<{
  *
  * @param promise the promise to be executed.
  */
-export declare const me: <T>(promise: Promise<T>) => {
-    err?: Error;
+export declare const me: <T, E = Error>(promise: PromiseStrict<T, E>) => {
+    err?: E;
     data?: T;
 };
 /**
@@ -115,11 +115,23 @@ export declare function isUndefined(value: unknown): boolean;
  */
 export declare function isNullOrUndefined(value: unknown): boolean;
 /**
+ * Checks if value is an array.
+ *
+ * @param value the value to inspect.
+ */
+export declare function isArray(value: unknown): boolean;
+/**
  * Checks if is an object.
  *
  * @param value the value to inspect.
  */
 export declare function isObject(value: unknown): boolean;
+/**
+ * Checks if is a plain object.
+ *
+ * @param value the value to inspect.
+ */
+export declare function isPlainObject(value: unknown): boolean;
 /**
  * Checks if is a string.
  *
@@ -127,9 +139,21 @@ export declare function isObject(value: unknown): boolean;
  */
 export declare function isString(value: unknown): boolean;
 /**
+ * Checks if is a function.
+ *
+ * @param value the value to inspect.
+ */
+export declare function isFunction(value: unknown): boolean;
+/**
  * Checks if string, object or array are empty.
  *
  * @param value the value to inspect.
  */
 export declare function isEmpty(value: unknown): boolean;
-export declare function parsePath<T extends IModel>(path: string): IParsedPath<T>;
+/**
+ * Ensures value or fallsback to default.
+ *
+ * @param value the value to inspect.
+ * @param def the default if value is undefined.
+ */
+export declare function toDefault(value: any, def: any): any;

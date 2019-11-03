@@ -573,7 +573,7 @@ export default function useForm<T extends IModel>(options?: IOptions<T>) {
   return {
 
     // Elements
-    register: useCallback(initElement<T, D>(base as any), []),
+    register: useCallback(initElement<T>(base as any), []),
     unregister: base.unregister,
 
     // Form

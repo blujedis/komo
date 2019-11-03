@@ -6,13 +6,11 @@ import {
   SubmitHandler,
   IValidator,
   ISchemaAst,
-  ResetHandler,
   IOptionsInternal,
   IBaseApi,
-  PromiseStrict,
-  Defaults
+  PromiseStrict
 } from './types';
-import { createLogger, isString, me, isUndefined, isFunction, isObject } from './utils';
+import { createLogger, isString, me, isUndefined, isFunction } from './utils';
 import { normalizeValidator, astToSchema } from './validate';
 import { ValidateOptions, ObjectSchema, InferType } from 'yup';
 
@@ -21,7 +19,7 @@ import { ValidateOptions, ObjectSchema, InferType } from 'yup';
  * @see https://www.html5rocks.com/en/tutorials/forms/constraintvalidation/
  */
 
-const DEFAULTS: IOptions<any, any> = {
+const DEFAULTS: IOptions<any> = {
   defaults: {},
   validateSubmit: true,
   validateBlur: true,
@@ -32,7 +30,7 @@ const DEFAULTS: IOptions<any, any> = {
 };
 
 // export function initForm<T extends IModel>(options: IOptions<T>) {
-export function initForm<T extends IModel, D extends Defaults<T>>(options: IOptionsInternal<T, D>) {
+export function initForm<T extends IModel>(options: IOptionsInternal<T>) {
 
   const defaults = useRef<T>({ ...options.model });
   const model = useRef<T>({ ...options.model });
@@ -368,7 +366,7 @@ export function initForm<T extends IModel, D extends Defaults<T>>(options: IOpti
 
   };
 
-  const api: IBaseApi<T, D> = {
+  const api: IBaseApi<T> = {
 
     // Common
     options,
@@ -432,9 +430,9 @@ export function initForm<T extends IModel, D extends Defaults<T>>(options: IOpti
  * 
  * @param options form api options.
  */
-export default function useForm<T extends IModel, D extends Defaults<T>>(options?: IOptions<T, D>) {
+export default function useForm<T extends IModel>(options?: IOptions<T>) {
 
-  const _options: IOptionsInternal<T, D> = { ...DEFAULTS, ...options as any };
+  const _options: IOptionsInternal<T> = { ...DEFAULTS, ...options as any };
 
   // Check if schema is object or ObjectSchema,
   // if yes get the defaults.

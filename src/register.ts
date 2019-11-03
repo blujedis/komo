@@ -9,7 +9,7 @@ import {
 import { getNativeValidators, getNativeValidatorTypes } from './validate';
 import {
   IRegisterElement, IRegisterOptions, IRegisteredElement,
-  IModel, INativeValidators, KeyOf, IBaseApi, RegisterElement, Defaults
+  IModel, INativeValidators, KeyOf, IBaseApi, RegisterElement
 } from './types';
 
 const typeMap = {
@@ -25,7 +25,7 @@ const typeMap = {
  * 
  * @param api the base form api.
  */
-export function initElement<T extends IModel, D extends Defaults<T>>(api?: IBaseApi<T, D>) {
+export function initElement<T extends IModel>(api?: IBaseApi<T>) {
 
   const {
     options: formOptions, log, schemaAst, fields, unregister, setModel,
@@ -325,14 +325,18 @@ export function initElement<T extends IModel, D extends Defaults<T>>(api?: IBase
         await me(element.validate());
     };
 
-    // Attach blur
-    addListener(element, 'blur', handleBlur);
-    events = [['blur', handleBlur]];
+    if (element.enableModelUpdate !== false) {
 
-    // Attach change.
-    const changeEvent = isTextLike(element.type) ? 'input' : 'change';
-    addListener(element, changeEvent, handleChange);
-    events = [...events, [changeEvent, handleChange]];
+      // Attach blur
+      addListener(element, 'blur', handleBlur);
+      events = [['blur', handleBlur]];
+
+      // Attach change.
+      const changeEvent = isTextLike(element.type) ? 'input' : 'change';
+      addListener(element, changeEvent, handleChange);
+      events = [...events, [changeEvent, handleChange]];
+
+    }
 
     // Bind mutation observer.
     initObserver(element as any, element.unregister.bind(element));
@@ -375,12 +379,9 @@ export function initElement<T extends IModel, D extends Defaults<T>>(api?: IBase
 
       return (element: IRegisterElement) => {
 
-        if (!element) {
-          // if (!mounted.current) // only show warning if not mounted.
-          //   log.warn(`Failed to register unknown element using options ${JSON.stringify(options)}.`);
+        if (!element)
           return;
-        }
-
+        
         // Extend element with options.
 
         const _element = element as IRegisteredElement<T>;
@@ -396,6 +397,7 @@ export function initElement<T extends IModel, D extends Defaults<T>>(api?: IBase
         _element.validateChange = options.validateChange;
         _element.validateBlur = options.validateBlur;
         _element.enableNativeValidation = options.enableNativeValidation;
+        _element.enableModelUpdate = options.enableModelUpdate;
 
         let minLength = _element.minLength === -1 ? undefined : _element.minLength;
         minLength = options.minLength || minLength;

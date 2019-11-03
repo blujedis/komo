@@ -25,7 +25,7 @@ export interface IModel { [key: string]: any; }
  * Validation handler function for user defined validationSchema.
  */
 export type ValidateModelHandler<T extends IModel> =
-  (model: T) => null | undefined | ErrorModel<T> | ErrorModel<T> |
+  (model: T) => null | undefined | ErrorMessageModel<T> | ErrorModel<T> |
     PromiseStrict<T, ErrorModel<T> | ErrorMessageModel<T>>;
 
 /**
@@ -152,14 +152,12 @@ export interface IFindField<T extends IModel> {
 
 // OPTIONS //
 
-export type Defaults<T> = { [K in keyof T]: any };
-
-export interface IOptions<T extends IModel, D extends Defaults<T>> {
+export interface IOptions<T extends IModel> {
 
   /**
    * Default model values (default: {})
    */
-  defaults?: D;
+  defaults?: Partial<T>;
 
   /**
    * A Yup ObjectSchema or custom function for validating form (default: undefined)
@@ -201,7 +199,7 @@ export interface IOptions<T extends IModel, D extends Defaults<T>> {
 /**
  * Internal options interface.
  */
-export interface IOptionsInternal<T extends IModel, D extends Defaults<T>> extends IOptions<T, D> {
+export interface IOptionsInternal<T extends IModel> extends IOptions<T> {
 
   /**
    * Komo populates initial model from defaults, or cast schema defaults.
@@ -353,6 +351,12 @@ export interface IRegisterOptions<T extends IModel> {
    */
   enableNativeValidation?: boolean;
 
+  /**
+   * When true element auto updates the model on blur or change. This is not to be confused
+   * with validateChange or validateBlur. Set to false to update your model manually.
+   */
+  enableModelUpdate?: boolean;
+
 }
 
 /**
@@ -416,6 +420,12 @@ export interface IRegisteredElement<T extends IModel> extends IRegisterElement {
    * Whether or not native validation should be enabled, overrides main options.
    */
   enableNativeValidation?: boolean;
+
+  /**
+   * When true element auto updates the model on blur or change. This is not to be confused
+   * with validateChange or validateBlur. Set to false to update your model manually.
+   */
+  enableModelUpdate?: boolean;
 
   /**
    * Validates the element using initialized validation configuration.
@@ -499,7 +509,7 @@ type Logger = ReturnType<typeof createLogger>;
 /**
  * The base API interface used by form field elements and form submit, reset handlers.
  */
-export interface IBaseApi<T extends IModel, D extends Defaults<T>> {
+export interface IBaseApi<T extends IModel> {
 
   /**
    * Simple internal logger.
@@ -554,7 +564,7 @@ export interface IBaseApi<T extends IModel, D extends Defaults<T>> {
   /**
    * Komo initialization options.
    */
-  options: IOptions<T, D>;
+  options: IOptions<T>;
 
   /**
    * Object containing active state of the form.

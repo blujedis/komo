@@ -31,7 +31,7 @@ export function initElement<T extends IModel>(api?: IBaseApi<T>) {
     options: formOptions, log, schemaAst, fields, unregister, setModel,
     getModel, getDefault, isTouched, isDirty, setDefault,
     setDirty, setTouched, removeDirty, isValidateBlur, isValidateChange,
-    validateModelAt, isValidatable, removeError, setError
+    validateModelAt, isValidatable, removeError, setError, findField
   } = api;
 
   /**
@@ -347,6 +347,16 @@ export function initElement<T extends IModel>(api?: IBaseApi<T>) {
   }
 
   /**
+   * Checks if the element is a duplicate and should be ignored.
+   * Radio groups never return true.
+   */
+  function isDuplicate(element: IRegisteredElement<T>) {
+    if (isRadio(element.type))
+      return false;
+    return fields.current.has(element) || findField(element.name);
+  }
+
+  /**
    * Registers and element with Komo context returning function which receive the element to be registered.
    * 
    * @param options options to register element with.
@@ -379,12 +389,12 @@ export function initElement<T extends IModel>(api?: IBaseApi<T>) {
 
       return (element: IRegisterElement) => {
 
-        if (!element)
-          return;
-        
         // Extend element with options.
 
         const _element = element as IRegisteredElement<T>;
+
+        if (!_element || isDuplicate(_element))
+          return;
 
         _element.name = options.name || _element.name;
         _element.path = options.path || _element.name;
@@ -416,6 +426,9 @@ export function initElement<T extends IModel>(api?: IBaseApi<T>) {
       };
 
     }
+
+    if (!elementOrOptions || isDuplicate(elementOrOptions as IRegisteredElement<T>))
+      return;
 
     // ONLY element was passed.
     bindElement(elementOrOptions as IRegisteredElement<T>);

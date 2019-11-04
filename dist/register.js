@@ -15,7 +15,7 @@ const typeMap = {
  * @param api the base form api.
  */
 function initElement(api) {
-    const { options: formOptions, log, schemaAst, fields, unregister, setModel, getModel, getDefault, isTouched, isDirty, setDefault, setDirty, setTouched, removeDirty, isValidateBlur, isValidateChange, validateModelAt, isValidatable, removeError, setError } = api;
+    const { options: formOptions, log, schemaAst, fields, unregister, setModel, getModel, getDefault, isTouched, isDirty, setDefault, setDirty, setTouched, removeDirty, isValidateBlur, isValidateChange, validateModelAt, isValidatable, removeError, setError, findField } = api;
     /**
      * Resets the element to its defaults.
      *
@@ -239,6 +239,15 @@ function initElement(api) {
         // Add to current fields collection.
         fields.current.add(element);
     }
+    /**
+     * Checks if the element is a duplicate and should be ignored.
+     * Radio groups never return true.
+     */
+    function isDuplicate(element) {
+        if (utils_1.isRadio(element.type))
+            return false;
+        return fields.current.has(element) || findField(element.name);
+    }
     function registerElement(elementOrOptions, options) {
         if (utils_1.isNullOrUndefined(elementOrOptions))
             return;
@@ -252,10 +261,10 @@ function initElement(api) {
             }
             options = options || {};
             return (element) => {
-                if (!element)
-                    return;
                 // Extend element with options.
                 const _element = element;
+                if (!_element || isDuplicate(_element))
+                    return;
                 _element.name = options.name || _element.name;
                 _element.path = options.path || _element.name;
                 _element.initValue = options.defaultValue;
@@ -279,6 +288,8 @@ function initElement(api) {
                 bindElement(_element);
             };
         }
+        if (!elementOrOptions || isDuplicate(elementOrOptions))
+            return;
         // ONLY element was passed.
         bindElement(elementOrOptions);
     }

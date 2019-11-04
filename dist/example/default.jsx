@@ -46,6 +46,8 @@ const Default = () => {
         <label htmlFor="firstName">First Name: </label>
         <input name="firstName" type="text" ref={register}/><br /><br />
 
+        <input name="firstName" type="text" ref={register}/><br /><br />
+
         <label htmlFor="lastName">Last Name: </label>
         <input type="text" name="lastName" ref={register}/><br /><br />
 

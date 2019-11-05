@@ -157,7 +157,7 @@ export interface IOptions<T extends IModel> {
   /**
    * Default model values (default: {})
    */
-  defaults?: Partial<T>;
+  defaults?: Partial<T> | Promise<Partial<T>>;
 
   /**
    * A Yup ObjectSchema or custom function for validating form (default: undefined)
@@ -444,6 +444,11 @@ export interface IRegisteredElement<T extends IModel> extends IRegisterElement {
   unbind?: () => void;
 
   /**
+   * Rebind defaults values.
+   */
+  rebind?: () => void;
+
+  /**
    * Unbinds and unregisters element from Komo.
    */
   unregister?: () => void;
@@ -682,6 +687,13 @@ export interface IBaseApi<T extends IModel> {
    * @param extend whether to merge/extend with existing model.
    */
   setDefault(model: T, extend?: boolean): void;
+
+  /**
+   * Updaetes default values from synchronizing with model and elements.
+   * 
+   * @param defaults 
+   */
+  syncDefaults(defaults: T): void;
 
   /**
    * Gets the model value at the specified path.

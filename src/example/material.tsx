@@ -18,18 +18,22 @@ const schema = object({
   urgent: boolean()
 });
 
+const defaults = {
+  firstName: 'Bill',
+  lastName: 'Lumbergh',
+  email: 'come-in-on-sunday@initech.com',
+  numbers: {
+    home: '9991212',
+    mobile: '9991456'
+  }
+};
+
 const Material: FC = () => {
 
+
+
   const { register, handleSubmit, handleReset, state } = useForm({
-    defaults: {
-      firstName: 'Bill',
-      lastName: 'Lumbergh',
-      email: 'come-in-on-sunday@initech.com',
-      numbers: {
-        home: '9991212',
-        mobile: '9991456'
-      }
-    },
+    defaults: Promise.resolve(defaults),
     validationSchema: schema,
     validateSubmitExit: true,
     enableWarnings: true

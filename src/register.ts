@@ -29,7 +29,7 @@ export function initElement<T extends IModel>(api?: IBaseApi<T>) {
 
   const {
     options: formOptions, log, schemaAst, fields, unregister, setModel,
-    getModel, getDefault, isTouched, isDirty, setDefault,
+    getModel, getDefault, isTouched, isDirty, setDefault, mounted,
     setDirty, setTouched, removeDirty, isValidateBlur, isValidateChange,
     validateModelAt, isValidatable, removeError, setError, getElement, render
   } = api;
@@ -88,7 +88,7 @@ export function initElement<T extends IModel>(api?: IBaseApi<T>) {
    * @param element the registered element to be updated.
    * @param isBlur indicates the update event is of type blur.
    */
-  function updateElement(element: IRegisteredElement<T>, isBlur: boolean = false) {
+  function updateElement(element: IRegisteredElement<T>) {
 
     // Previous value & flags.
     const defaultValue = getDefault(element.path);
@@ -96,12 +96,7 @@ export function initElement<T extends IModel>(api?: IBaseApi<T>) {
     const prevDirty = isDirty(element.name);
 
     let value: any;
-    let touched = false;
     let dirty = false;
-
-    // On change always set local touched.
-    if (!isBlur)
-      touched = true;
 
     if (isRadio(element.type)) {
 
@@ -112,12 +107,10 @@ export function initElement<T extends IModel>(api?: IBaseApi<T>) {
       const checked = radios.find(e => e.checked);
       value = (checked && checked.value) || '';
 
-      value = toDefault(value, defaultValue);
-
     }
 
     else if (isCheckbox(element.type)) {
-      value = toDefault(element.checked, defaultValue);
+      value = element.checked;
     }
 
     else if (element.multiple) {
@@ -131,32 +124,27 @@ export function initElement<T extends IModel>(api?: IBaseApi<T>) {
           value.push(opt.value || opt.text);
       }
 
-      value = toDefault(value, defaultValue);
-
     }
 
     else {
-      value = toDefault(element.value, defaultValue);
+      value = element.value;
     }
 
     dirty = isArray(defaultValue)
       ? !isEqual(defaultValue, value)
       : !isEqual(defaultValue + '', value + '');
 
-    // If is dirty on blur then
-    // it is also touched.
-    if (isBlur)
-      touched = !!dirty || prevTouched;
-
     if (dirty)
       setDirty(element.name);
 
-    if (touched)
+    if (!!dirty || prevTouched)
       setTouched(element.name);
 
     if (!dirty && prevDirty)
       removeDirty(element.name);
 
+    // Updating the model here so if 
+    // empty string set to undefined.
     if (value === '')
       value = undefined;
 
@@ -170,9 +158,9 @@ export function initElement<T extends IModel>(api?: IBaseApi<T>) {
    * 
    * @param element the element to be bound.
    */
-  function bindElement(element: IRegisteredElement<T>) {
+  function bindElement(element: IRegisteredElement<T>, rebind: boolean = false) {
 
-    if (!element || fields.current.has(element as IRegisteredElement<any>)) return;
+    if (!element || (fields.current.has(element as IRegisteredElement<any>) && !rebind)) return;
 
     if (!element.name) {
       log.warn(`Element of tag "${element.tagName}" could NOT be registered using name of undefined.`);
@@ -230,37 +218,41 @@ export function initElement<T extends IModel>(api?: IBaseApi<T>) {
       element.defaultValue = element.defaultValuePersist = element.value || modelVal || '';
     }
 
-    const allowNative = !isUndefined(element.enableNativeValidation) ?
-      element.enableNativeValidation : formOptions.enableNativeValidation;
-
     // NOTE: This should probably be refactored to
     // own file for greater flexibility/options.
-    if (allowNative && !isFunction(formOptions.validationSchema)) {
+    if (!rebind) {
 
-      const nativeValidators = getNativeValidators(element);
-      const nativeValidatorTypes = getNativeValidatorTypes(element);
+      const allowNative = !isUndefined(element.enableNativeValidation) ?
+        element.enableNativeValidation : formOptions.enableNativeValidation;
 
-      if (nativeValidators.length || nativeValidatorTypes.length) {
+      if (allowNative && !isFunction(formOptions.validationSchema)) {
 
-        schemaAst.current = schemaAst.current || {};
-        schemaAst.current[element.path] = schemaAst.current[element.path] || [];
+        const nativeValidators = getNativeValidators(element);
+        const nativeValidatorTypes = getNativeValidatorTypes(element);
 
-        const baseType = typeMap[element.type];
+        if (nativeValidators.length || nativeValidatorTypes.length) {
 
-        // Set the type.
-        schemaAst.current[element.path] = [[baseType || 'string', undefined]];
+          schemaAst.current = schemaAst.current || {};
+          schemaAst.current[element.path] = schemaAst.current[element.path] || [];
 
-        // These are basically sub types of string
-        // like email or string.
-        if (nativeValidatorTypes.length) {
-          schemaAst.current[element.path].push([element.type as any, undefined]);
+          const baseType = typeMap[element.type];
+
+          // Set the type.
+          schemaAst.current[element.path] = [[baseType || 'string', undefined]];
+
+          // These are basically sub types of string
+          // like email or string.
+          if (nativeValidatorTypes.length) {
+            schemaAst.current[element.path].push([element.type as any, undefined]);
+          }
+
+          // Extend AST with each native validator.
+          if (nativeValidators.length)
+            nativeValidators.forEach(k => {
+              schemaAst.current[element.path].push([k as KeyOf<INativeValidators>, element[k]]);
+            });
+
         }
-
-        // Extend AST with each native validator.
-        if (nativeValidators.length)
-          nativeValidators.forEach(k => {
-            schemaAst.current[element.path].push([k as KeyOf<INativeValidators>, element[k]]);
-          });
 
       }
 
@@ -269,6 +261,9 @@ export function initElement<T extends IModel>(api?: IBaseApi<T>) {
     // Set the Initial Value.
 
     resetElement(element, true);
+
+    // No need to rebind events just rebinding defaults.
+    if (rebind) return;
 
     // Bind events
 
@@ -299,8 +294,6 @@ export function initElement<T extends IModel>(api?: IBaseApi<T>) {
       resetElement(element);
     };
 
-    element.reset.bind(element);
-
     // Unbind events helper.
     element.unbind = () => {
       if (!events.length)
@@ -311,6 +304,10 @@ export function initElement<T extends IModel>(api?: IBaseApi<T>) {
       });
     };
 
+    element.rebind = () => {
+      bindElement(element, true);
+    };
+
     // Unbind any events and then unref
     // the lement from any collections.
     element.unregister = () => {
@@ -318,7 +315,7 @@ export function initElement<T extends IModel>(api?: IBaseApi<T>) {
     };
 
     const handleBlur = async (e: Event) => {
-      updateElement(element, true);
+      updateElement(element);
       if (isValidateBlur(element)) {
         await me(element.validate());
       }

@@ -36,20 +36,6 @@ export const me = <T, E = Error>(promise: PromiseStrict<T, E>) => {
 };
 
 /**
- * Merges own property names and types.
- * 
- * @param target the target object.
- * @param source the source to merge to target.
- */
-export function merge<T, S>(target: T, source: S) {
-  for (const k in source) {
-    if (!source.hasOwnProperty(k)) continue;
-    target[k as any] = source[k];
-  }
-  return target as T & S;
-}
-
-/**
  * Checks if value or value.type is "radio".
  * 
  * @param value the string or object containing type to inspect.
@@ -263,4 +249,21 @@ export function toDefault(value: any, def: any) {
   if (isUndefined(value))
     return def;
   return value;
+}
+
+/**
+ * Merges two objects.
+ * 
+ * @param target the target object.
+ * @param source the source object to add to target.
+ */
+export function merge<T, S>(target: T, source: S) {
+  for (const k in source) {
+    if (isUndefined(source[k])) continue;
+    if (isPlainObject(target[k as any]) && isPlainObject(source[k]))
+      target[k as any] = merge(target[k as any], source[k]);
+    else
+      target[k as any] = source[k];
+  }
+  return target as T & S;
 }

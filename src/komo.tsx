@@ -10,7 +10,7 @@ import {
   IBaseApi,
   PromiseStrict
 } from './types';
-import { createLogger, isString, me, isUndefined, isFunction } from './utils';
+import { createLogger, isString, me, isUndefined, isFunction, isPlainObject, isPromise, merge } from './utils';
 import { normalizeValidator, astToSchema } from './validate';
 import { ValidateOptions, ObjectSchema, InferType } from 'yup';
 
@@ -30,7 +30,7 @@ const DEFAULTS: IOptions<any> = {
 };
 
 // export function initForm<T extends IModel>(options: IOptions<T>) {
-export function initForm<T extends IModel>(options: IOptionsInternal<T>) {
+function initApi<T extends IModel>(options: IOptionsInternal<T>) {
 
   const defaults = useRef<T>({ ...options.model });
   const model = useRef<T>({ ...options.model });
@@ -117,6 +117,18 @@ export function initForm<T extends IModel>(options: IOptionsInternal<T>) {
     }
 
   }, []);
+
+  const syncDefaults = (defs: T) => {
+
+    defaults.current = merge({ ...defaults.current }, { ...defs });
+    model.current = merge({ ...defs }, { ...model.current });
+
+    // Iterate bound elements and update default values.
+    [...fields.current.values()].forEach(element => {
+      element.rebind();
+    });
+
+  };
 
   const setModel = useCallback((pathOrModel: string | T, value?: any) => {
 
@@ -408,6 +420,7 @@ export function initForm<T extends IModel>(options: IOptionsInternal<T>) {
     model,
     getDefault,
     setDefault,
+    syncDefaults,
     getModel,
     setModel,
     validator: validator.current,
@@ -450,12 +463,12 @@ export function initForm<T extends IModel>(options: IOptionsInternal<T>) {
  * 
  * @param options form api options.
  */
-export default function useForm<T extends IModel>(options?: IOptions<T>) {
+export function initKomo<T extends IModel>(options?: IOptions<T>) {
 
   // Check if schema is object or ObjectSchema,
   // if yes get the defaults.
-  const initDefaults = options.defaults;
-  let schemaDefaults;
+  let schemaDefaults: any = {};
+  let initDefaults: any = {};
 
   if (typeof options.validationSchema === 'object') {
     const schema = options.validationSchema as any;
@@ -464,13 +477,18 @@ export default function useForm<T extends IModel>(options?: IOptions<T>) {
 
   const _options: IOptionsInternal<T> = { ...DEFAULTS, ...options as any };
 
+  // Check if defaults are sync or async,
+  if (isPlainObject(options.defaults)) {
+    initDefaults = { ...options.defaults };
+  }
+
   _options.model = { ...schemaDefaults, ...initDefaults, };
 
-  const base = initForm(_options);
+  const base = initApi(_options);
 
   const {
     options: formOptions, log, defaults, render, clearDirty, clearTouched, clearError, setModel,
-    fields, submitCount, submitting, submitted, validateModel, getModel,
+    fields, submitCount, submitting, submitted, validateModel, getModel, syncDefaults,
     isValidatable, errors, setError, unregister, mounted, initSchema, model
   } = base;
 
@@ -479,16 +497,33 @@ export default function useForm<T extends IModel>(options?: IOptions<T>) {
     // May need to update model defaults
     // again from user here.
     mounted.current = true;
-    initSchema();
 
-    // validate form before touched.
-    if (options.validateInit) {
-      validateModel()
-        .catch(err => {
-          if (err)
-            setError(err);
-        });
-    }
+    const init = async () => {
+
+      const prom = isPromise(options.defaults) ? options.defaults : Promise.resolve(false);
+      const { err, data } = await me(prom as any);
+
+      if (err)
+        // tslint:disable-next-line: no-console
+        console.error(err);
+      else if (data)
+        syncDefaults(data);
+
+      // Init normalize the validation schema.
+      initSchema();
+
+      // validate form before touched.
+      if (options.validateInit) {
+        validateModel()
+          .catch(valErr => {
+            if (valErr)
+              setError(valErr);
+          });
+      }
+
+    };
+
+    init();
 
     return () => {
       mounted.current = false;

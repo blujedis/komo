@@ -1,6 +1,6 @@
-import { IModel, IFormState, KeyOf } from '../types';
+import { IModel, IFormState, KeyOf } from '..';
 
-export function useMaterialError<T extends IModel>(state: IFormState<T>) {
+export default function useCustomHook<T extends IModel>(state: IFormState<T>) {
 
   return (prop: KeyOf<T>, def: string = '') => {
 

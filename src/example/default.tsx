@@ -12,7 +12,8 @@ const schema = object({
     home: string(),
     mobile: string()
   }).default({ home: '5551212', mobile: '6661456' }),
-  urgent: boolean()
+  urgent: boolean(),
+  message: string().default('').required()
 });
 
 const Default: FC = () => {

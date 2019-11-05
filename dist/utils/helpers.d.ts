@@ -18,13 +18,6 @@ export declare const me: <T, E = Error>(promise: PromiseStrict<T, E>) => {
     data?: T;
 };
 /**
- * Merges own property names and types.
- *
- * @param target the target object.
- * @param source the source to merge to target.
- */
-export declare function merge<T, S>(target: T, source: S): T & S;
-/**
  * Checks if value or value.type is "radio".
  *
  * @param value the string or object containing type to inspect.
@@ -157,3 +150,17 @@ export declare function isEmpty(value: unknown): boolean;
  * @param def the default if value is undefined.
  */
 export declare function toDefault(value: any, def: any): any;
+/**
+ * Merges two objects.
+ *
+ * @param target the target object.
+ * @param source the source object to add to target.
+ */
+export declare function merge<T, S>(target: T, source: S): T & S;
+/**
+ * Similar to merge but only extends top levels.
+ *
+ * @param target the target object.
+ * @param source the source to extend to the target.
+ */
+export declare function extend<T, S>(target: T, source: S): T & S;

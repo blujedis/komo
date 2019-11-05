@@ -1,4 +1,4 @@
-import { BaseSyntheticEvent, MutableRefObject, LegacyRef } from 'react';
+import { BaseSyntheticEvent, MutableRefObject, LegacyRef, FormEvent } from 'react';
 import { ObjectSchema, ValidateOptions } from 'yup';
 import { createLogger } from './utils';
 /**
@@ -9,6 +9,16 @@ export declare type KeyOf<T> = Extract<keyof T, string>;
  * Extracts value from type using key of type as string.
  */
 export declare type ValueOf<T, K extends KeyOf<T>> = T[K];
+/**
+ * Object contiaing useField hooks for convenience.
+ */
+export declare type UseFields<Fields extends string, T> = {
+    [P in Fields]: T;
+};
+/**
+ * Infers the return type of a passed function.
+ */
+export declare type InferReturn<F extends Function> = F extends (...args: any[]) => infer R ? R : never;
 /**
  * The form model.
  */
@@ -122,7 +132,7 @@ export interface IOptions<T extends IModel> {
     /**
      * Default model values (default: {})
      */
-    defaults?: Partial<T>;
+    defaults?: Partial<T> | Promise<Partial<T>>;
     /**
      * A Yup ObjectSchema or custom function for validating form (default: undefined)
      */
@@ -349,6 +359,10 @@ export interface IRegisteredElement<T extends IModel> extends IRegisterElement {
      */
     unbind?: () => void;
     /**
+     * Rebind defaults values.
+     */
+    rebind?: () => void;
+    /**
      * Unbinds and unregisters element from Komo.
      */
     unregister?: () => void;
@@ -540,6 +554,12 @@ export interface IBaseApi<T extends IModel> {
      */
     setDefault(model: T, extend?: boolean): void;
     /**
+     * Updaetes default values from synchronizing with model and elements.
+     *
+     * @param defaults
+     */
+    syncDefaults(defaults: T): void;
+    /**
      * Gets the model value at the specified path.
      *
      * @param path the path to get model at.
@@ -703,5 +723,19 @@ export interface IBaseApi<T extends IModel> {
      * @param name the element name to lookup to be unregistered.
      */
     unregister(name: KeyOf<T>): void;
+}
+declare type BasePicked = 'render' | 'state' | 'getModel' | 'setModel' | 'validateModel' | 'validateModelAt' | 'setTouched' | 'removeTouched' | 'clearTouched' | 'setDirty' | 'removeDirty' | 'clearDirty' | 'setError' | 'removeError' | 'clearError' | 'getElement';
+export interface IKomoExtended<T extends IModel> extends Pick<IBaseApi<T>, BasePicked> {
+    register: {
+        (options: IRegisterOptions<T>): RegisterElement;
+        (element: IRegisterElement): void;
+    };
+    reset(values?: T): void;
+    handleReset(event: BaseSyntheticEvent): Promise<void>;
+    handleReset(values: T): (event: BaseSyntheticEvent) => Promise<void>;
+    handleSubmit(handler: SubmitHandler<T>): (event: FormEvent<HTMLFormElement>) => Promise<void>;
+    withKomo?<R, H extends (hook: IKomo<T>) => R>(hook: H): InferReturn<H>;
+}
+export interface IKomo<T extends IModel> extends Omit<IKomoExtended<T>, 'withHook'> {
 }
 export {};

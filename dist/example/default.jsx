@@ -15,7 +15,8 @@ const schema = yup_1.object({
         home: yup_1.string(),
         mobile: yup_1.string()
     }).default({ home: '5551212', mobile: '6661456' }),
-    urgent: yup_1.boolean()
+    urgent: yup_1.boolean(),
+    message: yup_1.string().default('').required()
 });
 const Default = () => {
     const { register, handleSubmit, handleReset, state } = __1.default({

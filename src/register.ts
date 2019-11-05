@@ -356,7 +356,10 @@ export function initElement<T extends IModel>(api?: IBaseApi<T>) {
   function isDuplicate(element: IRegisteredElement<T>) {
     if (isRadio(element.type))
       return false;
-    return fields.current.has(element) || getElement(element.name);
+    const isDupe = fields.current.has(element) || getElement(element.name);
+    if (isDupe)
+      log.warn(`Duplicate field name "${element.name}" ignored, field is not bound.`);
+    return isDupe;
   }
 
   /**

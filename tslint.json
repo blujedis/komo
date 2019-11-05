@@ -32,6 +32,7 @@
     "no-angle-bracket-type-assertion": false,
     "no-construct": false,
     "object-literal-key-quotes": false,
-    "prefer-for-of": false
+    "prefer-for-of": false,
+    "ban-types": false
   }
 }

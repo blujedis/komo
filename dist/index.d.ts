@@ -1,4 +1,4 @@
 export * from './types';
-export * from './form';
-import useForm from './form';
-export default useForm;
+export * from './komo';
+import { initKomo } from './komo';
+export default initKomo;

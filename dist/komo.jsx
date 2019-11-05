@@ -3,6 +3,7 @@ Object.defineProperty(exports, "__esModule", { value: true });
 const react_1 = require("react");
 const register_1 = require("./register");
 const dot_prop_1 = require("dot-prop");
+const hooks_1 = require("./hooks");
 const utils_1 = require("./utils");
 const validate_1 = require("./validate");
 /**
@@ -18,8 +19,7 @@ const DEFAULTS = {
     enableNativeValidation: false,
     enableWarnings: true
 };
-// export function initForm<T extends IModel>(options: IOptions<T>) {
-function initForm(options) {
+function initApi(options) {
     const defaults = react_1.useRef({ ...options.model });
     const model = react_1.useRef({ ...options.model });
     const fields = react_1.useRef(new Set());
@@ -80,6 +80,14 @@ function initForm(options) {
             defaults.current = current;
         }
     }, []);
+    const syncDefaults = (defs) => {
+        defaults.current = utils_1.merge({ ...defaults.current }, { ...defs });
+        model.current = utils_1.merge({ ...defs }, { ...model.current });
+        // Iterate bound elements and update default values.
+        [...fields.current.values()].forEach(element => {
+            element.rebind();
+        });
+    };
     const setModel = react_1.useCallback((pathOrModel, value) => {
         if (!pathOrModel) {
             log.error(`Cannot set default value using key or model of undefined.`);
@@ -296,6 +304,7 @@ function initForm(options) {
         model,
         getDefault,
         setDefault,
+        syncDefaults,
         getModel,
         setModel,
         validator: validator.current,
@@ -325,38 +334,36 @@ function initForm(options) {
     };
     return api;
 }
-exports.initForm = initForm;
 /**
  * Use form hook exposes Komo form hook API.
  *
  * @param options form api options.
  */
-function useForm(options) {
-    // Check if schema is object or ObjectSchema,
-    // if yes get the defaults.
-    const initDefaults = options.defaults;
-    let schemaDefaults;
-    if (typeof options.validationSchema === 'object') {
-        const schema = options.validationSchema;
-        schemaDefaults = schema._nodes ? { ...schema.cast() } : { ...schema };
-    }
+function initForm(options) {
     const _options = { ...DEFAULTS, ...options };
-    _options.model = { ...schemaDefaults, ...initDefaults, };
-    const base = initForm(_options);
-    const { options: formOptions, log, defaults, render, clearDirty, clearTouched, clearError, setModel, fields, submitCount, submitting, submitted, validateModel, getModel, isValidatable, errors, setError, unregister, mounted, initSchema, model } = base;
+    const base = initApi(_options);
+    const { options: formOptions, log, defaults, render, clearDirty, clearTouched, clearError, setModel, fields, submitCount, submitting, submitted, validateModel, getModel, syncDefaults, isValidatable, errors, setError, unregister, mounted, initSchema, model } = base;
     react_1.useEffect(() => {
         // May need to update model defaults
         // again from user here.
         mounted.current = true;
-        initSchema();
-        // validate form before touched.
-        if (options.validateInit) {
-            validateModel()
-                .catch(err => {
-                if (err)
-                    setError(err);
-            });
-        }
+        const init = async () => {
+            const normalized = validate_1.normalizeDefaults(options.defaults, options.validationSchema);
+            const { err, data } = await utils_1.me(normalized);
+            // Err and data both 
+            syncDefaults({ ...err, ...data });
+            // Init normalize the validation schema.
+            initSchema();
+            // validate form before touched.
+            if (options.validateInit) {
+                validateModel()
+                    .catch(valErr => {
+                    if (valErr)
+                        setError(valErr);
+                });
+            }
+        };
+        init();
         return () => {
             mounted.current = false;
             [...fields.current.values()].forEach(e => {
@@ -364,7 +371,12 @@ function useForm(options) {
             });
         };
     }, [unregister]);
-    const reset = react_1.useCallback((values = {}) => {
+    /**
+     * Manually resets model, dirty touched and clears errors.
+     *
+     * @param values new values to reset form with.
+     */
+    function _resetForm(values = {}) {
         // Reset all states.
         setModel({ ...defaults.current, ...values });
         clearDirty();
@@ -379,7 +391,7 @@ function useForm(options) {
         submitted.current = false;
         // Rerender the form
         render('reset');
-    }, []);
+    }
     function _handleReset(valuesOrEvent) {
         const handleCallback = async (event, values) => {
             if (event) {
@@ -394,8 +406,12 @@ function useForm(options) {
             };
         return handleCallback(valuesOrEvent);
     }
-    const handleReset = react_1.useCallback(_handleReset, []);
-    const handleSubmit = react_1.useCallback((handler) => {
+    /**
+     * Handles form submission.
+     *
+     * @param handler submit handler function.
+     */
+    function _handleSubmit(handler) {
         if (!handler) {
             // Submit called but no handler!!
             log.warn(`Cannot handleSubmit using submit handler of undefined.\n      Pass handler as "onSubmit={handleSubmit(your_submit_handler)}".\n      Or pass in options as "options.onSubmit".`);
@@ -432,7 +448,10 @@ function useForm(options) {
                 setError(err);
             await handleCallback(_model, err, event);
         };
-    }, []);
+    }
+    const reset = react_1.useCallback(_resetForm, []);
+    const handleReset = react_1.useCallback(_handleReset, []);
+    const handleSubmit = react_1.useCallback(_handleSubmit, []);
     return {
         // Elements
         register: react_1.useCallback(register_1.initElement(base), []),
@@ -444,6 +463,7 @@ function useForm(options) {
         handleReset,
         handleSubmit,
         // Model
+        getElement: base.getElement,
         getModel: base.getModel,
         setModel: base.setModel,
         validateModel: base.validateModel,
@@ -459,5 +479,21 @@ function useForm(options) {
         clearError: base.clearError
     };
 }
-exports.default = useForm;
-//# sourceMappingURL=form.jsx.map
+exports.initForm = initForm;
+/**
+ * Initializes Komo.
+ *
+ * @param options the komo options.
+ */
+function initKomo(options) {
+    const api = initForm(options);
+    function initWithKomo(handler) {
+        return handler(api);
+    }
+    api.withKomo = initWithKomo;
+    const hooks = hooks_1.initHooks(api);
+    const komo = utils_1.extend(api, hooks);
+    return komo;
+}
+exports.initKomo = initKomo;
+//# sourceMappingURL=komo.jsx.map

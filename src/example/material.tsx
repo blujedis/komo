@@ -1,6 +1,6 @@
 import React, { FC } from 'react';
 import useForm from '../';
-import { useMaterialError } from './useMaterialError';
+import useCustomHook from './hook';
 import { string, object, boolean } from 'yup';
 import Input from '@material-ui/core/Input';
 import TextField from '@material-ui/core/TextField';
@@ -9,7 +9,7 @@ import TextField from '@material-ui/core/TextField';
 
 const schema = object({
   firstName: string().required(),
-  lastName: string(),
+  lastName: string().required(),
   email: string().email(),
   numbers: object({
     home: string(),
@@ -30,9 +30,7 @@ const defaults = {
 
 const Material: FC = () => {
 
-
-
-  const { register, handleSubmit, handleReset, state } = useForm({
+  const { register, handleSubmit, handleReset, state, useField } = useForm({
     defaults: Promise.resolve(defaults),
     validationSchema: schema,
     validateSubmitExit: true,
@@ -47,8 +45,12 @@ const Material: FC = () => {
     console.log('submitted', state.isSubmitted);
   };
 
-  const initError = useMaterialError(state);
+  // Create a custom hook.
+  const initError = useCustomHook(state);
   const firstName = initError('firstName');
+
+  // Use built in Komo field hook
+  const lastName = useField('lastName');
 
   return (
     <div>
@@ -58,13 +60,12 @@ const Material: FC = () => {
 
       <form noValidate onSubmit={handleSubmit(onSubmit)} onReset={handleReset}>
 
-        {/* <Input name="firstName"
-          inputRef={register}
-          placeholder="First Name"
-          error={firstName.invalid} /><br /><br /> */}
         <TextField name="firstName"
           error={firstName.invalid}
-          inputRef={register} label={firstName.message} margin="normal" /><br /><br />
+          inputRef={register} label={firstName.message} margin="normal" defaultValue="Bill" /><br /><br />
+        <TextField name="lastName"
+          error={lastName.invalid}
+          inputRef={register} label={lastName.message} margin="normal" /><br /><br />
         <Input name="lastName" inputRef={register} placeholder="Last Name" /><br /><br />
         <Input name="email" inputRef={register} placeholder="Email" /><br /><br />
         <Input name="phone" inputRef={register({ path: 'numbers.home' })} placeholder="Phone" /><br /><br />

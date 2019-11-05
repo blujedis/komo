@@ -1,6 +1,6 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-function useMaterialError(state) {
+function useCustomHook(state) {
     return (prop, def = '') => {
         function hasError() {
             if (!state.touched.includes(prop))
@@ -22,5 +22,5 @@ function useMaterialError(state) {
         };
     };
 }
-exports.useMaterialError = useMaterialError;
-//# sourceMappingURL=useMaterialError.js.map
+exports.default = useCustomHook;
+//# sourceMappingURL=hook.js.map

@@ -190,6 +190,16 @@ There are three ways to set defaults for an element. You can usse the traditiona
   });
 ```
 
+Komo also supports promises for your defaults. Below we're just using <code>Promise.resolve</code> but you could use fetch or axios etc to get your data. Note errors are logged to the console but does not stop Komo's initialization. If an error or no data returned Komo will just initialize with an empty defaults object.
+
+```jsx
+  const { register } = useForm({
+    defaults: Promise.resolve({
+      firstName: 'Your_Name_Here'
+    })
+  });
+```
+
 #### Using Yup Schema
 
 When using a yup schema for your <code>validationSchema</code>, Komo will grab the defaults and use them for your form model.

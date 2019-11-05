@@ -267,3 +267,17 @@ export function merge<T, S>(target: T, source: S) {
   }
   return target as T & S;
 }
+
+/**
+ * Similar to merge but only extends top levels.
+ * 
+ * @param target the target object.
+ * @param source the source to extend to the target.
+ */
+export function extend<T, S>(target: T, source: S) {
+  for (const k in source) {
+    if (isUndefined(source[k]))continue;
+    target[k as any] = source[k];
+  }
+  return target as T & S;
+}

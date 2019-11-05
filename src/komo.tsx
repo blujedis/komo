@@ -1,6 +1,6 @@
 import { useRef, useEffect, FormEvent, useState, useCallback, BaseSyntheticEvent } from 'react';
 import { initElement } from './register';
-import { get, set, has } from 'dot-prop';
+import { get, set } from 'dot-prop';
 import {
   IOptions, IModel, KeyOf, IRegisteredElement, ErrorModel,
   SubmitHandler,
@@ -8,10 +8,13 @@ import {
   ISchemaAst,
   IOptionsInternal,
   IBaseApi,
-  PromiseStrict
+  PromiseStrict,
+  IKomo,
+  IKomoExtended
 } from './types';
-import { createLogger, isString, me, isUndefined, isFunction, isPlainObject, isPromise, merge } from './utils';
-import { normalizeValidator, astToSchema } from './validate';
+import { initHooks } from './hooks';
+import { createLogger, isString, me, isUndefined, isFunction, merge, extend } from './utils';
+import { normalizeValidator, astToSchema, normalizeDefaults } from './validate';
 import { ValidateOptions, ObjectSchema, InferType } from 'yup';
 
 /**
@@ -29,7 +32,6 @@ const DEFAULTS: IOptions<any> = {
   enableWarnings: true
 };
 
-// export function initForm<T extends IModel>(options: IOptions<T>) {
 function initApi<T extends IModel>(options: IOptionsInternal<T>) {
 
   const defaults = useRef<T>({ ...options.model });
@@ -463,26 +465,9 @@ function initApi<T extends IModel>(options: IOptionsInternal<T>) {
  * 
  * @param options form api options.
  */
-export function initKomo<T extends IModel>(options?: IOptions<T>) {
-
-  // Check if schema is object or ObjectSchema,
-  // if yes get the defaults.
-  let schemaDefaults: any = {};
-  let initDefaults: any = {};
-
-  if (typeof options.validationSchema === 'object') {
-    const schema = options.validationSchema as any;
-    schemaDefaults = schema._nodes ? { ...schema.cast() } : { ...schema };
-  }
+export function initForm<T extends IModel>(options?: IOptions<T>) {
 
   const _options: IOptionsInternal<T> = { ...DEFAULTS, ...options as any };
-
-  // Check if defaults are sync or async,
-  if (isPlainObject(options.defaults)) {
-    initDefaults = { ...options.defaults };
-  }
-
-  _options.model = { ...schemaDefaults, ...initDefaults, };
 
   const base = initApi(_options);
 
@@ -500,14 +485,11 @@ export function initKomo<T extends IModel>(options?: IOptions<T>) {
 
     const init = async () => {
 
-      const prom = isPromise(options.defaults) ? options.defaults : Promise.resolve(false);
-      const { err, data } = await me(prom as any);
+      const normalized = normalizeDefaults(options.defaults, options.validationSchema) as Promise<T>;
+      const { err, data } = await me(normalized);
 
-      if (err)
-        // tslint:disable-next-line: no-console
-        console.error(err);
-      else if (data)
-        syncDefaults(data);
+      // Err and data both 
+      syncDefaults({ ...err, ...data });
 
       // Init normalize the validation schema.
       initSchema();
@@ -534,7 +516,12 @@ export function initKomo<T extends IModel>(options?: IOptions<T>) {
 
   }, [unregister]);
 
-  const reset = useCallback((values: T = {} as any) => {
+  /**
+   * Manually resets model, dirty touched and clears errors.
+   * 
+   * @param values new values to reset form with.
+   */
+  function _resetForm(values: T = {} as any) {
 
     // Reset all states.
     setModel({ ...defaults.current, ...values });
@@ -554,9 +541,20 @@ export function initKomo<T extends IModel>(options?: IOptions<T>) {
     // Rerender the form
     render('reset');
 
-  }, []);
+  }
 
+  /**
+   * Default form reset.
+   * 
+   * @param event the form's reset event.
+   */
   function _handleReset(event: BaseSyntheticEvent): Promise<void>;
+
+  /**
+   * Resets the form with new values.
+   * 
+   * @param values new values to update the form with.
+   */
   function _handleReset(values: T): (event: BaseSyntheticEvent) => Promise<void>;
   function _handleReset(valuesOrEvent?: T | BaseSyntheticEvent) {
 
@@ -577,9 +575,12 @@ export function initKomo<T extends IModel>(options?: IOptions<T>) {
 
   }
 
-  const handleReset = useCallback(_handleReset, []);
-
-  const handleSubmit = useCallback((handler: SubmitHandler<T>) => {
+  /**
+   * Handles form submission.
+   * 
+   * @param handler submit handler function.
+   */
+  function _handleSubmit(handler: SubmitHandler<T>) {
 
     if (!handler) {
       // Submit called but no handler!!
@@ -636,7 +637,11 @@ export function initKomo<T extends IModel>(options?: IOptions<T>) {
 
     };
 
-  }, []);
+  }
+
+  const reset = useCallback(_resetForm, []);
+  const handleReset = useCallback(_handleReset, []);
+  const handleSubmit = useCallback(_handleSubmit, []);
 
   return {
 
@@ -652,6 +657,7 @@ export function initKomo<T extends IModel>(options?: IOptions<T>) {
     handleSubmit,
 
     // Model
+    getElement: base.getElement,
     getModel: base.getModel,
     setModel: base.setModel,
     validateModel: base.validateModel,
@@ -671,4 +677,20 @@ export function initKomo<T extends IModel>(options?: IOptions<T>) {
 
   };
 
+}
+
+/**
+ * Initializes Komo.
+ * 
+ * @param options the komo options.
+ */
+export function initKomo<T extends IModel>(options?: IOptions<T>) {
+  const api = initForm<T>(options) as IKomoExtended<T>;
+  function initWithKomo<F extends (komo: IKomo<T>) => any>(handler: F) {
+    return handler(api);
+  }
+  api.withKomo = initWithKomo;
+  const hooks = initHooks(api);
+  const komo = extend(api, hooks);
+  return komo;
 }

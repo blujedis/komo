@@ -1,4 +1,4 @@
-import { BaseSyntheticEvent, MutableRefObject, LegacyRef } from 'react';
+import { BaseSyntheticEvent, MutableRefObject, LegacyRef, FormEvent } from 'react';
 import { ObjectSchema, ValidateOptions, InferType } from 'yup';
 import { createLogger } from './utils';
 
@@ -13,6 +13,16 @@ export type KeyOf<T> = Extract<keyof T, string>;
  * Extracts value from type using key of type as string.
  */
 export type ValueOf<T, K extends KeyOf<T>> = T[K];
+
+/**
+ * Object contiaing useField hooks for convenience.
+ */
+export type UseFields<Fields extends string, T> = { [P in Fields]: T };
+
+/**
+ * Infers the return type of a passed function.
+ */
+export type InferReturn<F extends Function> = F extends (...args: any[]) => infer R ? R : never;
 
 // MODEL & VALIDATION //
 
@@ -900,3 +910,26 @@ export interface IBaseApi<T extends IModel> {
   unregister(name: KeyOf<T>): void;
 
 }
+
+type BasePicked = 'render' | 'state' | 'getModel' | 'setModel' | 'validateModel' | 'validateModelAt' | 'setTouched' | 'removeTouched' | 'clearTouched' | 'setDirty' | 'removeDirty' | 'clearDirty' | 'setError' | 'removeError' | 'clearError' | 'getElement';
+
+export interface IKomoExtended<T extends IModel> extends Pick<IBaseApi<T>, BasePicked> {
+
+  register: {
+    (options: IRegisterOptions<T>): RegisterElement;
+    (element: IRegisterElement): void;
+  };
+
+  reset(values?: T): void;
+
+  handleReset(event: BaseSyntheticEvent): Promise<void>;
+
+  handleReset(values: T): (event: BaseSyntheticEvent) => Promise<void>;
+
+  handleSubmit(handler: SubmitHandler<T>): (event: FormEvent<HTMLFormElement>) => Promise<void>;
+
+  withKomo?<R, H extends (hook: IKomo<T>) => R>(hook: H): InferReturn<H>;
+
+}
+
+export interface IKomo<T extends IModel> extends Omit<IKomoExtended<T>, 'withHook'> {}

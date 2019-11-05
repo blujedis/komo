@@ -15,7 +15,7 @@ const typeMap = {
  * @param api the base form api.
  */
 function initElement(api) {
-    const { options: formOptions, log, schemaAst, fields, unregister, setModel, getModel, getDefault, isTouched, isDirty, setDefault, setDirty, setTouched, removeDirty, isValidateBlur, isValidateChange, validateModelAt, isValidatable, removeError, setError, getElement, render } = api;
+    const { options: formOptions, log, schemaAst, fields, unregister, setModel, getModel, getDefault, isTouched, isDirty, setDefault, mounted, setDirty, setTouched, removeDirty, isValidateBlur, isValidateChange, validateModelAt, isValidatable, removeError, setError, getElement, render } = api;
     /**
      * Resets the element to its defaults.
      *
@@ -57,26 +57,21 @@ function initElement(api) {
      * @param element the registered element to be updated.
      * @param isBlur indicates the update event is of type blur.
      */
-    function updateElement(element, isBlur = false) {
+    function updateElement(element) {
         // Previous value & flags.
         const defaultValue = getDefault(element.path);
         const prevTouched = isTouched(element.name);
         const prevDirty = isDirty(element.name);
         let value;
-        let touched = false;
         let dirty = false;
-        // On change always set local touched.
-        if (!isBlur)
-            touched = true;
         if (utils_1.isRadio(element.type)) {
             const radios = [...fields.current.values()]
                 .filter(e => utils_1.isRadio(e.type) && e.name === element.name);
             const checked = radios.find(e => e.checked);
             value = (checked && checked.value) || '';
-            value = utils_1.toDefault(value, defaultValue);
         }
         else if (utils_1.isCheckbox(element.type)) {
-            value = utils_1.toDefault(element.checked, defaultValue);
+            value = element.checked;
         }
         else if (element.multiple) {
             value = [];
@@ -86,24 +81,21 @@ function initElement(api) {
                 if (opt.selected)
                     value.push(opt.value || opt.text);
             }
-            value = utils_1.toDefault(value, defaultValue);
         }
         else {
-            value = utils_1.toDefault(element.value, defaultValue);
+            value = element.value;
         }
         dirty = utils_1.isArray(defaultValue)
             ? !utils_1.isEqual(defaultValue, value)
             : !utils_1.isEqual(defaultValue + '', value + '');
-        // If is dirty on blur then
-        // it is also touched.
-        if (isBlur)
-            touched = !!dirty || prevTouched;
         if (dirty)
             setDirty(element.name);
-        if (touched)
+        if (!!dirty || prevTouched)
             setTouched(element.name);
         if (!dirty && prevDirty)
             removeDirty(element.name);
+        // Updating the model here so if 
+        // empty string set to undefined.
         if (value === '')
             value = undefined;
         // Set the model value.
@@ -114,8 +106,8 @@ function initElement(api) {
      *
      * @param element the element to be bound.
      */
-    function bindElement(element) {
-        if (!element || fields.current.has(element))
+    function bindElement(element, rebind = false) {
+        if (!element || (fields.current.has(element) && !rebind))
             return;
         if (!element.name) {
             log.warn(`Element of tag "${element.tagName}" could NOT be registered using name of undefined.`);
@@ -157,33 +149,38 @@ function initElement(api) {
         else {
             element.defaultValue = element.defaultValuePersist = element.value || modelVal || '';
         }
-        const allowNative = !utils_1.isUndefined(element.enableNativeValidation) ?
-            element.enableNativeValidation : formOptions.enableNativeValidation;
         // NOTE: This should probably be refactored to
         // own file for greater flexibility/options.
-        if (allowNative && !utils_1.isFunction(formOptions.validationSchema)) {
-            const nativeValidators = validate_1.getNativeValidators(element);
-            const nativeValidatorTypes = validate_1.getNativeValidatorTypes(element);
-            if (nativeValidators.length || nativeValidatorTypes.length) {
-                schemaAst.current = schemaAst.current || {};
-                schemaAst.current[element.path] = schemaAst.current[element.path] || [];
-                const baseType = typeMap[element.type];
-                // Set the type.
-                schemaAst.current[element.path] = [[baseType || 'string', undefined]];
-                // These are basically sub types of string
-                // like email or string.
-                if (nativeValidatorTypes.length) {
-                    schemaAst.current[element.path].push([element.type, undefined]);
+        if (!rebind) {
+            const allowNative = !utils_1.isUndefined(element.enableNativeValidation) ?
+                element.enableNativeValidation : formOptions.enableNativeValidation;
+            if (allowNative && !utils_1.isFunction(formOptions.validationSchema)) {
+                const nativeValidators = validate_1.getNativeValidators(element);
+                const nativeValidatorTypes = validate_1.getNativeValidatorTypes(element);
+                if (nativeValidators.length || nativeValidatorTypes.length) {
+                    schemaAst.current = schemaAst.current || {};
+                    schemaAst.current[element.path] = schemaAst.current[element.path] || [];
+                    const baseType = typeMap[element.type];
+                    // Set the type.
+                    schemaAst.current[element.path] = [[baseType || 'string', undefined]];
+                    // These are basically sub types of string
+                    // like email or string.
+                    if (nativeValidatorTypes.length) {
+                        schemaAst.current[element.path].push([element.type, undefined]);
+                    }
+                    // Extend AST with each native validator.
+                    if (nativeValidators.length)
+                        nativeValidators.forEach(k => {
+                            schemaAst.current[element.path].push([k, element[k]]);
+                        });
                 }
-                // Extend AST with each native validator.
-                if (nativeValidators.length)
-                    nativeValidators.forEach(k => {
-                        schemaAst.current[element.path].push([k, element[k]]);
-                    });
             }
         }
         // Set the Initial Value.
         resetElement(element, true);
+        // No need to rebind events just rebinding defaults.
+        if (rebind)
+            return;
         // Bind events
         let events = [];
         element.validate = async () => {
@@ -203,7 +200,6 @@ function initElement(api) {
         element.reset = () => {
             resetElement(element);
         };
-        element.reset.bind(element);
         // Unbind events helper.
         element.unbind = () => {
             if (!events.length)
@@ -213,13 +209,16 @@ function initElement(api) {
                 utils_1.removeListener(element, event, handler);
             });
         };
+        element.rebind = () => {
+            bindElement(element, true);
+        };
         // Unbind any events and then unref
         // the lement from any collections.
         element.unregister = () => {
             unregister(element);
         };
         const handleBlur = async (e) => {
-            updateElement(element, true);
+            updateElement(element);
             if (isValidateBlur(element)) {
                 await utils_1.me(element.validate());
             }
@@ -251,7 +250,10 @@ function initElement(api) {
     function isDuplicate(element) {
         if (utils_1.isRadio(element.type))
             return false;
-        return fields.current.has(element) || getElement(element.name);
+        const isDupe = fields.current.has(element) || getElement(element.name);
+        if (isDupe)
+            log.warn(`Duplicate field name "${element.name}" ignored, field is not bound.`);
+        return isDupe;
     }
     function registerElement(elementOrOptions, options) {
         if (utils_1.isNullOrUndefined(elementOrOptions))

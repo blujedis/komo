@@ -33,21 +33,6 @@ exports.me = (promise) => {
         .catch(err => ({ err }));
 };
 /**
- * Merges own property names and types.
- *
- * @param target the target object.
- * @param source the source to merge to target.
- */
-function merge(target, source) {
-    for (const k in source) {
-        if (!source.hasOwnProperty(k))
-            continue;
-        target[k] = source[k];
-    }
-    return target;
-}
-exports.merge = merge;
-/**
  * Checks if value or value.type is "radio".
  *
  * @param value the string or object containing type to inspect.
@@ -262,4 +247,37 @@ function toDefault(value, def) {
     return value;
 }
 exports.toDefault = toDefault;
+/**
+ * Merges two objects.
+ *
+ * @param target the target object.
+ * @param source the source object to add to target.
+ */
+function merge(target, source) {
+    for (const k in source) {
+        if (isUndefined(source[k]))
+            continue;
+        if (isPlainObject(target[k]) && isPlainObject(source[k]))
+            target[k] = merge(target[k], source[k]);
+        else
+            target[k] = source[k];
+    }
+    return target;
+}
+exports.merge = merge;
+/**
+ * Similar to merge but only extends top levels.
+ *
+ * @param target the target object.
+ * @param source the source to extend to the target.
+ */
+function extend(target, source) {
+    for (const k in source) {
+        if (isUndefined(source[k]))
+            continue;
+        target[k] = source[k];
+    }
+    return target;
+}
+exports.extend = extend;
 //# sourceMappingURL=helpers.js.map

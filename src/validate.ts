@@ -9,7 +9,7 @@ import {
   ErrorMessageModel,
   IValidationError
 } from './types';
-import { isPromise, isTruthy, isString, isFunction, me, isNullOrUndefined, isEmpty, isPlainObject } from './utils/helpers';
+import { isPromise, isTruthy, isString, isFunction, me, isNullOrUndefined, isEmpty, isPlainObject, isUndefined } from './utils/helpers';
 
 
 
@@ -275,4 +275,66 @@ export function getNativeValidatorTypes(element: IRegisteredElement<any>) {
  */
 export function hasNativeValidators(element: IRegisteredElement<any>) {
   return !!getNativeValidators(element).length || !!getNativeValidatorTypes(element).length;
+}
+
+/**
+ * Purge default values from schema. We need to to this otherwise
+ * Yup will not properly throw errors. 
+ * 
+ * @param schema the validation schema 
+ */
+export function purgeSchemaDefaults<T extends IModel>(schema: ObjectSchema<T>) {
+  // @ts-ignore
+  const { fields } = schema;
+  for (const k in fields) {
+    if (!fields[k]) continue;
+    const field = fields[k];
+    if (!isUndefined(field._default))
+      delete field._default;
+  }
+}
+
+/**
+ * Normalizes default values.
+ * 
+ * @param defaults user defined defaults.
+ * @param schema a yup validation schema or user defined function.
+ * @param purge when true purge defaults from yup schema
+ */
+export function normalizeDefaults<T extends IModel>(defaults: T, schema: any, purge: boolean = true): Promise<T> {
+
+  // Check if schema is object or ObjectSchema,
+  // if yes get the defaults.
+  let schemaDefaults: any = {};
+  let initDefaults: any = {};
+
+  if (typeof schema === 'object') {
+    // @ts-ignore
+    schemaDefaults = schema._nodes ? { ...schema.default() } : { ...schema };
+    if (purge)
+      purgeSchemaDefaults(schema);
+  }
+
+  // Check if defaults are sync or async,
+  if (isPlainObject(defaults))
+    initDefaults = { ...defaults };
+
+  if (!isPromise(defaults))
+    return Promise.resolve({ ...schemaDefaults, ...initDefaults });
+
+  const prom: Promise<T> = defaults as any;
+
+  return prom
+    .then(res => {
+      // Return schema defaults merged with user defined defaults.
+      return { ...schemaDefaults, ...res };
+    })
+    .catch(err => {
+      if (err)
+        // tslint:disable-next-line: no-console
+        console.log(err);
+      // log error but still return any defaults we have.
+      return schemaDefaults;
+    });
+
 }

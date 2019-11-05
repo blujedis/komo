@@ -90,10 +90,10 @@
 				<section class="tsd-panel tsd-member tsd-kind-variable tsd-parent-kind-external-module tsd-is-not-exported">
 					<a name="schema" class="tsd-anchor"></a>
 					<h3><span class="tsd-flag ts-flagConst">Const</span> schema</h3>
-					<div class="tsd-signature tsd-kind-icon">schema<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">ObjectSchema</span><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">Object</span><span class="tsd-signature-symbol">&gt;</span><span class="tsd-signature-symbol"> =&nbsp;object({firstName: string().default(&#x27;Bill&#x27;),lastName: string().default(&#x27;Lumbergh&#x27;),email: string().email().default(&#x27;come-in-on-sunday@initech.com&#x27;),numbers: object({home: string(),mobile: string()}).default({ home: &#x27;9991212&#x27;, mobile: &#x27;9991456&#x27; }),urgent: boolean()})</span></div>
+					<div class="tsd-signature tsd-kind-icon">schema<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">ObjectSchema</span><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">Object</span><span class="tsd-signature-symbol">&gt;</span><span class="tsd-signature-symbol"> =&nbsp;object({firstName: string().required(),lastName: string(),email: string().email(),numbers: object({home: string(),mobile: string()}),urgent: boolean()})</span></div>
 					<aside class="tsd-sources">
 						<ul>
-							<li>Defined in <a href="https://github.com/blujedis/komo/blob/f8d151e/src/example/material.tsx#L8">example/material.tsx:8</a></li>
+							<li>Defined in <a href="https://github.com/blujedis/komo/blob/d71a83a/src/example/material.tsx#L10">example/material.tsx:10</a></li>
 						</ul>
 					</aside>
 				</section>
@@ -110,7 +110,7 @@
 						<li class="tsd-description">
 							<aside class="tsd-sources">
 								<ul>
-									<li>Defined in <a href="https://github.com/blujedis/komo/blob/f8d151e/src/example/material.tsx#L19">example/material.tsx:19</a></li>
+									<li>Defined in <a href="https://github.com/blujedis/komo/blob/d71a83a/src/example/material.tsx#L21">example/material.tsx:21</a></li>
 								</ul>
 							</aside>
 							<h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">Element</span></h4>
@@ -142,6 +142,9 @@
 					</li>
 					<li class=" tsd-kind-external-module">
 						<a href="_example_menu_.html">"example/menu"</a>
+					</li>
+					<li class=" tsd-kind-external-module">
+						<a href="_example_usematerialerror_.html">"example/use<wbr>Material<wbr>Error"</a>
 					</li>
 					<li class=" tsd-kind-external-module">
 						<a href="_example_user_.html">"example/user"</a>

@@ -15,7 +15,7 @@ const typeMap = {
  * @param api the base form api.
  */
 function initElement(api) {
-    const { options: formOptions, log, schemaAst, fields, unregister, setModel, getModel, getDefault, isTouched, isDirty, setDefault, setDirty, setTouched, removeDirty, isValidateBlur, isValidateChange, validateModelAt, isValidatable, removeError, setError, findField } = api;
+    const { options: formOptions, log, schemaAst, fields, unregister, setModel, getModel, getDefault, isTouched, isDirty, setDefault, setDirty, setTouched, removeDirty, isValidateBlur, isValidateChange, validateModelAt, isValidatable, removeError, setError, getElement, render } = api;
     /**
      * Resets the element to its defaults.
      *
@@ -104,6 +104,8 @@ function initElement(api) {
             setTouched(element.name);
         if (!dirty && prevDirty)
             removeDirty(element.name);
+        if (value === '')
+            value = undefined;
         // Set the model value.
         setModel(element.path, value);
     }
@@ -194,6 +196,7 @@ function initElement(api) {
                 return Promise.reject(err);
             }
             removeError(element.name);
+            render();
             return Promise.resolve(data);
         };
         // Reset the element to initial values.
@@ -217,13 +220,15 @@ function initElement(api) {
         };
         const handleBlur = async (e) => {
             updateElement(element, true);
-            if (isValidateBlur(element))
+            if (isValidateBlur(element)) {
                 await utils_1.me(element.validate());
+            }
         };
         const handleChange = async (e) => {
             updateElement(element);
-            if (isValidateChange(element))
+            if (isValidateChange(element)) {
                 await utils_1.me(element.validate());
+            }
         };
         if (element.enableModelUpdate !== false) {
             // Attach blur
@@ -246,7 +251,7 @@ function initElement(api) {
     function isDuplicate(element) {
         if (utils_1.isRadio(element.type))
             return false;
-        return fields.current.has(element) || findField(element.name);
+        return fields.current.has(element) || getElement(element.name);
     }
     function registerElement(elementOrOptions, options) {
         if (utils_1.isNullOrUndefined(elementOrOptions))

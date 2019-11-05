@@ -56,7 +56,7 @@ export function initForm<T extends IModel>(options: IOptionsInternal<T>) {
     renderStatus({ status });
   };
 
-  const findField = (namePathOrElement: string | IRegisteredElement<T>) => {
+  const getElement = (namePathOrElement: string | IRegisteredElement<T>) => {
     if (typeof namePathOrElement === 'object')
       return namePathOrElement;
     return [...fields.current.values()].find(e => e.name === namePathOrElement || e.path === namePathOrElement);
@@ -70,7 +70,7 @@ export function initForm<T extends IModel>(options: IOptionsInternal<T>) {
       options.validationSchema = astToSchema(schemaAst.current, options.validationSchema as ObjectSchema<T>);
 
     // Create the validator.
-    validator.current = normalizeValidator(options.validationSchema as ObjectSchema<T>, findField);
+    validator.current = normalizeValidator(options.validationSchema as ObjectSchema<T>, getElement);
 
     schema = options.validationSchema as any;
 
@@ -86,7 +86,7 @@ export function initForm<T extends IModel>(options: IOptionsInternal<T>) {
     return get(defaults.current, path);
   };
 
-  const setDefault = (pathOrModel: string | T, value?: any) => {
+  const setDefault = useCallback((pathOrModel: string | T, value?: any) => {
 
     if (!pathOrModel) {
       log.error(`Cannot set default value using key or model of undefined.`);
@@ -116,7 +116,7 @@ export function initForm<T extends IModel>(options: IOptionsInternal<T>) {
 
     }
 
-  };
+  }, []);
 
   const setModel = useCallback((pathOrModel: string | T, value?: any) => {
 
@@ -150,11 +150,11 @@ export function initForm<T extends IModel>(options: IOptionsInternal<T>) {
 
   }, []);
 
-  const getModel = (path?: string) => {
+  const getModel = useCallback((path?: string) => {
     if (!path)
       return model.current;
     return get<T>(model.current, path);
-  };
+  }, [defaults]);
 
   // TOUCHED //
 
@@ -172,11 +172,11 @@ export function initForm<T extends IModel>(options: IOptionsInternal<T>) {
     touched.current.clear();
   };
 
-  const isTouched = (name?: KeyOf<T>) => {
+  const isTouched = useCallback((name?: KeyOf<T>) => {
     if (name)
       return touched.current.has(name);
     return !!touched.current.size;
-  };
+  }, []);
 
   // DIRTY //
 
@@ -194,11 +194,11 @@ export function initForm<T extends IModel>(options: IOptionsInternal<T>) {
     dirty.current.clear();
   };
 
-  const isDirty = (name?: KeyOf<T>) => {
+  const isDirty = useCallback((name?: KeyOf<T>) => {
     if (name)
       return dirty.current.has(name);
     return !!dirty.current.size;
-  };
+  }, []);
 
   // ERRORS //
 
@@ -213,26 +213,33 @@ export function initForm<T extends IModel>(options: IOptionsInternal<T>) {
       else
         errors.current = { ...nameOrErrors as ErrorModel<T> };
     }
+    for (const k in errors.current) {
+      if (isUndefined(errors.current[k]))
+        delete errors.current[k];
+    }
     render('seterror');
     return errors.current;
   }, [options.validationSchema]);
 
-  const removeError = (name: KeyOf<T>) => {
-    setError(name, undefined); // this just causes a render to trigger.
-    const clone = { ...errors.current };
-    delete clone[name];
-    errors.current = clone;
-    return true;
-  };
+  const removeError = useCallback((name: KeyOf<T>) => {
+    const exists = errors.current.hasOwnProperty(name);
+    // causes a render to trigger then we set below.
+    // saves us a render actually.
+    setError(name, undefined);
+    const errs: Partial<ErrorModel<T>> = {};
+    for (const k in errors.current) {
+      if (typeof errors.current[k] !== 'undefined' || k !== name)
+        errs[k] = errors.current[k];
+    }
+    errors.current = errs as any;
+    // Just so we know if something actually deleted.
+    if (exists)
+      return true;
+    return false;
+  }, [options.validationSchema, setError]);
 
   const clearError = () => {
     errors.current = {} as any;
-  };
-
-  const isError = (name?: KeyOf<T>) => {
-    if (name)
-      return !has(errors, name);
-    return !Object.entries(errors).length;
   };
 
   // VALIDATION //
@@ -256,14 +263,14 @@ export function initForm<T extends IModel>(options: IOptionsInternal<T>) {
 
     const _validator = validator.current;
     const element = isString(nameOrElement) ?
-      findField(nameOrElement as KeyOf<T>) : nameOrElement as IRegisteredElement<T>;
+      getElement(nameOrElement as KeyOf<T>) : nameOrElement as IRegisteredElement<T>;
 
     if (!element) {
       log.error(`validateModelAt failed using missing or unknown element.`);
       return;
     }
 
-    const currentValue = getModel(element.path);
+    let currentValue = getModel(element.path);
 
     if (!_validator)
       return Promise.resolve(currentValue) as Promise<Partial<T>>;
@@ -272,6 +279,8 @@ export function initForm<T extends IModel>(options: IOptionsInternal<T>) {
 
     if (isFunction(options.validationSchema))
       return _validator.validateAt(element.path, model.current);
+
+    currentValue = (currentValue as any) === '' ? undefined : currentValue;
 
     return _validator.validateAt(element.path, currentValue, opts);
 
@@ -286,14 +295,14 @@ export function initForm<T extends IModel>(options: IOptionsInternal<T>) {
   const isValidateChange = (nameOrElement: KeyOf<T> | IRegisteredElement<T>) => {
     let element = nameOrElement as IRegisteredElement<T>;
     if (isString(nameOrElement))
-      element = findField(nameOrElement as KeyOf<T>);
+      element = getElement(nameOrElement as KeyOf<T>);
     return isUndefined(element.validateChange) ? options.validateChange : element.validateChange;
   };
 
   const isValidateBlur = (nameOrElement: KeyOf<T> | IRegisteredElement<T>) => {
     let element = nameOrElement as IRegisteredElement<T>;
     if (isString(nameOrElement))
-      element = findField(nameOrElement as KeyOf<T>);
+      element = getElement(nameOrElement as KeyOf<T>);
     return isUndefined(element.validateBlur) ? options.validateBlur : element.validateBlur;
   };
 
@@ -305,7 +314,7 @@ export function initForm<T extends IModel>(options: IOptionsInternal<T>) {
 
     // If string find the element in fields.
     const _element = typeof element === 'string' ?
-      findField(element as string) :
+      getElement(element as string) :
       element as IRegisteredElement<T>;
 
     if (!_element) {
@@ -340,6 +349,22 @@ export function initForm<T extends IModel>(options: IOptionsInternal<T>) {
       return errors.current;
     },
 
+    get touched() {
+      return [...touched.current.keys()];
+    },
+
+    get dirty() {
+      return [...dirty.current.keys()];
+    },
+
+    get valid() {
+      return !Object.entries(errors.current).length;
+    },
+
+    get invalid() {
+      return !!Object.entries(errors.current).length;
+    },
+
     get isSubmitting() {
       return submitting.current;
     },
@@ -350,10 +375,6 @@ export function initForm<T extends IModel>(options: IOptionsInternal<T>) {
 
     get submitCount() {
       return submitCount.current;
-    },
-
-    get isValid() {
-      return isError();
     },
 
     get isDirty() {
@@ -376,7 +397,7 @@ export function initForm<T extends IModel>(options: IOptionsInternal<T>) {
     unregister,
     schemaAst,
     render,
-    findField,
+    getElement,
     initSchema,
 
     // Form
@@ -413,7 +434,6 @@ export function initForm<T extends IModel>(options: IOptionsInternal<T>) {
     setError,
     removeError,
     clearError,
-    isError,
 
     submitCount,
     submitting,
@@ -432,18 +452,19 @@ export function initForm<T extends IModel>(options: IOptionsInternal<T>) {
  */
 export default function useForm<T extends IModel>(options?: IOptions<T>) {
 
-  const _options: IOptionsInternal<T> = { ...DEFAULTS, ...options as any };
-
   // Check if schema is object or ObjectSchema,
   // if yes get the defaults.
+  const initDefaults = options.defaults;
+  let schemaDefaults;
+
   if (typeof options.validationSchema === 'object') {
     const schema = options.validationSchema as any;
-    const _defaults = schema._nodes ? schema.cast() : schema;
-    _options.model = { ..._defaults };
+    schemaDefaults = schema._nodes ? { ...schema.cast() } : { ...schema };
   }
 
-  if ((_options as any).defaults)
-    _options.model = { ...(_options as any).defaults, ..._options.model };
+  const _options: IOptionsInternal<T> = { ...DEFAULTS, ...options as any };
+
+  _options.model = { ...schemaDefaults, ...initDefaults, };
 
   const base = initForm(_options);
 
@@ -455,6 +476,8 @@ export default function useForm<T extends IModel>(options?: IOptions<T>) {
 
   useEffect(() => {
 
+    // May need to update model defaults
+    // again from user here.
     mounted.current = true;
     initSchema();
 
@@ -531,6 +554,13 @@ export default function useForm<T extends IModel>(options?: IOptions<T>) {
 
     const handleCallback = (m, e, ev) => {
 
+      const errorKeys = Object.keys(errors.current);
+
+      if (errorKeys.length && formOptions.validateSubmitExit) {
+        log.warn(`Failed to submit invalid form with the following error properties: "${errorKeys.join(', ')}"`);
+        return;
+      }
+
       submitting.current = false;
       submitted.current = true;
       submitCount.current = submitCount.current + 1;
@@ -545,19 +575,22 @@ export default function useForm<T extends IModel>(options?: IOptions<T>) {
 
       submitting.current = true;
 
+
+
       if (event) {
         event.preventDefault();
         event.persist();
       }
 
       const _model = getModel();
-      clearError();
 
       // Can't validate or is disabled.
       if (!isValidatable() || !formOptions.validateSubmit) {
         await handleCallback(model, {} as any, event);
         return;
       }
+
+      clearError();
 
       const { err } = await me<T, ErrorModel<T>>(validateModel(_model));
 
@@ -577,6 +610,7 @@ export default function useForm<T extends IModel>(options?: IOptions<T>) {
     unregister: base.unregister,
 
     // Form
+    render,
     state: base.state,
     reset,
     handleReset,
@@ -598,7 +632,7 @@ export default function useForm<T extends IModel>(options?: IOptions<T>) {
 
     setError: base.setError,
     removeError: base.removeError,
-    clearError: base.clearError,
+    clearError: base.clearError
 
   };
 

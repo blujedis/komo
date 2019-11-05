@@ -229,7 +229,6 @@ export function normalizeValidator<T extends IModel>(
     };
 
     validator.validateAt = (path: string, value: any, options?: ValidateOptions) => {
-
       return (schema as ObjectSchema<T>).validateAt(path, { [path]: value } as any, options)
         .then(res => {
           return set({}, path, res) as Partial<T>;

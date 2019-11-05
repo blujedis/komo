@@ -140,6 +140,11 @@ export interface IOptions<T extends IModel> {
      */
     validateSubmit?: boolean;
     /**
+     * When true validation is triggered on submit if error halts submit (default: false)
+     * Defaults to false so user opts in can see submissions are working.
+     */
+    validateSubmitExit?: boolean;
+    /**
      * When true validation is triggered when form is first initialized (default: false)
      */
     validateInit?: boolean;
@@ -398,6 +403,56 @@ export declare type ErrorMessageModel<T extends IModel> = {
  * Simple internal logger.
  */
 declare type Logger = ReturnType<typeof createLogger>;
+export interface IFormState<T extends IModel> {
+    /**
+     * The data model.
+     */
+    model: T;
+    /**
+     * Object containing current error model.
+     */
+    errors: ErrorModel<T>;
+    /**
+     * Array of current touched fields.
+     */
+    touched: Array<KeyOf<T>>;
+    /**
+     * Array of current dirty fields.
+     */
+    dirty: Array<KeyOf<T>>;
+    /**
+     * Boolean indicating if is mounted.
+     */
+    isMounted: boolean;
+    /**
+     * Boolean indicating if form is submitting.
+     */
+    isSubmitting: boolean;
+    /**
+     * Boolean indicating if form is submitted.
+     */
+    isSubmitted: boolean;
+    /**
+     * The number count of submissions.
+     */
+    submitCount: number;
+    /**
+     * Boolean indicating if the form is valid.
+     */
+    valid: boolean;
+    /**
+     * Boolean indicating if the form is invalid.
+     */
+    invalid: boolean;
+    /**
+     * Boolean indicating if the form is dirty.
+     */
+    isDirty: boolean;
+    /**
+     * Boolean indicating if the form has been touched.
+     */
+    isTouched: boolean;
+}
 /**
  * The base API interface used by form field elements and form submit, reset handlers.
  */
@@ -449,44 +504,7 @@ export interface IBaseApi<T extends IModel> {
     /**
      * Object containing active state of the form.
      */
-    state: {
-        /**
-         * The data model.
-         */
-        model: T;
-        /**
-         * Object containing current error model.
-         */
-        errors: ErrorModel<T>;
-        /**
-         * Boolean indicating if is mounted.
-         */
-        isMounted: boolean;
-        /**
-         * Boolean indicating if form is submitting.
-         */
-        isSubmitting: boolean;
-        /**
-         * Boolean indicating if form is submitted.
-         */
-        isSubmitted: boolean;
-        /**
-         * The number count of submissions.
-         */
-        submitCount: number;
-        /**
-         * Boolean indicating if the form is valid.
-         */
-        isValid: boolean;
-        /**
-         * Boolean indicating if the form is dirty.
-         */
-        isDirty: boolean;
-        /**
-         * Boolean indicating if the form has been touched.
-         */
-        isTouched: boolean;
-    };
+    state: IFormState<T>;
     /**
      * Initializes and normalizes the schema.
      */
@@ -658,12 +676,6 @@ export interface IBaseApi<T extends IModel> {
      */
     removeError(name: KeyOf<T>): boolean;
     /**
-     * Checks if field/element has error by name.
-     *
-     * @param name the field name to check.
-     */
-    isError(name?: KeyOf<T>): boolean;
-    /**
      * Clears all errors from error model.
      */
     clearError(): void;
@@ -672,13 +684,13 @@ export interface IBaseApi<T extends IModel> {
      *
      * @param element a registered element.
      */
-    findField(element: IRegisteredElement<T>): IRegisteredElement<T>;
+    getElement(element: IRegisteredElement<T>): IRegisteredElement<T>;
     /**
      * Finds a field/element by name or path.
      *
      * @param nameOrPath the name or path used to lookup element.
      */
-    findField(nameOrPath: string): IRegisteredElement<T>;
+    getElement(nameOrPath: string): IRegisteredElement<T>;
     /**
      * Unregisters an element by instance.
      *

@@ -40,7 +40,7 @@ function initForm(options) {
             return getStatus.status;
         renderStatus({ status });
     };
-    const findField = (namePathOrElement) => {
+    const getElement = (namePathOrElement) => {
         if (typeof namePathOrElement === 'object')
             return namePathOrElement;
         return [...fields.current.values()].find(e => e.name === namePathOrElement || e.path === namePathOrElement);
@@ -50,7 +50,7 @@ function initForm(options) {
         if (schemaAst.current)
             options.validationSchema = validate_1.astToSchema(schemaAst.current, options.validationSchema);
         // Create the validator.
-        validator.current = validate_1.normalizeValidator(options.validationSchema, findField);
+        validator.current = validate_1.normalizeValidator(options.validationSchema, getElement);
         schema = options.validationSchema;
         return schema;
     };
@@ -60,7 +60,7 @@ function initForm(options) {
             return defaults.current;
         return dot_prop_1.get(defaults.current, path);
     };
-    const setDefault = (pathOrModel, value) => {
+    const setDefault = react_1.useCallback((pathOrModel, value) => {
         if (!pathOrModel) {
             log.error(`Cannot set default value using key or model of undefined.`);
             return;
@@ -79,7 +79,7 @@ function initForm(options) {
                 current = pathOrModel;
             defaults.current = current;
         }
-    };
+    }, []);
     const setModel = react_1.useCallback((pathOrModel, value) => {
         if (!pathOrModel) {
             log.error(`Cannot set default value using key or model of undefined.`);
@@ -100,11 +100,11 @@ function initForm(options) {
             model.current = current;
         }
     }, []);
-    const getModel = (path) => {
+    const getModel = react_1.useCallback((path) => {
         if (!path)
             return model.current;
         return dot_prop_1.get(model.current, path);
-    };
+    }, [defaults]);
     // TOUCHED //
     const setTouched = (name) => {
         if (!touched.current.has(name))
@@ -117,11 +117,11 @@ function initForm(options) {
     const clearTouched = () => {
         touched.current.clear();
     };
-    const isTouched = (name) => {
+    const isTouched = react_1.useCallback((name) => {
         if (name)
             return touched.current.has(name);
         return !!touched.current.size;
-    };
+    }, []);
     // DIRTY //
     const setDirty = (name) => {
         if (!dirty.current.has(name))
@@ -134,11 +134,11 @@ function initForm(options) {
     const clearDirty = () => {
         dirty.current.clear();
     };
-    const isDirty = (name) => {
+    const isDirty = react_1.useCallback((name) => {
         if (name)
             return dirty.current.has(name);
         return !!dirty.current.size;
-    };
+    }, []);
     // ERRORS //
     const setError = react_1.useCallback((nameOrErrors, value) => {
         const currentErrors = { ...errors.current };
@@ -151,23 +151,31 @@ function initForm(options) {
             else
                 errors.current = { ...nameOrErrors };
         }
+        for (const k in errors.current) {
+            if (utils_1.isUndefined(errors.current[k]))
+                delete errors.current[k];
+        }
         render('seterror');
         return errors.current;
     }, [options.validationSchema]);
-    const removeError = (name) => {
-        setError(name, undefined); // this just causes a render to trigger.
-        const clone = { ...errors.current };
-        delete clone[name];
-        errors.current = clone;
-        return true;
-    };
+    const removeError = react_1.useCallback((name) => {
+        const exists = errors.current.hasOwnProperty(name);
+        // causes a render to trigger then we set below.
+        // saves us a render actually.
+        setError(name, undefined);
+        const errs = {};
+        for (const k in errors.current) {
+            if (typeof errors.current[k] !== 'undefined' || k !== name)
+                errs[k] = errors.current[k];
+        }
+        errors.current = errs;
+        // Just so we know if something actually deleted.
+        if (exists)
+            return true;
+        return false;
+    }, [options.validationSchema, setError]);
     const clearError = () => {
         errors.current = {};
-    };
-    const isError = (name) => {
-        if (name)
-            return !dot_prop_1.has(errors, name);
-        return !Object.entries(errors).length;
     };
     // VALIDATION //
     const validateModel = react_1.useCallback((opts) => {
@@ -180,17 +188,18 @@ function initForm(options) {
     const validateModelAt = react_1.useCallback((nameOrElement, opts) => {
         const _validator = validator.current;
         const element = utils_1.isString(nameOrElement) ?
-            findField(nameOrElement) : nameOrElement;
+            getElement(nameOrElement) : nameOrElement;
         if (!element) {
             log.error(`validateModelAt failed using missing or unknown element.`);
             return;
         }
-        const currentValue = getModel(element.path);
+        let currentValue = getModel(element.path);
         if (!_validator)
             return Promise.resolve(currentValue);
         opts = { abortEarly: false, ...opts };
         if (utils_1.isFunction(options.validationSchema))
             return _validator.validateAt(element.path, model.current);
+        currentValue = currentValue === '' ? undefined : currentValue;
         return _validator.validateAt(element.path, currentValue, opts);
     }, [options.validationSchema, setError]);
     const isValidatable = () => {
@@ -201,13 +210,13 @@ function initForm(options) {
     const isValidateChange = (nameOrElement) => {
         let element = nameOrElement;
         if (utils_1.isString(nameOrElement))
-            element = findField(nameOrElement);
+            element = getElement(nameOrElement);
         return utils_1.isUndefined(element.validateChange) ? options.validateChange : element.validateChange;
     };
     const isValidateBlur = (nameOrElement) => {
         let element = nameOrElement;
         if (utils_1.isString(nameOrElement))
-            element = findField(nameOrElement);
+            element = getElement(nameOrElement);
         return utils_1.isUndefined(element.validateBlur) ? options.validateBlur : element.validateBlur;
     };
     const unregister = react_1.useCallback((element) => {
@@ -216,7 +225,7 @@ function initForm(options) {
             return;
         // If string find the element in fields.
         const _element = typeof element === 'string' ?
-            findField(element) :
+            getElement(element) :
             element;
         if (!_element) {
             log.warn(`Failed to unregister element of undefined.`);
@@ -241,6 +250,18 @@ function initForm(options) {
         get errors() {
             return errors.current;
         },
+        get touched() {
+            return [...touched.current.keys()];
+        },
+        get dirty() {
+            return [...dirty.current.keys()];
+        },
+        get valid() {
+            return !Object.entries(errors.current).length;
+        },
+        get invalid() {
+            return !!Object.entries(errors.current).length;
+        },
         get isSubmitting() {
             return submitting.current;
         },
@@ -249,9 +270,6 @@ function initForm(options) {
         },
         get submitCount() {
             return submitCount.current;
-        },
-        get isValid() {
-            return isError();
         },
         get isDirty() {
             return isDirty();
@@ -269,7 +287,7 @@ function initForm(options) {
         unregister,
         schemaAst,
         render,
-        findField,
+        getElement,
         initSchema,
         // Form
         mounted,
@@ -301,7 +319,6 @@ function initForm(options) {
         setError,
         removeError,
         clearError,
-        isError,
         submitCount,
         submitting,
         submitted
@@ -315,19 +332,21 @@ exports.initForm = initForm;
  * @param options form api options.
  */
 function useForm(options) {
-    const _options = { ...DEFAULTS, ...options };
     // Check if schema is object or ObjectSchema,
     // if yes get the defaults.
+    const initDefaults = options.defaults;
+    let schemaDefaults;
     if (typeof options.validationSchema === 'object') {
         const schema = options.validationSchema;
-        const _defaults = schema._nodes ? schema.cast() : schema;
-        _options.model = { ..._defaults };
+        schemaDefaults = schema._nodes ? { ...schema.cast() } : { ...schema };
     }
-    if (_options.defaults)
-        _options.model = { ..._options.defaults, ..._options.model };
+    const _options = { ...DEFAULTS, ...options };
+    _options.model = { ...schemaDefaults, ...initDefaults, };
     const base = initForm(_options);
     const { options: formOptions, log, defaults, render, clearDirty, clearTouched, clearError, setModel, fields, submitCount, submitting, submitted, validateModel, getModel, isValidatable, errors, setError, unregister, mounted, initSchema, model } = base;
     react_1.useEffect(() => {
+        // May need to update model defaults
+        // again from user here.
         mounted.current = true;
         initSchema();
         // validate form before touched.
@@ -383,6 +402,11 @@ function useForm(options) {
             return;
         }
         const handleCallback = (m, e, ev) => {
+            const errorKeys = Object.keys(errors.current);
+            if (errorKeys.length && formOptions.validateSubmitExit) {
+                log.warn(`Failed to submit invalid form with the following error properties: "${errorKeys.join(', ')}"`);
+                return;
+            }
             submitting.current = false;
             submitted.current = true;
             submitCount.current = submitCount.current + 1;
@@ -397,12 +421,12 @@ function useForm(options) {
                 event.persist();
             }
             const _model = getModel();
-            clearError();
             // Can't validate or is disabled.
             if (!isValidatable() || !formOptions.validateSubmit) {
                 await handleCallback(model, {}, event);
                 return;
             }
+            clearError();
             const { err } = await utils_1.me(validateModel(_model));
             if (err)
                 setError(err);
@@ -414,6 +438,7 @@ function useForm(options) {
         register: react_1.useCallback(register_1.initElement(base), []),
         unregister: base.unregister,
         // Form
+        render,
         state: base.state,
         reset,
         handleReset,
@@ -431,7 +456,7 @@ function useForm(options) {
         clearDirty: base.clearDirty,
         setError: base.setError,
         removeError: base.removeError,
-        clearError: base.clearError,
+        clearError: base.clearError
     };
 }
 exports.default = useForm;

@@ -31,7 +31,7 @@ export function initElement<T extends IModel>(api?: IBaseApi<T>) {
     options: formOptions, log, schemaAst, fields, unregister, setModel,
     getModel, getDefault, isTouched, isDirty, setDefault,
     setDirty, setTouched, removeDirty, isValidateBlur, isValidateChange,
-    validateModelAt, isValidatable, removeError, setError, findField
+    validateModelAt, isValidatable, removeError, setError, getElement, render
   } = api;
 
   /**
@@ -156,6 +156,9 @@ export function initElement<T extends IModel>(api?: IBaseApi<T>) {
 
     if (!dirty && prevDirty)
       removeDirty(element.name);
+
+    if (value === '')
+      value = undefined;
 
     // Set the model value.
     setModel(element.path, value);
@@ -286,6 +289,7 @@ export function initElement<T extends IModel>(api?: IBaseApi<T>) {
       }
 
       removeError(element.name);
+      render();
       return Promise.resolve(data);
 
     };
@@ -315,14 +319,16 @@ export function initElement<T extends IModel>(api?: IBaseApi<T>) {
 
     const handleBlur = async (e: Event) => {
       updateElement(element, true);
-      if (isValidateBlur(element))
+      if (isValidateBlur(element)) {
         await me(element.validate());
+      }
     };
 
     const handleChange = async (e: Event) => {
       updateElement(element);
-      if (isValidateChange(element))
+      if (isValidateChange(element)) {
         await me(element.validate());
+      }
     };
 
     if (element.enableModelUpdate !== false) {
@@ -353,7 +359,7 @@ export function initElement<T extends IModel>(api?: IBaseApi<T>) {
   function isDuplicate(element: IRegisteredElement<T>) {
     if (isRadio(element.type))
       return false;
-    return fields.current.has(element) || findField(element.name);
+    return fields.current.has(element) || getElement(element.name);
   }
 
   /**

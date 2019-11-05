@@ -254,7 +254,7 @@ export function isEmpty(value: unknown) {
 }
 
 /**
- * Ensures value or fallsback to default.
+ * Ensures default when value is undefined.
  * 
  * @param value the value to inspect.
  * @param def the default if value is undefined.

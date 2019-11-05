@@ -16,17 +16,11 @@ export default function useForm<T extends IModel>(options?: IOptions<T>): {
         (element: IRegisteredElement<T>): void;
         (name: Extract<keyof T, string>): void;
     };
-    state: {
-        model: T;
-        errors: ErrorModel<T>;
-        isMounted: boolean;
-        isSubmitting: boolean;
-        isSubmitted: boolean;
-        submitCount: number;
-        isValid: boolean;
-        isDirty: boolean;
-        isTouched: boolean;
+    render: {
+        (status: string): void;
+        (): string;
     };
+    state: import("./types").IFormState<T>;
     reset: (values?: T) => void;
     handleReset: {
         (event: BaseSyntheticEvent<object, any, any>): Promise<void>;

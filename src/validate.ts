@@ -18,7 +18,7 @@ import { isPromise, isTruthy, isString, isFunction, me, isNullOrUndefined, isEmp
  * 
  * @param findField the core lookup helper for finding elements.
  */
-export function lookup<T extends IModel>(findField: IFindField<T>) {
+export function lookup<T>(findField: IFindField<T>) {
 
   const getElement = (pathOrElement: string | IRegisteredElement<T>) => {
     if (!isString(pathOrElement))
@@ -42,7 +42,7 @@ export function lookup<T extends IModel>(findField: IFindField<T>) {
  * 
  * @param error the emitted yup error.
  */
-export function yupToErrors<T extends IModel>(
+export function yupToErrors<T>(
   error: ValidationError, findField?: IFindField<T>): ErrorModel<T> {
 
   const errors: ErrorModel<T> = {} as any;
@@ -85,7 +85,7 @@ export function yupToErrors<T extends IModel>(
  * @param ast the schema ast to convert.
  * @param schema optional existing schema.
  */
-export function astToSchema<T extends IModel>(ast: ISchemaAst, schema?: ObjectSchema<T>): ObjectSchema<T> {
+export function astToSchema<T extends object>(ast: ISchemaAst, schema?: ObjectSchema<T>): ObjectSchema<T> {
 
   let obj: any = {};
 
@@ -141,7 +141,7 @@ export function astToSchema<T extends IModel>(ast: ISchemaAst, schema?: ObjectSc
  * 
  * @param errors the collection of errors as ErrorModel or ErrorMessageModel.
  */
-export function ensureErrorModel<T extends IModel>(
+export function ensureErrorModel<T>(
   errors: ErrorModel<T> | ErrorMessageModel<T>) {
   if (isNullOrUndefined(errors) || isEmpty(errors))
     return ({} as any) as ErrorModel<T>;
@@ -170,7 +170,7 @@ export function ensureErrorModel<T extends IModel>(
  * 
  * @param schema the yup schema or user function for validation.
  */
-export function normalizeValidator<T extends IModel>(
+export function normalizeValidator<T extends object>(
   schema: ValidationSchema<T>, findField?: IFindField<T>): IValidator<T> {
 
   let validator: IValidator<T>;
@@ -283,7 +283,7 @@ export function hasNativeValidators(element: IRegisteredElement<any>) {
  * 
  * @param schema the validation schema 
  */
-export function purgeSchemaDefaults<T extends IModel>(schema: ObjectSchema<T>) {
+export function purgeSchemaDefaults<T extends object>(schema: ObjectSchema<T>) {
   // @ts-ignore
   const { fields } = schema;
   for (const k in fields) {
@@ -301,7 +301,7 @@ export function purgeSchemaDefaults<T extends IModel>(schema: ObjectSchema<T>) {
  * @param schema a yup validation schema or user defined function.
  * @param purge when true purge defaults from yup schema
  */
-export function normalizeDefaults<T extends IModel>(defaults: T, schema: any, purge: boolean = true): Promise<T> {
+export function normalizeDefaults<T>(defaults: T, schema: any, purge: boolean = true): Promise<T> {
 
   // Check if schema is object or ObjectSchema,
   // if yes get the defaults.

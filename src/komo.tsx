@@ -32,10 +32,10 @@ const DEFAULTS: IOptions<any> = {
   enableWarnings: true
 };
 
-function initApi<T extends IModel>(options: IOptionsInternal<T>) {
+function initApi<T>(options: IOptions<T>) {
 
-  const defaults = useRef<T>({ ...options.model });
-  const model = useRef<T>({ ...options.model });
+  const defaults = useRef<T>({} as T);
+  const model = useRef<T>({} as T);
   const fields = useRef(new Set<IRegisteredElement<T>>());
   const touched = useRef(new Set<KeyOf<T>>());
   const dirty = useRef(new Set<KeyOf<T>>());
@@ -465,7 +465,7 @@ function initApi<T extends IModel>(options: IOptionsInternal<T>) {
  * 
  * @param options form api options.
  */
-export function initForm<T extends IModel>(options?: IOptions<T>) {
+function initForm<T>(options?: IOptions<T>) {
 
   const _options: IOptionsInternal<T> = { ...DEFAULTS, ...options as any };
 

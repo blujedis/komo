@@ -207,24 +207,87 @@ export interface IOptions<T extends IModel> {
 
 }
 
-/**
- * Internal options interface.
- */
-export interface IOptionsInternal<T extends IModel> extends IOptions<T> {
-
-  /**
-   * Komo populates initial model from defaults, or cast schema defaults.
-   */
-  model?: T;
-
-}
-
 // REGISTER //
 
 /**
- * Type which when called returns an React ref of HTMLElement.
+ * Interface for custom registrations of an element.
  */
-export type RegisterElement = (element: IRegisterElement) => LegacyRef<HTMLElement>;
+export interface IRegisterOptions<T extends IModel> {
+
+  /**
+   * The name of the element.
+   */
+  name?: KeyOf<T>;
+
+  /**
+   * The default value to use on resets.
+   */
+  defaultValue?: any;
+
+  /**
+   * The default value to use when is element type using "checked".
+   */
+  defaultChecked?: boolean;
+
+  /**
+   * Whether the element should be initialized as required.
+   */
+  required?: boolean;
+
+  /**
+   * Default for element should be a min of this value min="5".
+   */
+  min?: number;
+
+  /**
+   * Default for element should be a max of this value min="5".
+   */
+  max?: number;
+
+  /**
+   * Default element string should be a max of this length.
+   */
+  maxLength?: number;
+
+  /**
+   * Default element string should be a min of this length.
+   */
+  minLength?: number;
+
+  /**
+   * Default element should match this pattern.
+   */
+  pattern?: RegExp;
+
+  // CUSTOM PROPS //
+
+  /**
+   * Alertnate path in model to get/set data from for element value.
+   */
+  path?: string;
+
+  /**
+   * Whether element should validate on change overrides main options.
+   */
+  validateChange?: boolean;
+
+  /**
+   * Whether element should validate on blur, overrides main options.
+   */
+  validateBlur?: boolean;
+
+  /**
+   * Whether or not native validation should be enabled, overrides main options.
+   */
+  enableNativeValidation?: boolean;
+
+  /**
+   * When true element auto updates the model on blur or change. This is not to be confused
+   * with validateChange or validateBlur. Set to false to update your model manually.
+   */
+  enableModelUpdate?: boolean;
+
+}
 
 /**
  * Interface for registering an element, extends HTMLElement.
@@ -290,83 +353,6 @@ export interface IRegisterElement extends Partial<HTMLElement> {
    * When element string to be a max of this length.
    */
   maxLength?: string | number;
-}
-
-/**
- * Interface for custom registrations of an element.
- */
-export interface IRegisterOptions<T extends IModel> {
-
-  /**
-   * The name of the element.
-   */
-  name?: KeyOf<T>;
-
-  /**
-   * Alertnate path in model to get/set data from for element value.
-   */
-  path?: string;
-
-  /**
-   * The default value to use on resets.
-   */
-  defaultValue?: any;
-
-  /**
-   * The default value to use when is element type using "checked".
-   */
-  defaultChecked?: boolean;
-
-  /**
-   * Whether the element should be initialized as required.
-   */
-  required?: boolean;
-
-  /**
-   * Default for element should be a min of this value min="5".
-   */
-  min?: number;
-
-  /**
-   * Default for element should be a max of this value min="5".
-   */
-  max?: number;
-
-  /**
-   * Default element string should be a max of this length.
-   */
-  maxLength?: number;
-
-  /**
-   * Default element string should be a min of this length.
-   */
-  minLength?: number;
-
-  /**
-   * Default element should match this pattern.
-   */
-  pattern?: RegExp;
-
-  /**
-   * Whether element should validate on change overrides main options.
-   */
-  validateChange?: boolean;
-
-  /**
-   * Whether element should validate on blur, overrides main options.
-   */
-  validateBlur?: boolean;
-
-  /**
-   * Whether or not native validation should be enabled, overrides main options.
-   */
-  enableNativeValidation?: boolean;
-
-  /**
-   * When true element auto updates the model on blur or change. This is not to be confused
-   * with validateChange or validateBlur. Set to false to update your model manually.
-   */
-  enableModelUpdate?: boolean;
 
 }
 
@@ -379,6 +365,23 @@ export interface IRegisteredElement<T extends IModel> extends IRegisterElement {
    * The name of the element.
    */
   name: KeyOf<T>;
+
+  /**
+   * The default value used when reset is called.
+   */
+  defaultValue?: any;
+
+  /**
+   * The default checked value when reset is called if applicable.
+   */
+  defaultChecked?: boolean;
+
+  // CUSTOM PROPS //
+
+  /**
+   * Indicates element is bound to Komo.
+   */
+  komo?: boolean;
 
   /**
    * The alternate model path for getting/setting field value.
@@ -394,16 +397,6 @@ export interface IRegisteredElement<T extends IModel> extends IRegisterElement {
    * The initialized checked value if any.
    */
   initChecked?: boolean;
-
-  /**
-   * The default value used when reset is called.
-   */
-  defaultValue?: any;
-
-  /**
-   * The default checked value when reset is called if applicable.
-   */
-  defaultChecked?: boolean;
 
   /**
    * Same as defaultValue but some libs
@@ -444,14 +437,39 @@ export interface IRegisteredElement<T extends IModel> extends IRegisterElement {
   validate?: () => PromiseStrict<Partial<T>, Partial<ErrorModel<T>>>;
 
   /**
+   * Sets element as touched.
+   */
+  touch?: () => void;
+
+  /**
+   * Sets element as untouched.
+   */
+  untouch?: () => void;
+
+  /**
+   * Set element as dirty.
+   */
+  dirty?: () => void;
+
+  /**
+   * Set elmement as undirty.
+   */
+  undirty?: () => void;
+
+  /**
    * Unbinds events for the element.
    */
   unbind?: () => void;
 
   /**
-   * Rebind defaults values.
+   * Re initializes the element defaults.
    */
-  rebind?: () => void;
+  reinit?: (options?: { defaultValue?: any, defaultChecked?: boolean }) => void;
+
+  /**
+   * Registers the element with Komo.
+   */
+  register?: () => void;
 
   /**
    * Unbinds and unregisters element from Komo.
@@ -464,6 +482,31 @@ export interface IRegisteredElement<T extends IModel> extends IRegisterElement {
   reset?: () => void;
 
 }
+
+/**
+ * Type which when called returns an React ref of HTMLElement.
+ */
+export type RegisterElement = (element: IRegisterElement) => LegacyRef<HTMLElement>;
+
+/**
+ * Interface for registering an element.
+ */
+export interface IRegister<T extends IModel> {
+
+  /**
+   * Registers an element with Komo using custom options.
+   * 
+   * @param options the element registration options.
+   */
+  (options: IRegisterOptions<T>): RegisterElement;
+
+  /**
+   * Registers an element with Komo directly without options.
+   */
+  (element: IRegisterElement): void;
+
+}
+
 
 // ERRORS //
 
@@ -906,19 +949,6 @@ export interface IBaseApi<T extends IModel> {
 
 }
 
-export interface IRegister<T extends IModel> {
-  /**
-   * Registers an element with Komo using custom options.
-   * 
-   * @param options the element registration options.
-   */
-  (options: IRegisterOptions<T>): RegisterElement;
-
-  /**
-   * Registers an element with Komo directly without options.
-   */
-  (element: IRegisterElement): void;
-}
 
 /**
  * Resulting object upon initializing useField.

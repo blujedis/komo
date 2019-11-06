@@ -33,6 +33,7 @@
     "no-construct": false,
     "object-literal-key-quotes": false,
     "prefer-for-of": false,
-    "ban-types": false
+    "ban-types": false,
+    "no-object-literal-type-assertion": false
   }
 }

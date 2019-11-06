@@ -1,4 +1,5 @@
-import { IModel, KeyOf, IKomo, UseFields } from './types';
+import { IModel, KeyOf, IKomo, IUseFields } from './types';
+import { useCallback } from 'react';
 
 export function initHooks<T extends IModel>(komo: IKomo<T>) {
 
@@ -33,11 +34,15 @@ export function initHooks<T extends IModel>(komo: IKomo<T>) {
    * @param name the name of the field to create hook for.
    * @param def the default message value, typically empty string ''.
    */
-  function useField(name: KeyOf<T>, def: string = '') {
+  function useField(name: KeyOf<T>) {
 
     return {
 
       get element() {
+        return komo.getElement(name);
+      },
+
+      get path() {
         return komo.getElement(name);
       },
 
@@ -54,9 +59,15 @@ export function initHooks<T extends IModel>(komo: IKomo<T>) {
       },
 
       get message() {
-        if (!this.errors || typeof this.errors[name] === 'undefined')
-          return def;
-        return this.errors[name][0].message;
+        if (!komo.state.errors || typeof komo.state.errors[name] === 'undefined')
+          return null;
+        return komo.state.errors[name][0].message;
+      },
+
+      get messages() {
+        if (!komo.state.errors || typeof komo.state.errors[name] === 'undefined')
+          return null;
+        return komo.state.errors[name].map(e => e.message);
       },
 
       get valid() {
@@ -83,16 +94,16 @@ export function initHooks<T extends IModel>(komo: IKomo<T>) {
    * 
    * @param names the field names you wish to create hooks for.
    */
-  function useFields<K extends KeyOf<T>>(...name: K[]) {
-    return name.reduce((result, prop) => {
+  function useFields<K extends KeyOf<T>>(...names: K[]) {
+    return names.reduce((result, prop) => {
       result[prop as any] = useField(prop);
       return result;
-    }, {}) as UseFields<K, ReturnType<typeof useField>>;
+    }, {}) as IUseFields<K, ReturnType<typeof useField>>;
   }
 
   return {
-    useField,
-    useFields
+    useField: useCallback(useField, []),
+    useFields: useCallback(useFields, [useField])
   };
 
 }

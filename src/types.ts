@@ -15,11 +15,6 @@ export type KeyOf<T> = Extract<keyof T, string>;
 export type ValueOf<T, K extends KeyOf<T>> = T[K];
 
 /**
- * Object contiaing useField hooks for convenience.
- */
-export type UseFields<Fields extends string, T> = { [P in Fields]: T };
-
-/**
  * Infers the return type of a passed function.
  */
 export type InferReturn<F extends Function> = F extends (...args: any[]) => infer R ? R : never;
@@ -911,25 +906,148 @@ export interface IBaseApi<T extends IModel> {
 
 }
 
+export interface IRegister<T extends IModel> {
+  /**
+   * Registers an element with Komo using custom options.
+   * 
+   * @param options the element registration options.
+   */
+  (options: IRegisterOptions<T>): RegisterElement;
+
+  /**
+   * Registers an element with Komo directly without options.
+   */
+  (element: IRegisterElement): void;
+}
+
+/**
+ * Resulting object upon initializing useField.
+ */
+export interface IUseField<T extends IModel> {
+
+  /**
+   * Exposes access to the hook's bound element in your form. This allows 
+   * you to get/set properties directly on your element.
+   */
+  readonly element: IRegisteredElement<T>;
+
+  /**
+   * The data path in your model which this field/element gets/sets data from.
+   */
+  readonly path: string;
+
+  /**
+   * Indicates if the field/element is touched.
+   */
+  readonly touched: boolean;
+
+  /**
+   * Indicates if the field/element is dirty.
+   */
+  readonly dirty: boolean;
+
+  /**
+   * Returns the current errors for a field/element.
+   */
+  readonly errors: ErrorModel<T>;
+
+  /**
+   * Returns the current top error for a field/element.
+   */
+  readonly message: string;
+
+  /**
+   * Returns current error messages for a field/element.
+   */
+  readonly messages: string[];
+
+  /**
+   * Returns true if the field/element is valid or without errors.
+   */
+  readonly valid: boolean;
+
+  /**
+   * Returns true when the field/element has errors and is invalid.
+   */
+  readonly invalid: boolean;
+
+}
+
+/**
+ * Resulting object upon initializing useFields.
+ */
+export type IUseFields<Fields extends string, T> = { [P in Fields]: T };
+
+/**
+ * Create useField type returning IUseField.
+ */
+export type UseField<T extends IModel> = (name: Extract<keyof T, string>) => IUseField<T>;
+
+/**
+ * Create useFields type returning IUseFields.
+ */
+export type UseFields<T extends IModel> =
+  <K extends Extract<keyof T, string>>(...names: K[]) => IUseFields<K, IUseField<T>>;
+
 type BasePicked = 'render' | 'state' | 'getModel' | 'setModel' | 'validateModel' | 'validateModelAt' | 'setTouched' | 'removeTouched' | 'clearTouched' | 'setDirty' | 'removeDirty' | 'clearDirty' | 'setError' | 'removeError' | 'clearError' | 'getElement';
 
 export interface IKomoExtended<T extends IModel> extends Pick<IBaseApi<T>, BasePicked> {
 
-  register: {
-    (options: IRegisterOptions<T>): RegisterElement;
-    (element: IRegisterElement): void;
-  };
+  /**
+   * Registers an element/field with Komo.
+   */
+  register: IRegister<T>;
 
+  /**
+   * Resets form clearing errors and restoring defaults. This is called by "handleReset".
+   * 
+   * @param values optiona values to reset the form with.
+   */
   reset(values?: T): void;
 
+  /**
+   * Handles reset for the bound from.
+   * 
+   * @param event the html form event on reset.
+   */
   handleReset(event: BaseSyntheticEvent): Promise<void>;
 
+  /**
+   * Handles reset for the bound from with suppiled new values.
+   * 
+   * @param event the html form event on reset.
+   */
   handleReset(values: T): (event: BaseSyntheticEvent) => Promise<void>;
 
+  /**
+   * Handles form submission.
+   * 
+   * @param handler the form submission handler used to submit the form.
+   */
   handleSubmit(handler: SubmitHandler<T>): (event: FormEvent<HTMLFormElement>) => Promise<void>;
 
+  /**
+   * Built in hook for exposing helpers to a given form field.
+   * 
+   * @param name the name of the field/element to bind to.
+   */
+  useField?: (name: Extract<keyof T, string>) => IUseField<T>;
+
+  /**
+   * Built in hook for exposing helpers to a given set of fields.
+   * 
+   * @param names the names of fields/elements you wish to create hooks for.
+   */
+  useFields?<K extends Extract<keyof T, string>>(...names: K[]): IUseFields<K, IUseField<T>>;
+
+  /**
+   * Convenience method for generating hooks which receives the Komo api. Essentially this
+   * just makes your types play nicely.
+   * 
+   * @param hook the hook which accepts the Komo api.
+   */
   withKomo?<R, H extends (hook: IKomo<T>) => R>(hook: H): InferReturn<H>;
 
 }
 
-export interface IKomo<T extends IModel> extends Omit<IKomoExtended<T>, 'withHook'> {}
+export interface IKomo<T extends IModel> extends Omit<IKomoExtended<T>, 'withHook'> { }

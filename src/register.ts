@@ -95,6 +95,8 @@ export function initElement<T extends IModel>(api?: IBaseApi<T>) {
     const prevTouched = isTouched(element.name);
     const prevDirty = isDirty(element.name);
 
+    // console.log('update:', element.name, element.value, element.defaultValuePersist + '\n');
+
     let value: any;
     let dirty = false;
 
@@ -129,6 +131,7 @@ export function initElement<T extends IModel>(api?: IBaseApi<T>) {
     else {
       value = element.value;
     }
+    // console.log('element:', element.value, 'value:', value, 'default:', defaultValue);
 
     dirty = isArray(defaultValue)
       ? !isEqual(defaultValue, value)
@@ -160,12 +163,18 @@ export function initElement<T extends IModel>(api?: IBaseApi<T>) {
    */
   function bindElement(element: IRegisteredElement<T>, rebind: boolean = false) {
 
-    if (!element || (fields.current.has(element as IRegisteredElement<any>) && !rebind)) return;
+    // @ts-ignore
+    if (!element || element.bound || (fields.current.has(element as IRegisteredElement<any>) && !rebind)) return;
 
     if (!element.name) {
       log.warn(`Element of tag "${element.tagName}" could NOT be registered using name of undefined.`);
       return;
     }
+
+    // @ts-ignore
+    element.bound = false;
+
+    console.log('binding:', element.name);
 
     // Normalize path, get default values.
 
@@ -315,6 +324,7 @@ export function initElement<T extends IModel>(api?: IBaseApi<T>) {
     };
 
     const handleBlur = async (e: Event) => {
+      console.log(element.name);
       updateElement(element);
       if (isValidateBlur(element)) {
         await me(element.validate());
@@ -356,10 +366,7 @@ export function initElement<T extends IModel>(api?: IBaseApi<T>) {
   function isDuplicate(element: IRegisteredElement<T>) {
     if (isRadio(element.type))
       return false;
-    const isDupe = fields.current.has(element) || getElement(element.name);
-    if (isDupe)
-      log.warn(`Duplicate field name "${element.name}" ignored, field is not bound.`);
-    return isDupe;
+    return fields.current.has(element) || getElement(element.name);
   }
 
   /**

@@ -58,13 +58,13 @@ function initApi<T extends IModel>(options: IOptionsInternal<T>) {
     renderStatus({ status });
   };
 
-  const getElement = (namePathOrElement: string | IRegisteredElement<T>) => {
+  const getElement = useCallback((namePathOrElement: string | IRegisteredElement<T>) => {
     if (typeof namePathOrElement === 'object')
       return namePathOrElement;
     return [...fields.current.values()].find(e => e.name === namePathOrElement || e.path === namePathOrElement);
-  };
+  }, []);
 
-  const initSchema = () => {
+  const initSchema = useCallback(() => {
 
     let schema: T & InferType<typeof options.validationSchema>;
 
@@ -78,7 +78,7 @@ function initApi<T extends IModel>(options: IOptionsInternal<T>) {
 
     return schema;
 
-  };
+  }, []);
 
   // MODEL //
 
@@ -120,7 +120,7 @@ function initApi<T extends IModel>(options: IOptionsInternal<T>) {
 
   }, []);
 
-  const syncDefaults = (defs: T) => {
+  const syncDefaults = useCallback((defs: T) => {
 
     defaults.current = merge({ ...defaults.current }, { ...defs });
     model.current = merge({ ...defs }, { ...model.current });
@@ -130,7 +130,7 @@ function initApi<T extends IModel>(options: IOptionsInternal<T>) {
       element.rebind();
     });
 
-  };
+  }, []);
 
   const setModel = useCallback((pathOrModel: string | T, value?: any) => {
 
@@ -162,7 +162,7 @@ function initApi<T extends IModel>(options: IOptionsInternal<T>) {
 
     }
 
-  }, []);
+  }, [defaults.current, model.current]);
 
   const getModel = useCallback((path?: string) => {
     if (!path)
@@ -483,6 +483,8 @@ export function initForm<T extends IModel>(options?: IOptions<T>) {
     // again from user here.
     mounted.current = true;
 
+    // [...fields.current.values()].map(e => console.log(e.name))
+
     const init = async () => {
 
       const normalized = normalizeDefaults(options.defaults, options.validationSchema) as Promise<T>;
@@ -692,5 +694,5 @@ export function initKomo<T extends IModel>(options?: IOptions<T>) {
   api.withKomo = initWithKomo;
   const hooks = initHooks(api);
   const komo = extend(api, hooks);
-  return komo;
+  return komo as IKomo<T>;
 }

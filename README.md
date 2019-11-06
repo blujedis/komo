@@ -77,7 +77,7 @@ const onSubmit = (model) => {
 };
 ```
 
-### Complete Form
+### Complete Example Form
 
 Not let's put it all together so you can see it in one place. 
 
@@ -232,6 +232,36 @@ The below will map errors in our error model <code>{ firstName: [ error objects 
 
 ```jsx
 <input name="firstName" type="text" ref={register({ path: 'user.name.first' })} />
+```
+
+## Hooks
+
+Komo has some built in hooks that make it trivial to wire up to fields or expose your own hooks using the built in <code>withKomo</code> helper.
+
+### useField
+
+```jsx
+const { useField } = useForm({
+  // options here excluded for brevity.
+});
+
+const firstName = useField('firstName');
+
+const MyError = ({ hook }: { hook: ReturnType<typeof useField> }) => {
+  if (hook.valid)
+    return null;
+  return (
+    <span style={{ color: 'red' }}>{hook.message}</span>
+  );
+};
+
+const myComponent = ({name}: { register: any } & HTMLElement) => {
+  return (
+    <div>
+      <input name="firstName" type="text" >
+    </div>
+  );
+};
 ```
 
 ## UI Libraries

@@ -1,4 +1,6 @@
 
+const WINDOW = typeof window === 'undefined' ? global : window;
+
 const levels = {
   fatal: 'font-weight: bold; color: yellow; background-color: #8B0000;',
   error: 'font-weight: bold; color: #8B0000;',
@@ -28,8 +30,7 @@ type Debuggers<K extends string> = { [P in K]: (...args: any[]) => void };
 let _logger: ILogger;
 
 export const isWebpack = typeof __BLU_DEV_VARS__ !== 'undefined';
-
-export const vars = __BLU_DEV_VARS__ || { debug: [] };
+export const vars = isWebpack ? __BLU_DEV_VARS__ || { debug: [] } : { debug: [] };
 
 /**
  * Creates a new singleton logger at the specified level. When no level is passed

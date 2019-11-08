@@ -1,5 +1,6 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
+const WINDOW = typeof window === 'undefined' ? global : window;
 const levels = {
     fatal: 'font-weight: bold; color: yellow; background-color: #8B0000;',
     error: 'font-weight: bold; color: #8B0000;',
@@ -9,7 +10,7 @@ const levels = {
 };
 let _logger;
 exports.isWebpack = typeof __BLU_DEV_VARS__ !== 'undefined';
-exports.vars = __BLU_DEV_VARS__ || { debug: [] };
+exports.vars = exports.isWebpack ? __BLU_DEV_VARS__ || { debug: [] } : { debug: [] };
 /**
  * Creates a new singleton logger at the specified level. When no level is passed
  * the previously created logger is returned.

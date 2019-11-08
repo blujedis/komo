@@ -353,6 +353,21 @@ export default MyForm;</code></pre>
   );
 
 }</code></pre>
+				<a href="#casting-model" id="casting-model" style="color: inherit; text-decoration: none;">
+					<h2>Casting Model</h2>
+				</a>
+				<p>By default Komo will attemp to cast your data before persisting to model. For example a string of &quot;true&quot; will become an actual boolean <code>true</code>.</p>
+				<p>This feature can be disabled by setting <code>options.castHandler</code> to false or null.</p>
+				<p>You can also pass your own synchronous function that casts the value and simply returns it. </p>
+				<p>Although your model will likely be converted to a string using <code>JSON.stringify</code> before posting
+				to your server, casting the model value only allows you to do checks against the model state as you&#39;d expect.</p>
+				<p>Again if this is not what you want simply disable it.</p>
+				<pre><code class="language-ts"><span class="hljs-keyword">const</span> { register } = useForm({
+  castHandler: <span class="hljs-function">(<span class="hljs-params">value, path, name</span>) =&gt;</span> {
+    <span class="hljs-comment">// do something with value and return.</span>
+    <span class="hljs-keyword">return</span> value;
+  }
+})</code></pre>
 				<a href="#ui-libraries" id="ui-libraries" style="color: inherit; text-decoration: none;">
 					<h2>UI Libraries</h2>
 				</a>

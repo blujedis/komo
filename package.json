@@ -1,6 +1,6 @@
 {
   "name": "komo",
-  "version": "0.1.6",
+  "version": "0.1.7",
   "description": "React form helper",
   "main": "dist/index.js",
   "repository": "https://github.com/blujedis/komo.git",
@@ -14,6 +14,13 @@
     "docs": "typedoc ./src --options ./typedoc.json --out ./docs && touch ./docs/.nojekyll",
     "prep": "npm run build && npm run docs"
   },
+  "files": [
+    "dist",
+    "docs",
+    "CHANGE.md",
+    "LICENSE",
+    "README.md"
+  ],
   "dependencies": {
     "dot-prop": "^5.1.0",
     "lodash.isequal": "^4.5.0",

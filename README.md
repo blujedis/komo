@@ -336,6 +336,28 @@ const onFirstBlur = (e) => lastName.focus();
 }
 ```
 
+## Casting Model
+
+By default Komo will attemp to cast your data before persisting to model. For example a string of "true" will become an actual boolean <code>true</code>.
+
+This feature can be disabled by setting <code>options.castHandler</code> to false or null.
+
+You can also pass your own synchronous function that casts the value and simply returns it. 
+
+Although your model will likely be converted to a string using <code>JSON.stringify</code> before posting 
+to your server, casting the model value only allows you to do checks against the model state as you'd expect.
+
+Again if this is not what you want simply disable it.
+
+```ts
+const { register } = useForm({
+  castHandler: (value, path, name) => {
+    // do something with value and return.
+    return value;
+  }
+})
+```
+
 ## UI Libraries
 
 You can of course use Komo with most UI libraries although they may differ in configuration. Komo aims to give you granular control. It's up to use to create your own Component wrappers and things to make life easier. This is by design. Otherwise too many opinions get in the way.

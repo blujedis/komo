@@ -1,21 +1,44 @@
-import { IModel, IKomo, UseFields } from './types';
+import { IModel, IKomo, IUseFields } from './types';
+import { BaseSyntheticEvent } from 'react';
 export declare function initHooks<T extends IModel>(komo: IKomo<T>): {
-    useField: (name: Extract<keyof T, string>, def?: string) => {
+    useField: (name: Extract<keyof T, string>) => {
+        register: import("./types").IRegister<T>;
+        readonly mounted: boolean;
         readonly element: import("./types").IRegisteredElement<T>;
-        readonly touched: boolean;
-        readonly dirty: boolean;
-        readonly errors: import("./types").ErrorModel<T>;
-        readonly message: string;
+        readonly errors: import("./types").ErrorModel<T>[Extract<keyof T, string>];
         readonly valid: boolean;
         readonly invalid: boolean;
+        readonly touched: boolean;
+        readonly dirty: boolean;
+        readonly name: Extract<keyof T, string>;
+        readonly path: string;
+        value: any;
+        data: any;
+        readonly message: string;
+        readonly messages: string[];
+        focus(e?: BaseSyntheticEvent<object, any, any>): void;
+        blur(e?: BaseSyntheticEvent<object, any, any>): void;
+        update(value: T[Extract<keyof T, string>], modelValue?: any, validate?: boolean): void;
+        validate(): import("./types").PromiseStrict<Partial<T>, Partial<import("./types").ErrorModel<T>>>;
     };
-    useFields: <K extends Extract<keyof T, string>>(...name: K[]) => UseFields<K, {
+    useFields: (...names: any[]) => IUseFields<any, {
+        register: import("./types").IRegister<T>;
+        readonly mounted: boolean;
         readonly element: import("./types").IRegisteredElement<T>;
-        readonly touched: boolean;
-        readonly dirty: boolean;
-        readonly errors: import("./types").ErrorModel<T>;
-        readonly message: string;
+        readonly errors: import("./types").ErrorModel<T>[Extract<keyof T, string>];
         readonly valid: boolean;
         readonly invalid: boolean;
+        readonly touched: boolean;
+        readonly dirty: boolean;
+        readonly name: Extract<keyof T, string>;
+        readonly path: string;
+        value: any;
+        data: any;
+        readonly message: string;
+        readonly messages: string[];
+        focus(e?: BaseSyntheticEvent<object, any, any>): void;
+        blur(e?: BaseSyntheticEvent<object, any, any>): void;
+        update(value: T[Extract<keyof T, string>], modelValue?: any, validate?: boolean): void;
+        validate(): import("./types").PromiseStrict<Partial<T>, Partial<import("./types").ErrorModel<T>>>;
     }>;
 };

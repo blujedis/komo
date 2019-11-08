@@ -124,8 +124,8 @@ export default MyForm;</span></code></pre>
     <span class="hljs-keyword">return</span>; 
   <span class="hljs-built_in">console</span>.log(model); <span class="hljs-comment">// display our model data.</span>
 };</code></pre>
-				<a href="#complete-form" id="complete-form" style="color: inherit; text-decoration: none;">
-					<h3>Complete Form</h3>
+				<a href="#complete-example-form" id="complete-example-form" style="color: inherit; text-decoration: none;">
+					<h3>Complete Example Form</h3>
 				</a>
 				<p>Not let&#39;s put it all together so you can see it in one place. </p>
 				<pre><code class="language-jsx"><span class="hljs-keyword">import</span> React, { FC } <span class="hljs-keyword">from</span> <span class="hljs-string">'react'</span>;
@@ -260,6 +260,99 @@ export default MyForm;</code></pre>
 				<p>Komo allows models with nested data. Any form field can have a mapped path enabling getting and setting from a nested prop.</p>
 				<p>The below will map errors in our error model <code>{ firstName: [ error objects here ] }</code> but it&#39;s model data will get/set from the nested path of <code>user.name.first</code>.</p>
 				<pre><code class="language-jsx">&lt;input name=<span class="hljs-string">"firstName"</span> type=<span class="hljs-string">"text"</span> ref={register({ <span class="hljs-attr">path</span>: <span class="hljs-string">'user.name.first'</span> })} /&gt;</code></pre>
+				<a href="#hooks" id="hooks" style="color: inherit; text-decoration: none;">
+					<h2>Hooks</h2>
+				</a>
+				<p>Komo has some built in hooks that make it trivial to wire up to fields or expose your own hooks using the built in <code>withKomo</code> helper.</p>
+				<p>Your best bet is to clone the repo then run <code>yarn start</code>. Then navigate to the <strong>/advanced</strong> page. This will give you an idea of some of the cool stuff Komo can do.</p>
+				<a href="#usefield-hook" id="usefield-hook" style="color: inherit; text-decoration: none;">
+					<h3>useField Hook</h3>
+				</a>
+				<p>Expose the hook from Komo&#39;s main useForm hook, then call the hook and pass in the form element name you wish to use. Simple as that. Just remember your hook will not have access to the element until Komo has mounted.</p>
+				<pre><code class="language-jsx"><span class="hljs-keyword">const</span> { useField } = useForm({
+  <span class="hljs-comment">// options here excluded for brevity.</span>
+});
+
+<span class="hljs-keyword">const</span> firstName = useField(<span class="hljs-string">'firstName'</span>);</code></pre>
+				<a href="#companion-hook-components" id="companion-hook-components" style="color: inherit; text-decoration: none;">
+					<h3>Companion Hook Components</h3>
+				</a>
+				<p>Below we have an Error Component and a TextInput Component that use the errors exposed from our hook.</p>
+				<pre><code class="language-jsx"><span class="hljs-comment">/**
+ * Simple component to display our errors.
+ * @param props our error component's props.
+ */</span>
+<span class="hljs-keyword">const</span> ErrorMessage = <span class="hljs-function">(<span class="hljs-params">{ errors }</span>) =&gt;</span> {
+  <span class="hljs-keyword">if</span> (!errors || !errors.length)
+    <span class="hljs-keyword">return</span> <span class="hljs-literal">null</span>;
+  <span class="hljs-keyword">const</span> err = errors[<span class="hljs-number">0</span>];
+  <span class="hljs-keyword">return</span> (<span class="xml"><span class="hljs-tag">&lt;<span class="hljs-name">div</span> <span class="hljs-attr">style</span>=<span class="hljs-string">{{</span> <span class="hljs-attr">color:</span> '<span class="hljs-attr">red</span>', <span class="hljs-attr">margin:</span> '<span class="hljs-attr">6px</span> <span class="hljs-attr">0</span> <span class="hljs-attr">10px</span>' }}&gt;</span>{err.message}<span class="hljs-tag">&lt;/<span class="hljs-name">div</span>&gt;</span></span>);
+};
+
+<span class="hljs-comment">/**
+ * Custom input message text field.
+ */</span>
+<span class="hljs-keyword">const</span> TextInput = <span class="hljs-function">(<span class="hljs-params">props: InputProps</span>) =&gt;</span> {
+  <span class="hljs-keyword">const</span> { hook, ...clone } = props;
+  <span class="hljs-keyword">const</span> { name } = clone;
+  <span class="hljs-keyword">const</span> field = props.hook(name);
+  <span class="hljs-keyword">const</span> capitalize = <span class="hljs-function"><span class="hljs-params">v</span> =&gt;</span> v.charAt(<span class="hljs-number">0</span>).toUpperCase() + v.slice(<span class="hljs-number">1</span>);
+  <span class="hljs-keyword">return</span> (
+    &lt;div&gt;
+      &lt;label htmlFor={name}&gt;{capitalize(name)}: &lt;/label&gt;
+      &lt;input type="text" ref={field.register} {...clone} /&gt;
+      &lt;ErrorMessage errors={field.errors} /&gt;
+    &lt;/div&gt;
+  );
+};</code></pre>
+				<a href="#form-with-hooks" id="form-with-hooks" style="color: inherit; text-decoration: none;">
+					<h3>Form with Hooks</h3>
+				</a>
+				<pre><code class="language-jsx"><span class="hljs-keyword">const</span> App = <span class="hljs-function"><span class="hljs-params">()</span> =&gt;</span> {
+
+<span class="hljs-comment">// Create some hooks to our fields</span>
+<span class="hljs-keyword">const</span> firstName = useField(<span class="hljs-string">'firstName'</span>);
+<span class="hljs-keyword">const</span> lastName = useField(<span class="hljs-string">'lastName'</span>);
+
+<span class="hljs-comment">// When the first name field blurs set the </span>
+<span class="hljs-comment">// focus to the last name field.</span>
+<span class="hljs-keyword">const</span> onFirstBlur = <span class="hljs-function">(<span class="hljs-params">e</span>) =&gt;</span> lastName.focus();
+
+<span class="hljs-comment">// When last name changes manually validate</span>
+<span class="hljs-comment">// and display response or error.</span>
+ <span class="hljs-keyword">const</span> onLastChange = <span class="hljs-function">(<span class="hljs-params">e</span>) =&gt;</span> {
+    lastName.validate()
+      .then(<span class="hljs-function"><span class="hljs-params">res</span> =&gt;</span> <span class="hljs-built_in">console</span>.log.bind(<span class="hljs-built_in">console</span>))
+      .catch(<span class="hljs-function"><span class="hljs-params">err</span> =&gt;</span> <span class="hljs-built_in">console</span>.log.bind(<span class="hljs-built_in">console</span>));
+  };
+
+  <span class="hljs-keyword">return</span> (
+    &lt;form noValidate onSubmit={handleSubmit(onSubmit)} onReset={handleReset}&gt;
+
+      &lt;label htmlFor="firstName"&gt;First Name: &lt;/label&gt;
+      &lt;input name="firstName" type="text" ref={register} onChange={onFirstBlur} /&gt;&lt;br /&gt;&lt;br /&gt;
+
+      &lt;TextInput name="lastName" hook={useField} onChange={onLastChange} /&gt;&lt;br /&gt;
+
+      &lt;button type="button" onClick={lastName.focus}&gt;Set LastName Focus&lt;/button&gt;&lt;br /&gt;&lt;br /&gt;
+
+      &lt;button type="button" onClick={updateLast('Waddams')}&gt;Set LastName to Waddams&lt;/button&gt;&lt;br /&gt;&lt;br /&gt;
+
+      &lt;button type="button" onClick={updateLast('')}&gt;Set LastName to Undefined&lt;/button&gt;&lt;br /&gt;&lt;br /&gt;
+
+      &lt;JsonErrors errors={state.errors} /&gt;
+
+      &lt;br /&gt;
+      &lt;hr /&gt;
+      &lt;br /&gt;
+
+      &lt;input type="reset" value="Reset" /&gt;&amp;nbsp;
+      &lt;input type="submit" value="Submit" /&gt;
+
+    &lt;/form&gt;
+  );
+
+}</code></pre>
 				<a href="#ui-libraries" id="ui-libraries" style="color: inherit; text-decoration: none;">
 					<h2>UI Libraries</h2>
 				</a>
@@ -294,7 +387,7 @@ export default MyForm;</code></pre>
 						<a href="globals.html"><em>Globals</em></a>
 					</li>
 					<li class=" tsd-kind-external-module">
-						<a href="modules/_constants_.html">"constants"</a>
+						<a href="modules/_example_advanced_.html">"example/advanced"</a>
 					</li>
 					<li class=" tsd-kind-external-module">
 						<a href="modules/_example_app_.html">"example/app"</a>
@@ -307,6 +400,9 @@ export default MyForm;</code></pre>
 					</li>
 					<li class=" tsd-kind-external-module">
 						<a href="modules/_example_index_.html">"example/index"</a>
+					</li>
+					<li class=" tsd-kind-external-module">
+						<a href="modules/_example_jsonerrors_.html">"example/jsonerrors"</a>
 					</li>
 					<li class=" tsd-kind-external-module">
 						<a href="modules/_example_material_.html">"example/material"</a>
@@ -342,13 +438,13 @@ export default MyForm;</code></pre>
 						<a href="modules/_utils_index_.html">"utils/index"</a>
 					</li>
 					<li class=" tsd-kind-external-module">
-						<a href="modules/_utils_logger_.html">"utils/logger"</a>
-					</li>
-					<li class=" tsd-kind-external-module">
 						<a href="modules/_utils_observer_.html">"utils/observer"</a>
 					</li>
 					<li class=" tsd-kind-external-module">
 						<a href="modules/_utils_renders_.html">"utils/renders"</a>
+					</li>
+					<li class=" tsd-kind-external-module">
+						<a href="modules/_utils_tools_.html">"utils/tools"</a>
 					</li>
 					<li class=" tsd-kind-external-module">
 						<a href="modules/_validate_.html">"validate"</a>

@@ -1,17 +1,15 @@
 
 import {
   isRadio, isCheckbox, addListener, isTextLike, removeListener,
-  initObserver, isBooleanLike, isEqual, isString, isUndefined, isNullOrUndefined, me, isFunction,
-  isObject,
-  toDefault,
-  isArray
+  initObserver, isBooleanLike, isString, isUndefined, isNullOrUndefined, me, isFunction,
+  isObject, ILogger, debuggers, isSelectMultiple, getLogger, isEqual, isArray
 } from './utils';
 import { getNativeValidators, getNativeValidatorTypes } from './validate';
 import {
   IRegisterElement, IRegisterOptions, IRegisteredElement,
-  IModel, INativeValidators, KeyOf, IBaseApi, RegisterElement
+  IModel, INativeValidators, KeyOf, IKomoBase, RegisterElement, CastHandler, PromiseStrict, ErrorModel
 } from './types';
-
+import { findDOMNode } from 'react-dom';
 const typeMap = {
   range: 'number',
   number: 'number',
@@ -20,34 +18,222 @@ const typeMap = {
   checkbox: 'boolean'
 };
 
+let log: ILogger;
+const { debug_register, debug_event } = debuggers;
+
 /**
  * Creates initialized methods for binding and registering an element.
  * 
  * @param api the base form api.
  */
-export function initElement<T>(api?: IBaseApi<T>) {
+export function initElement<T extends IModel>(api?: IKomoBase<T>) {
 
   const {
-    options: formOptions, log, schemaAst, fields, unregister, setModel,
-    getModel, getDefault, isTouched, isDirty, setDefault, mounted,
+    options: komoOptions, schemaAst, fields, unregister, setModel,
+    getModel, isTouched, isDirty, setDefault, mounted,
     setDirty, setTouched, removeDirty, isValidateBlur, isValidateChange,
-    validateModelAt, isValidatable, removeError, setError, getElement, render
+    validateModelAt, isValidatable, removeError, setError, render, getElement,
+    isDirtyCompared
   } = api;
+
+  log = getLogger();
 
   /**
    * Checks if the element is a duplicate and should be ignored.
    * Radio groups never return true.
    */
-  function isBound(element: IRegisteredElement<T>) {
-    return fields.current.has(element) || element.komo;
+  function isRegistered(element: IRegisteredElement<T>) {
+
+    if (mounted.current)
+      return true;
+
+    const exists = fields.current.has(element);
+    const elements = getElement(element.name, true);
+
+    // if only a single element, not a radio group.
+    if (elements.length === 1)
+      return exists || !elements.length;
+
+    // If group ensure name/value not dupe.
+    return exists || !!elements.filter(e => e.value === element.value).length;
+
+  }
+
+  // TODO: need to breatkout get set for each element type
+  // into it's own file, make it more clear.
+
+  /**
+   * 
+   * @param element the element to set multiple select element for.
+   * @param values the array of values to set.
+   */
+  function setMultiple(element: IRegisteredElement<T>, values: string[]) {
+
+    values = !isArray(values) ? [values] as any : values;
+
+    const result = [];
+
+    for (let i = 0; i < element.options.length; i++) {
+
+      const opt = element.options[i];
+      opt.selected = false;
+
+      opt.removeAttribute('selected');
+      if (values.includes(opt.value) || values.includes(opt.text)) {
+        opt.setAttribute('selected', 'true');
+        opt.selected = true;
+        result.push(opt.value || opt.text);
+      }
+
+    }
+
+    return result;
+
   }
 
   /**
-   * Resets the element to its defaults value and/or checked.
+   * Get multiple values from select multiple.
+   * 
+   * @param element the element to get select multiple values for.
+   */
+  function getMultiple(element: IRegisteredElement<T>) {
+
+    if (!isSelectMultiple(element.type)) {
+      log.fatal(
+        `Attempted to get as select multiple value but is type "${element.type}" and tag of ${element.tagName}`);
+      return;
+    }
+
+    const value = [];
+
+    // tslint:disable-next-line
+    for (let i = 0; i < element.options.length; i++) {
+      const opt = element.options[i];
+      if (opt.selected)
+        value.push(opt.value || opt.text);
+    }
+
+    return value;
+
+  }
+
+  /**
+   * Gets value of checked radio.
+   * 
+   * @param element the radio element to get value for.
+   */
+  function getRadioValue(element: IRegisteredElement<T>) {
+
+    if (!isRadio(element.type)) {
+      log.fatal(`Attempted to get as radio value but is type ${element.type} and tag of ${element.tagName}`);
+      return;
+    }
+
+    const radios = getElement(element.name, true);
+
+    const checked = radios.find(e => e.checked);
+
+    return (checked && checked.value) || '';
+
+  }
+
+  /**
+   * Find radios and set checked on value match.
+   * 
+   * @param name the radio group name.
+   * @param value the value to match to set checked radio.
+   */
+  function setRadioChecked(name: string, value: any) {
+
+    const radios = getElement(name, true);
+    let nextChecked;
+
+    radios.forEach((radio) => {
+      if (isEqual(radio.value, value)) {
+        radio.checked = true;
+        nextChecked = radio;
+      }
+      else {
+        radio.checked = false;
+      }
+
+    });
+
+    if (!nextChecked)
+      log.fatal(`Could not set radio group, value "${value} has no match.`);
+
+    return nextChecked;
+
+  }
+
+  /**
+   * Gets the data value from parsing element.
+   * This value will be used to set the model.
+   * 
+   * @param element the registered element to be updated.
+   */
+  function getElementValue(element: IRegisteredElement<T>) {
+
+    let value: any;
+
+    if (isRadio(element.type)) {
+      value = getRadioValue(element);
+    }
+
+    else if (isCheckbox(element.type)) {
+      value = element.checked;
+    }
+
+    else if (element.multiple) {
+      value = getMultiple(element);
+    }
+
+    else {
+      value = element.value;
+    }
+
+    return value;
+
+  }
+
+  /**
+   * Sets the element's default value. be sure to pass the correct
+   * value type. Multiples for example needs an array of values.
+   * 
+   * @param element the element to be reset.
+   * @param value the element value to set.
+   */
+  function setElementValue(element: IRegisteredElement<T>, value: any) {
+
+    value = isUndefined(value) ? '' : value;
+
+    if (isRadio(element.type)) {
+      setRadioChecked(element.name, value);
+    }
+
+    else if (isCheckbox(element.type)) {
+      if (isBooleanLike(value) && (value === true || value === 'true'))
+        element.checked = true;
+      else
+        element.checked = false;
+    }
+
+    else if (element.multiple) {
+      value = setMultiple(element, value);
+    }
+
+    else {
+      element.value = value;
+    }
+
+  }
+
+  /**
+   * Sets the element's default value.
    * 
    * @param element the element to be reset.
    */
-  function setElementDefault(element: IRegisteredElement<T>) {
+  function setElementDefault(element: IRegisteredElement<T>, isReset: boolean = false) {
 
     let value;
 
@@ -59,27 +245,22 @@ export function initElement<T>(api?: IBaseApi<T>) {
 
     else if (isCheckbox(element.type)) {
       element.checked = element.defaultChecked = isBooleanLike(element.defaultCheckedPersist);
+      value = element.checked;
     }
 
     else if (element.multiple) {
-
-      value = [...element.defaultValuePersist];
-
-      for (let i = 0; i < element.options.length; i++) {
-        const opt = element.options[i];
-        if (value.includes(opt.value) || value.includes(opt.text)) {
-          opt.setAttribute('selected', 'true');
-          opt.selected = true;
-        }
-
-      }
-
+      value = setMultiple(element, [...element.defaultValuePersist]);
     }
 
     else {
       value = element.defaultValuePersist;
       element.value = value;
     }
+
+    // Don't set undefined unchecked
+    // radio will not have value.
+    if (isUndefined(value))
+      return value;
 
     setModel(element.path, value);
 
@@ -88,64 +269,31 @@ export function initElement<T>(api?: IBaseApi<T>) {
   }
 
   /**
-   * Updates the element on event changes.
+   * Sets the element's state after comparing value.
    * 
-   * @param element the registered element to be updated.
-   * @param isBlur indicates the update event is of type blur.
+   * @param element the element to set state for.
+   * @param value the value used to compare state.
    */
-  function updateElement(element: IRegisteredElement<T>) {
+  function setElementState(element: IRegisteredElement<T>, value: any) {
 
-    // Previous value & flags.
-    const defaultValue = getDefault(element.path);
     const prevTouched = isTouched(element.name);
     const prevDirty = isDirty(element.name);
+    const dirtyCompared = isDirtyCompared(element.name, value);
 
-    let value: any;
     let dirty = false;
+    let touched = false;
 
-    if (isRadio(element.type)) {
-
-      const radios =
-        [...fields.current.values()]
-          .filter(e => isRadio(e.type) && e.name === element.name);
-
-      const checked = radios.find(e => e.checked);
-      value = (checked && checked.value) || '';
-
-    }
-
-    else if (isCheckbox(element.type)) {
-      value = element.checked;
-    }
-
-    else if (element.multiple) {
-
-      value = [];
-
-      // tslint:disable-next-line
-      for (let i = 0; i < element.options.length; i++) {
-        const opt = element.options[i];
-        if (opt.selected)
-          value.push(opt.value || opt.text);
-      }
-
-    }
-
-    else {
-      value = element.value;
-    }
-
-    dirty = isArray(defaultValue)
-      ? !isEqual(defaultValue, value)
-      : !isEqual(defaultValue + '', value + '');
-
-    if (dirty)
+    if (dirtyCompared) {
       setDirty(element.name);
+      dirty = true;
+    }
 
-    if (!!dirty || prevTouched)
+    if (!!dirtyCompared || prevTouched) {
       setTouched(element.name);
+      touched = true;
+    }
 
-    if (!dirty && prevDirty)
+    if (!dirtyCompared && prevDirty)
       removeDirty(element.name);
 
     // Updating the model here so if 
@@ -153,8 +301,47 @@ export function initElement<T>(api?: IBaseApi<T>) {
     if (value === '')
       value = undefined;
 
+    return {
+      dirty,
+      touched,
+      value,
+      modelValue: undefined
+    };
+
+  }
+
+  // Persists data to model.
+  function setElementModel(element: IRegisteredElement<T>, modelValue: any) {
+
+    const castHandler = komoOptions.castHandler as CastHandler<T>;
+
+    modelValue = castHandler(modelValue, element.path, element.name);
+
     // Set the model value.
-    setModel(element.path, value);
+    setModel(element.path, modelValue);
+
+    return modelValue;
+
+  }
+
+  function updateStateAndModel(element: IRegisteredElement<T>, value?: any, modelValue?: any) {
+
+    // if no value is provided then
+    // get the normalized value.
+    value = isUndefined(value) ? getElementValue(element) : value;
+
+    // Update the state.
+    const elementState = setElementState(element, value);
+
+    debug_event('update:state', element.name, elementState);
+
+    // Ensure the model value.
+    modelValue = isUndefined(modelValue) ? value : modelValue;
+
+    // Update the model value.
+    elementState.modelValue = setElementModel(element, modelValue);
+
+    return elementState;
 
   }
 
@@ -166,9 +353,9 @@ export function initElement<T>(api?: IBaseApi<T>) {
   function parseNativeValidators(element: IRegisteredElement<T>) {
 
     const allowNative = !isUndefined(element.enableNativeValidation) ?
-      element.enableNativeValidation : formOptions.enableNativeValidation;
+      element.enableNativeValidation : komoOptions.enableNativeValidation;
 
-    if (allowNative && !isFunction(formOptions.validationSchema)) {
+    if (allowNative && !isFunction(komoOptions.validationSchema)) {
 
       const nativeValidators = getNativeValidators(element);
       const nativeValidatorTypes = getNativeValidatorTypes(element);
@@ -210,14 +397,16 @@ export function initElement<T>(api?: IBaseApi<T>) {
     let events = [];
 
     const handleBlur = async (e: Event) => {
-      updateElement(element);
+      updateStateAndModel(element);
+      debug_event(element.name, element.value);
       if (isValidateBlur(element)) {
         await me(element.validate());
       }
     };
 
     const handleChange = async (e: Event) => {
-      updateElement(element);
+      updateStateAndModel(element);
+      debug_event(element.name, element.value);
       if (isValidateChange(element)) {
         await me(element.validate());
       }
@@ -236,10 +425,36 @@ export function initElement<T>(api?: IBaseApi<T>) {
 
     }
 
-    // Bind mutation observer.
-    initObserver(element as any, element.unregister.bind(element));
-
     return events;
+
+  }
+
+  /**
+   * Validates the model at key name.
+   * 
+   * @param element the element to be validated.
+   * @param value the value to be validated.
+   */
+  async function validateElementModel(element: IRegisteredElement<T>, value: any) {
+
+    if (!isValidatable())
+      return Promise.resolve(value) as Promise<Partial<T>>;
+
+    const { err, data } = await me(validateModelAt(element));
+
+    if (err) {
+      setError(element.name, err[element.name]);
+      render('validate:invalid');
+      return Promise.reject(err) as Promise<Partial<ErrorModel<T>>>;
+    }
+
+    // Model is valid remove all errors.
+    removeError(element.name);
+
+    // Render and update view.
+    render('validate:valid');
+
+    return Promise.resolve(data) as Promise<Partial<T>>;
 
   }
 
@@ -257,24 +472,27 @@ export function initElement<T>(api?: IBaseApi<T>) {
     if (!rebind)
       events = attachEvents(element);
 
-    element.validate = async () => {
+    // Update the model, value and state.
+    element.update = async (value: any, modelValue: any, validate: boolean = true) => {
 
-      const currentValue = getModel(element.path);
+      // Select multiples use model array 
+      // to set it's slected values.
+      const setVal = element.multiple ? modelValue || value : value;
 
-      if (!isValidatable())
-        return Promise.resolve(currentValue);
+      setElementValue(element, setVal);
 
-      const { err, data } = await me(validateModelAt(element));
+      updateStateAndModel(element, value, modelValue);
 
-      if (err) {
-        setError(element.name, err[element.name]);
-        return Promise.reject(err);
+      if (!validate) {
+        render('update:novalidate');
+        return;
       }
+      await me(validateElementModel(element, value));
+    };
 
-      removeError(element.name);
-      render();
-      return Promise.resolve(data);
-
+    element.validate = async () => {
+      const currentValue = getModel(element.path);
+      return validateElementModel(element, currentValue) as PromiseStrict<Partial<T>, Partial<ErrorModel<T>>>;
     };
 
     // Reset the element to initial values.
@@ -301,6 +519,9 @@ export function initElement<T>(api?: IBaseApi<T>) {
     element.unregister = () => {
       unregister(element as IRegisteredElement<any>);
     };
+
+    // Bind mutation observer.
+    initObserver(element as any, element.unregister.bind(element));
 
   }
 
@@ -341,14 +562,13 @@ export function initElement<T>(api?: IBaseApi<T>) {
 
       arr = arr.filter(v => !isUndefined(v));
 
-      // Ensure initial value includes
-      // any default selected values in options.
-      for (let i = 0; i < element.options.length; i++) {
-        const opt = element.options[i];
-        if (opt.selected && (!(arr.includes(opt.value) || arr.includes(opt.text))) {
-          arr.push(opt.value || opt.text);
-        }
-      }
+      const elementValues = getMultiple(element);
+
+      arr = [...arr, ...elementValues].reduce((a, c) => {
+        if (!a.includes(c))
+          a.push(c);
+        return a;
+      }, []);
 
       element.defaultValue = element.defaultValuePersist = arr;
 
@@ -369,7 +589,7 @@ export function initElement<T>(api?: IBaseApi<T>) {
    */
   function bindElement(element: IRegisteredElement<T>, rebind: boolean = false) {
 
-    if (!element || (isBound(element) && !rebind)) return;
+    if (!element || (isRegistered(element) && !rebind)) return;
 
     if (!element.name) {
       log.warn(`Element of tag "${element.tagName}" could NOT be registered using name of undefined.`);
@@ -391,9 +611,6 @@ export function initElement<T>(api?: IBaseApi<T>) {
 
     // Attach/extend element with events.
     extendEvents(element, rebind);
-
-    // Set element as bound to Komo.
-    element.komo = true;
 
     // Add to current field to the collection.
     if (!rebind)
@@ -438,8 +655,10 @@ export function initElement<T>(api?: IBaseApi<T>) {
 
         const _element = element as IRegisteredElement<T>;
 
-        if (!_element || isBound(_element))
+        if (!_element || isRegistered(_element))
           return;
+
+        debug_register('custom', _element.name);
 
         _element.name = options.name || _element.name;
         _element.path = options.path || _element.name;
@@ -480,8 +699,10 @@ export function initElement<T>(api?: IBaseApi<T>) {
 
     }
 
-    if (!elementOrOptions || isBound(elementOrOptions as IRegisteredElement<T>))
+    if (!elementOrOptions || isRegistered(elementOrOptions as IRegisteredElement<T>))
       return;
+
+    debug_register((elementOrOptions as any).name);
 
     // ONLY element was passed.
     bindElement(elementOrOptions as IRegisteredElement<T>);

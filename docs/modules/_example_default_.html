@@ -71,9 +71,15 @@
 				<section class="tsd-panel tsd-index-panel">
 					<div class="tsd-index-content">
 						<section class="tsd-index-section tsd-is-not-exported">
+							<h3>Type aliases</h3>
+							<ul class="tsd-index-list">
+								<li class="tsd-kind-type-alias tsd-parent-kind-external-module tsd-is-not-exported"><a href="_example_default_.html#schema" class="tsd-kind-icon">Schema</a></li>
+							</ul>
+						</section>
+						<section class="tsd-index-section tsd-is-not-exported">
 							<h3>Variables</h3>
 							<ul class="tsd-index-list">
-								<li class="tsd-kind-variable tsd-parent-kind-external-module tsd-is-not-exported"><a href="_example_default_.html#schema" class="tsd-kind-icon">schema</a></li>
+								<li class="tsd-kind-variable tsd-parent-kind-external-module tsd-is-not-exported"><a href="_example_default_.html#schema-1" class="tsd-kind-icon">schema</a></li>
 							</ul>
 						</section>
 						<section class="tsd-index-section ">
@@ -86,16 +92,39 @@
 				</section>
 			</section>
 			<section class="tsd-panel-group tsd-member-group tsd-is-not-exported">
-				<h2>Variables</h2>
-				<section class="tsd-panel tsd-member tsd-kind-variable tsd-parent-kind-external-module tsd-is-not-exported">
+				<h2>Type aliases</h2>
+				<section class="tsd-panel tsd-member tsd-kind-type-alias tsd-parent-kind-external-module tsd-is-not-exported">
 					<a name="schema" class="tsd-anchor"></a>
-					<h3><span class="tsd-flag ts-flagConst">Const</span> schema</h3>
-					<div class="tsd-signature tsd-kind-icon">schema<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">ObjectSchema</span><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">Object</span><span class="tsd-signature-symbol">&gt;</span><span class="tsd-signature-symbol"> =&nbsp;object({firstName: string().default(&#x27;Bill&#x27;),lastName: string().default(&#x27;Lumbergh&#x27;),email: string().email().default(&#x27;come-in-on-sunday@initech.com&#x27;),numbers: object({home: string(),mobile: string()}).default({ home: &#x27;5551212&#x27;, mobile: &#x27;6661456&#x27; }),urgent: boolean(),message: string().default(&#x27;&#x27;).required()})</span></div>
+					<h3>Schema</h3>
+					<div class="tsd-signature tsd-kind-icon">Schema<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">Partial</span><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">InferType</span><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">ObjectSchema</span><span class="tsd-signature-symbol">&gt;</span><span class="tsd-signature-symbol">&gt;</span></div>
 					<aside class="tsd-sources">
 						<ul>
-							<li>Defined in <a href="https://github.com/blujedis/komo/blob/a4e18cb/src/example/default.tsx#L7">example/default.tsx:7</a></li>
+							<li>Defined in <a href="https://github.com/blujedis/komo/blob/779280c/src/example/default.tsx#L24">example/default.tsx:24</a></li>
 						</ul>
 					</aside>
+					<div class="tsd-comment tsd-typography">
+						<div class="lead">
+							<p>Inferred type using helper from Yup.</p>
+						</div>
+					</div>
+				</section>
+			</section>
+			<section class="tsd-panel-group tsd-member-group tsd-is-not-exported">
+				<h2>Variables</h2>
+				<section class="tsd-panel tsd-member tsd-kind-variable tsd-parent-kind-external-module tsd-is-not-exported">
+					<a name="schema-1" class="tsd-anchor"></a>
+					<h3><span class="tsd-flag ts-flagConst">Const</span> schema</h3>
+					<div class="tsd-signature tsd-kind-icon">schema<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">ObjectSchema</span><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">Object</span><span class="tsd-signature-symbol">&gt;</span><span class="tsd-signature-symbol"> =&nbsp;object({firstName: string().default(&#x27;Bill&#x27;),lastName: string().required().default(&#x27;Lumbergh&#x27;),email: string().email().default(&#x27;come-in-on-sunday@initech.com&#x27;),numbers: object({home: string(),mobile: string()}).default({ home: &#x27;5551212&#x27;, mobile: &#x27;6661456&#x27; }),urgent: boolean(),message: string().required()})</span></div>
+					<aside class="tsd-sources">
+						<ul>
+							<li>Defined in <a href="https://github.com/blujedis/komo/blob/779280c/src/example/default.tsx#L9">example/default.tsx:9</a></li>
+						</ul>
+					</aside>
+					<div class="tsd-comment tsd-typography">
+						<div class="lead">
+							<p>Schema - our data model or schema using Yup.</p>
+						</div>
+					</div>
 				</section>
 			</section>
 			<section class="tsd-panel-group tsd-member-group ">
@@ -110,9 +139,14 @@
 						<li class="tsd-description">
 							<aside class="tsd-sources">
 								<ul>
-									<li>Defined in <a href="https://github.com/blujedis/komo/blob/a4e18cb/src/example/default.tsx#L19">example/default.tsx:19</a></li>
+									<li>Defined in <a href="https://github.com/blujedis/komo/blob/779280c/src/example/default.tsx#L29">example/default.tsx:29</a></li>
 								</ul>
 							</aside>
+							<div class="tsd-comment tsd-typography">
+								<div class="lead">
+									<p>Our Default form component.</p>
+								</div>
+							</div>
 							<h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">Element</span></h4>
 						</li>
 					</ul>
@@ -126,7 +160,7 @@
 						<a href="../globals.html"><em>Globals</em></a>
 					</li>
 					<li class=" tsd-kind-external-module">
-						<a href="_constants_.html">"constants"</a>
+						<a href="_example_advanced_.html">"example/advanced"</a>
 					</li>
 					<li class=" tsd-kind-external-module">
 						<a href="_example_app_.html">"example/app"</a>
@@ -139,6 +173,9 @@
 					</li>
 					<li class=" tsd-kind-external-module">
 						<a href="_example_index_.html">"example/index"</a>
+					</li>
+					<li class=" tsd-kind-external-module">
+						<a href="_example_jsonerrors_.html">"example/jsonerrors"</a>
 					</li>
 					<li class=" tsd-kind-external-module">
 						<a href="_example_material_.html">"example/material"</a>
@@ -174,13 +211,13 @@
 						<a href="_utils_index_.html">"utils/index"</a>
 					</li>
 					<li class=" tsd-kind-external-module">
-						<a href="_utils_logger_.html">"utils/logger"</a>
-					</li>
-					<li class=" tsd-kind-external-module">
 						<a href="_utils_observer_.html">"utils/observer"</a>
 					</li>
 					<li class=" tsd-kind-external-module">
 						<a href="_utils_renders_.html">"utils/renders"</a>
+					</li>
+					<li class=" tsd-kind-external-module">
+						<a href="_utils_tools_.html">"utils/tools"</a>
 					</li>
 					<li class=" tsd-kind-external-module">
 						<a href="_validate_.html">"validate"</a>
@@ -189,8 +226,11 @@
 			</nav>
 			<nav class="tsd-navigation secondary menu-sticky">
 				<ul class="before-current">
+					<li class=" tsd-kind-type-alias tsd-parent-kind-external-module tsd-is-not-exported">
+						<a href="_example_default_.html#schema" class="tsd-kind-icon">Schema</a>
+					</li>
 					<li class=" tsd-kind-variable tsd-parent-kind-external-module tsd-is-not-exported">
-						<a href="_example_default_.html#schema" class="tsd-kind-icon">schema</a>
+						<a href="_example_default_.html#schema-1" class="tsd-kind-icon">schema</a>
 					</li>
 					<li class=" tsd-kind-function tsd-parent-kind-external-module">
 						<a href="_example_default_.html#default" class="tsd-kind-icon">Default</a>

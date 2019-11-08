@@ -1,4 +1,4 @@
-import { ValidationError, ValidateOptions, object, ObjectSchema, number, string, boolean } from 'yup';
+import { object, string, boolean, ValidationError, number, ObjectSchema, ValidateOptions, mixed } from 'yup';
 import { set, get } from 'dot-prop';
 import {
   IModel, ErrorModel, ValidationSchema, IValidator, IRegisteredElement,
@@ -7,18 +7,22 @@ import {
   IFindField,
   ValidateModelHandler,
   ErrorMessageModel,
-  IValidationError
+  IValidationError,
+  CastHandler
 } from './types';
-import { isPromise, isTruthy, isString, isFunction, me, isNullOrUndefined, isEmpty, isPlainObject, isUndefined } from './utils/helpers';
+import {
+  debuggers, isPromise, isTruthy, isString, isFunction, me,
+  isNullOrUndefined, isEmpty, isPlainObject, isUndefined, isObject, isArray
+} from './utils';
 
-
+const { debug_validate } = debuggers;
 
 /**
  * Lookup helper for element or prop in element.
  * 
  * @param findField the core lookup helper for finding elements.
  */
-export function lookup<T>(findField: IFindField<T>) {
+export function lookup<T extends IModel>(findField: IFindField<T>) {
 
   const getElement = (pathOrElement: string | IRegisteredElement<T>) => {
     if (!isString(pathOrElement))
@@ -42,7 +46,7 @@ export function lookup<T>(findField: IFindField<T>) {
  * 
  * @param error the emitted yup error.
  */
-export function yupToErrors<T>(
+export function yupToErrors<T extends IModel>(
   error: ValidationError, findField?: IFindField<T>): ErrorModel<T> {
 
   const errors: ErrorModel<T> = {} as any;
@@ -85,7 +89,7 @@ export function yupToErrors<T>(
  * @param ast the schema ast to convert.
  * @param schema optional existing schema.
  */
-export function astToSchema<T extends object>(ast: ISchemaAst, schema?: ObjectSchema<T>): ObjectSchema<T> {
+export function astToSchema<T extends IModel>(ast: ISchemaAst, schema?: ObjectSchema<T>): ObjectSchema<T> {
 
   let obj: any = {};
 
@@ -141,7 +145,7 @@ export function astToSchema<T extends object>(ast: ISchemaAst, schema?: ObjectSc
  * 
  * @param errors the collection of errors as ErrorModel or ErrorMessageModel.
  */
-export function ensureErrorModel<T>(
+export function ensureErrorModel<T extends IModel>(
   errors: ErrorModel<T> | ErrorMessageModel<T>) {
   if (isNullOrUndefined(errors) || isEmpty(errors))
     return ({} as any) as ErrorModel<T>;
@@ -170,7 +174,7 @@ export function ensureErrorModel<T>(
  * 
  * @param schema the yup schema or user function for validation.
  */
-export function normalizeValidator<T extends object>(
+export function normalizeValidator<T extends IModel>(
   schema: ValidationSchema<T>, findField?: IFindField<T>): IValidator<T> {
 
   let validator: IValidator<T>;
@@ -278,63 +282,133 @@ export function hasNativeValidators(element: IRegisteredElement<any>) {
 }
 
 /**
- * Purge default values from schema. We need to to this otherwise
- * Yup will not properly throw errors. 
- * 
- * @param schema the validation schema 
- */
-export function purgeSchemaDefaults<T extends object>(schema: ObjectSchema<T>) {
-  // @ts-ignore
-  const { fields } = schema;
-  for (const k in fields) {
-    if (!fields[k]) continue;
-    const field = fields[k];
-    if (!isUndefined(field._default))
-      delete field._default;
-  }
-}
-
-/**
  * Normalizes default values.
  * 
  * @param defaults user defined defaults.
  * @param schema a yup validation schema or user defined function.
  * @param purge when true purge defaults from yup schema
  */
-export function normalizeDefaults<T>(defaults: T, schema: any, purge: boolean = true): Promise<T> {
+export function promisifyDefaults<T extends IModel>(defaults: T, yupDefaults: Partial<T> = {}) {
 
-  // Check if schema is object or ObjectSchema,
-  // if yes get the defaults.
-  let schemaDefaults: any = {};
-  let initDefaults: any = {};
-
-  if (typeof schema === 'object') {
-    // @ts-ignore
-    schemaDefaults = schema._nodes ? { ...schema.default() } : { ...schema };
-    if (purge)
-      purgeSchemaDefaults(schema);
-  }
-
-  // Check if defaults are sync or async,
-  if (isPlainObject(defaults))
-    initDefaults = { ...defaults };
+  const initDefaults: Partial<T> = isPlainObject(defaults) ? { ...defaults } : {};
 
   if (!isPromise(defaults))
-    return Promise.resolve({ ...schemaDefaults, ...initDefaults });
+    return Promise.resolve({ ...yupDefaults, ...initDefaults }) as Promise<T>;
 
-  const prom: Promise<T> = defaults as any;
-
-  return prom
+  return (defaults as any)
     .then(res => {
-      // Return schema defaults merged with user defined defaults.
-      return { ...schemaDefaults, ...res };
+      return { ...yupDefaults, ...res }; // merge schema defs with user defs.
     })
     .catch(err => {
-      if (err)
-        // tslint:disable-next-line: no-console
-        console.log(err);
-      // log error but still return any defaults we have.
-      return schemaDefaults;
-    });
+      // tslint:disable-next-line: no-console
+      if (err) console.log(err);
+      return { ...yupDefaults };
+    }) as Promise<T>;
+
+}
+
+/**
+ * Checks if object is a Yup Schema.
+ * 
+ * @param schema the value to inspect if is a yup schema.
+ */
+export function isYupSchema(schema: any) {
+  return isObject(schema) && schema.__isYupSchema__;
+}
+
+/**
+ * If is a Yup Schema parses defaults then stores original source. 
+ * This allows for re-populating your defaults on next time your route is resolved.
+ * 
+ * @param schema the provided validation schema.
+ */
+export function parseYupDefaults<T extends IModel>(schema: ValidationSchema<T>, purge: boolean) {
+
+  let _schema = schema as any;
+
+  if (!isYupSchema(schema))
+    return {
+      schema,
+      defaults: {}
+    };
+
+  if (_schema.__INIT_DEFAULTS__)
+    _schema = _schema.clone().default(_schema.__INIT_DEFAULTS__);
+
+  const defaults = { ..._schema.default() };
+
+  if (purge) {
+
+    const fields = _schema.fields;
+
+    for (const k in fields) {
+      if (isUndefined(fields[k])) continue;
+      delete fields[k]._default;
+      delete fields[k]._defaultDefault;
+    }
+
+    _schema.__INIT_DEFAULTS__ = { ...defaults };
+
+  }
+
+  return {
+    schema: _schema,
+    defaults
+  };
+
+}
+
+/**
+ * If object or array shallow clone otherwise return value.
+ * 
+ * @param value the value to be cloned.
+ */
+export function simpleClone(value: any) {
+  if (isObject(value)) {
+    if (isArray(value))
+      return [...value];
+    return { ...value };
+  }
+  return value;
+}
+
+/**
+ * Uses yup to try and cast value to type or calls back for user defined casting.
+ * 
+ * @param value the value to be cast.
+ */
+export function castValue(value: any) {
+
+  if (isUndefined(value))
+    return value;
+
+  const origVal = simpleClone(value);
+  const castVal = mixed().cast(value);
+
+  return isUndefined(castVal) ? origVal : castVal;
+
+}
+
+/**
+ * Normalizes the cast handler so the same signature can be called.
+ * When the handler is disabled a noop is created returning the original value.
+ * 
+ * @param handler the cast handler or whether the handler is enabled.
+ */
+export function normalizeCasting<T extends IModel>(handler: boolean | CastHandler<T>) {
+
+  handler = isUndefined(handler) ? true : handler;
+
+  if (!handler)
+    return value => value;
+
+  // Use internal yup casting.
+  if (handler === true)
+    return value => castValue(value);
+
+  return (value: any, path: string, name: KeyOf<T>) => {
+    value = castValue(value);
+    (handler as CastHandler<T>)(value, path, name);
+  };
 
 }

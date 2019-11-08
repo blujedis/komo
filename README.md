@@ -238,7 +238,11 @@ The below will map errors in our error model <code>{ firstName: [ error objects 
 
 Komo has some built in hooks that make it trivial to wire up to fields or expose your own hooks using the built in <code>withKomo</code> helper.
 
-### useField
+Your best bet is to clone the repo then run <code>yarn start</code>. Then navigate to the **/advanced** page. This will give you an idea of some of the cool stuff Komo can do.
+
+### useField Hook
+
+Expose the hook from Komo's main useForm hook, then call the hook and pass in the form element name you wish to use. Simple as that. Just remember your hook will not have access to the element until Komo has mounted.
 
 ```jsx
 const { useField } = useForm({
@@ -246,22 +250,90 @@ const { useField } = useForm({
 });
 
 const firstName = useField('firstName');
+```
 
-const MyError = ({ hook }: { hook: ReturnType<typeof useField> }) => {
-  if (hook.valid)
+### Companion Hook Components
+
+Below we have an Error Component and a TextInput Component that use the errors exposed from our hook.
+
+```jsx
+/**
+ * Simple component to display our errors.
+ * @param props our error component's props.
+ */
+const ErrorMessage = ({ errors }) => {
+  if (!errors || !errors.length)
     return null;
-  return (
-    <span style={{ color: 'red' }}>{hook.message}</span>
-  );
+  const err = errors[0];
+  return (<div style={{ color: 'red', margin: '6px 0 10px' }}>{err.message}</div>);
 };
 
-const myComponent = ({name}: { register: any } & HTMLElement) => {
+/**
+ * Custom input message text field.
+ */
+const TextInput = (props: InputProps) => {
+  const { hook, ...clone } = props;
+  const { name } = clone;
+  const field = props.hook(name);
+  const capitalize = v => v.charAt(0).toUpperCase() + v.slice(1);
   return (
     <div>
-      <input name="firstName" type="text" >
+      <label htmlFor={name}>{capitalize(name)}: </label>
+      <input type="text" ref={field.register} {...clone} />
+      <ErrorMessage errors={field.errors} />
     </div>
   );
 };
+```
+
+### Form with Hooks
+
+```jsx
+const App = () => {
+
+// Create some hooks to our fields
+const firstName = useField('firstName');
+const lastName = useField('lastName');
+
+// When the first name field blurs set the 
+// focus to the last name field.
+const onFirstBlur = (e) => lastName.focus();
+
+// When last name changes manually validate
+// and display response or error.
+ const onLastChange = (e) => {
+    lastName.validate()
+      .then(res => console.log.bind(console))
+      .catch(err => console.log.bind(console));
+  };
+
+  return (
+    <form noValidate onSubmit={handleSubmit(onSubmit)} onReset={handleReset}>
+
+      <label htmlFor="firstName">First Name: </label>
+      <input name="firstName" type="text" ref={register} onChange={onFirstBlur} /><br /><br />
+
+      <TextInput name="lastName" hook={useField} onChange={onLastChange} /><br />
+
+      <button type="button" onClick={lastName.focus}>Set LastName Focus</button><br /><br />
+
+      <button type="button" onClick={updateLast('Waddams')}>Set LastName to Waddams</button><br /><br />
+
+      <button type="button" onClick={updateLast('')}>Set LastName to Undefined</button><br /><br />
+
+      <JsonErrors errors={state.errors} />
+
+      <br />
+      <hr />
+      <br />
+
+      <input type="reset" value="Reset" />&nbsp;
+      <input type="submit" value="Submit" />
+
+    </form>
+  );
+
+}
 ```
 
 ## UI Libraries

@@ -16,12 +16,15 @@ const DEFAULTS = {
     validateBlur: true,
     validateChange: false,
     validateInit: false,
+    validationSchemaPurge: true,
     enableNativeValidation: false,
-    enableWarnings: true
+    logLevel: 'log'
 };
+let log = utils_1.createLogger();
+const { debug_api, debug_init } = utils_1.debuggers;
 function initApi(options) {
-    const defaults = react_1.useRef({ ...options.model });
-    const model = react_1.useRef({ ...options.model });
+    const defaults = react_1.useRef({});
+    const model = react_1.useRef({});
     const fields = react_1.useRef(new Set());
     const touched = react_1.useRef(new Set());
     const dirty = react_1.useRef(new Set());
@@ -32,20 +35,29 @@ function initApi(options) {
     const submitCount = react_1.useRef(0);
     const submitting = react_1.useRef(false);
     const submitted = react_1.useRef(false);
-    const [getStatus, renderStatus] = react_1.useState({ status: 'init' });
+    const [currentStatus, renderStatus] = react_1.useState('init');
+    let state = {};
+    let api = {};
     // HELPERS //
-    const log = utils_1.createLogger(options.enableWarnings ? 'info' : 'error');
     const render = (status) => {
-        if (!status)
-            return getStatus.status;
-        renderStatus({ status });
+        renderStatus(status);
+        debug_api('rendered', status);
     };
-    const getElement = (namePathOrElement) => {
-        if (typeof namePathOrElement === 'object')
+    function _getElement(namePathOrElement, asGroup = false) {
+        // if (typeof namePathOrElement === 'object')
+        if (utils_1.isObject(namePathOrElement))
             return namePathOrElement;
-        return [...fields.current.values()].find(e => e.name === namePathOrElement || e.path === namePathOrElement);
-    };
-    const initSchema = () => {
+        const filtered = [...fields.current.values()]
+            .filter(e => e.name === namePathOrElement || e.path === namePathOrElement);
+        if (asGroup)
+            return filtered;
+        return filtered[0];
+    }
+    const getElement = react_1.useCallback(_getElement, [fields]);
+    const getRegistered = react_1.useCallback((asPath = false) => {
+        return [...fields.current.values()].map(f => asPath ? f.path : f.name);
+    }, [fields]);
+    const initSchema = react_1.useCallback(() => {
         let schema;
         if (schemaAst.current)
             options.validationSchema = validate_1.astToSchema(schemaAst.current, options.validationSchema);
@@ -53,7 +65,7 @@ function initApi(options) {
         validator.current = validate_1.normalizeValidator(options.validationSchema, getElement);
         schema = options.validationSchema;
         return schema;
-    };
+    }, [defaults, options.validationSchema]);
     // MODEL //
     const getDefault = (path) => {
         if (!path)
@@ -80,14 +92,14 @@ function initApi(options) {
             defaults.current = current;
         }
     }, []);
-    const syncDefaults = (defs) => {
+    const syncDefaults = react_1.useCallback((defs) => {
         defaults.current = utils_1.merge({ ...defaults.current }, { ...defs });
         model.current = utils_1.merge({ ...defs }, { ...model.current });
         // Iterate bound elements and update default values.
         [...fields.current.values()].forEach(element => {
-            element.rebind();
+            element.reinit();
         });
-    };
+    }, []);
     const setModel = react_1.useCallback((pathOrModel, value) => {
         if (!pathOrModel) {
             log.error(`Cannot set default value using key or model of undefined.`);
@@ -107,13 +119,13 @@ function initApi(options) {
                 current = pathOrModel;
             model.current = current;
         }
-    }, []);
-    const getModel = react_1.useCallback((path) => {
+    }, [defaults, model]);
+    const getModel = (path) => {
         if (!path)
             return model.current;
         return dot_prop_1.get(model.current, path);
-    }, [defaults]);
-    // TOUCHED //
+    };
+    // TOUCHED // 
     const setTouched = (name) => {
         if (!touched.current.has(name))
             touched.current.add(name);
@@ -142,6 +154,18 @@ function initApi(options) {
     const clearDirty = () => {
         dirty.current.clear();
     };
+    const isDirtyCompared = (name, value, defaultValue) => {
+        const element = getElement(name);
+        value = utils_1.toDefault(value, element.value);
+        defaultValue = utils_1.toDefault(defaultValue, getModel(element.path));
+        // Probably need to look further into this
+        // ensure common and edge cases are covered.
+        // NOTE: we check array here as value could
+        // be multiple option group in some cases.
+        return utils_1.isArray(defaultValue)
+            ? !utils_1.isEqual(defaultValue, value)
+            : !utils_1.isEqual(defaultValue + '', value + '');
+    };
     const isDirty = react_1.useCallback((name) => {
         if (name)
             return dirty.current.has(name);
@@ -163,17 +187,18 @@ function initApi(options) {
             if (utils_1.isUndefined(errors.current[k]))
                 delete errors.current[k];
         }
-        render('seterror');
+        render('error:set');
+        debug_api('seterror', errors.current);
         return errors.current;
     }, [options.validationSchema]);
     const removeError = react_1.useCallback((name) => {
         const exists = errors.current.hasOwnProperty(name);
         // causes a render to trigger then we set below.
-        // saves us a render actually.
         setError(name, undefined);
         const errs = {};
         for (const k in errors.current) {
-            if (typeof errors.current[k] !== 'undefined' || k !== name)
+            // if (typeof errors.current[k] !== 'undefined' || k !== name)
+            if (!utils_1.isUndefined(errors.current[k]) || k !== name)
                 errs[k] = errors.current[k];
         }
         errors.current = errs;
@@ -190,7 +215,7 @@ function initApi(options) {
         const _validator = validator.current;
         if (!_validator)
             return Promise.resolve(model.current);
-        opts = { abortEarly: false, ...opts };
+        opts = { ...opts, ...{ strict: false, abortEarly: false } };
         return _validator.validate(model.current, opts);
     }, [options.validationSchema, setError]);
     const validateModelAt = react_1.useCallback((nameOrElement, opts) => {
@@ -204,17 +229,13 @@ function initApi(options) {
         let currentValue = getModel(element.path);
         if (!_validator)
             return Promise.resolve(currentValue);
-        opts = { abortEarly: false, ...opts };
+        opts = { ...opts, ...{ strict: false, abortEarly: false } };
         if (utils_1.isFunction(options.validationSchema))
             return _validator.validateAt(element.path, model.current);
         currentValue = currentValue === '' ? undefined : currentValue;
         return _validator.validateAt(element.path, currentValue, opts);
     }, [options.validationSchema, setError]);
-    const isValidatable = () => {
-        return (typeof options.validationSchema === 'object' &&
-            typeof options.validationSchema._nodes) !== 'undefined' ||
-            typeof options.validationSchema === 'function';
-    };
+    const isValidatable = () => validate_1.isYupSchema(options.validationSchema) || utils_1.isFunction(options.validationSchema);
     const isValidateChange = (nameOrElement) => {
         let element = nameOrElement;
         if (utils_1.isString(nameOrElement))
@@ -232,7 +253,7 @@ function initApi(options) {
         if (!fields.current.size)
             return;
         // If string find the element in fields.
-        const _element = typeof element === 'string' ?
+        const _element = utils_1.isString(element) ?
             getElement(element) :
             element;
         if (!_element) {
@@ -248,12 +269,12 @@ function initApi(options) {
         // Delete the element from fields collection.
         fields.current.delete(_element);
     }, []);
-    const state = {
+    state = {
         get model() {
             return model.current;
         },
-        get isMounted() {
-            return mounted.current;
+        get mounted() {
+            return !!mounted.current;
         },
         get errors() {
             return errors.current;
@@ -286,16 +307,16 @@ function initApi(options) {
             return isTouched();
         }
     };
-    const api = {
+    api = {
         // Common
         options,
-        log,
         defaults,
         fields,
         unregister,
         schemaAst,
         render,
         getElement,
+        getRegistered,
         initSchema,
         // Form
         mounted,
@@ -323,13 +344,13 @@ function initApi(options) {
         removeDirty,
         clearDirty,
         isDirty,
+        isDirtyCompared,
         // Errors,
         errors,
         setError,
         removeError,
         clearError,
-        submitCount,
-        submitting,
+        submitCount, submitting,
         submitted
     };
     return api;
@@ -340,16 +361,18 @@ function initApi(options) {
  * @param options form api options.
  */
 function initForm(options) {
-    const _options = { ...DEFAULTS, ...options };
-    const base = initApi(_options);
-    const { options: formOptions, log, defaults, render, clearDirty, clearTouched, clearError, setModel, fields, submitCount, submitting, submitted, validateModel, getModel, syncDefaults, isValidatable, errors, setError, unregister, mounted, initSchema, model } = base;
+    const base = initApi(options);
+    const { options: formOptions, defaults, render, clearDirty, clearTouched, clearError, setModel, fields, submitCount, submitting, submitted, validateModel, getModel, syncDefaults, state, isValidatable, errors, setError, unregister, mounted, initSchema, model, getRegistered, getElement } = base;
     react_1.useEffect(() => {
-        // May need to update model defaults
-        // again from user here.
-        mounted.current = true;
         const init = async () => {
-            const normalized = validate_1.normalizeDefaults(options.defaults, options.validationSchema);
-            const { err, data } = await utils_1.me(normalized);
+            if (mounted.current)
+                return;
+            debug_init('fields', getRegistered());
+            debug_init('schema', options.validationSchema);
+            const { err, data } = await utils_1.me(options.defaults);
+            debug_init('defaults', data);
+            if (err && utils_1.isPlainObject(err))
+                debug_init('err', err);
             // Err and data both 
             syncDefaults({ ...err, ...data });
             // Init normalize the validation schema.
@@ -360,7 +383,12 @@ function initForm(options) {
                     .catch(valErr => {
                     if (valErr)
                         setError(valErr);
+                }).finally(() => {
+                    mounted.current = true;
                 });
+            }
+            else {
+                mounted.current = true;
             }
         };
         init();
@@ -370,7 +398,7 @@ function initForm(options) {
                 unregister(e);
             });
         };
-    }, [unregister]);
+    }, []);
     /**
      * Manually resets model, dirty touched and clears errors.
      *
@@ -390,7 +418,7 @@ function initForm(options) {
         submitting.current = false;
         submitted.current = false;
         // Rerender the form
-        render('reset');
+        render('form:reset');
     }
     function _handleReset(valuesOrEvent) {
         const handleCallback = async (event, values) => {
@@ -400,7 +428,7 @@ function initForm(options) {
             }
             await reset(values);
         };
-        if (typeof valuesOrEvent === 'function')
+        if (utils_1.isFunction(valuesOrEvent))
             return (event) => {
                 return handleCallback(event, valuesOrEvent);
             };
@@ -427,7 +455,7 @@ function initForm(options) {
             submitted.current = true;
             submitCount.current = submitCount.current + 1;
             errors.current = e || errors.current;
-            render('submit');
+            render('form:submit');
             handler(m, e || {}, ev);
         };
         return async (event) => {
@@ -452,17 +480,18 @@ function initForm(options) {
     const reset = react_1.useCallback(_resetForm, []);
     const handleReset = react_1.useCallback(_handleReset, []);
     const handleSubmit = react_1.useCallback(_handleSubmit, []);
-    return {
+    const api = {
         // Elements
         register: react_1.useCallback(register_1.initElement(base), []),
         unregister: base.unregister,
         // Form
         render,
-        state: base.state,
         reset,
         handleReset,
         handleSubmit,
+        state,
         // Model
+        getDefault: base.getDefault,
         getElement: base.getElement,
         getModel: base.getModel,
         setModel: base.setModel,
@@ -471,21 +500,29 @@ function initForm(options) {
         setTouched: base.setTouched,
         removeTouched: base.removeTouched,
         clearTouched: base.clearTouched,
+        isTouched: base.isTouched,
         setDirty: base.setDirty,
         removeDirty: base.removeDirty,
         clearDirty: base.clearDirty,
+        isDirty: base.isDirty,
         setError: base.setError,
         removeError: base.removeError,
         clearError: base.clearError
     };
+    return api;
 }
-exports.initForm = initForm;
 /**
  * Initializes Komo.
  *
  * @param options the komo options.
  */
 function initKomo(options) {
+    options = { ...DEFAULTS, ...options };
+    log = utils_1.createLogger(options.logLevel);
+    const normalizeYup = validate_1.parseYupDefaults(options.validationSchema, options.validationSchemaPurge);
+    options.validationSchema = normalizeYup.schema;
+    options.defaults = validate_1.promisifyDefaults(options.defaults, normalizeYup.defaults);
+    options.castHandler = validate_1.normalizeCasting(options.castHandler);
     const api = initForm(options);
     function initWithKomo(handler) {
         return handler(api);

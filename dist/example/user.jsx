@@ -31,7 +31,7 @@ const User = () => {
         },
         validationSchema: schema,
         enableNativeValidation: true,
-        enableWarnings: true
+        logLevel: 'debug'
     });
     const onSubmit = (model) => {
         console.log(model);

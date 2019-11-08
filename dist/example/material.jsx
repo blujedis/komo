@@ -18,7 +18,6 @@ const schema = yup_1.object({
         home: yup_1.string(),
         mobile: yup_1.string()
     }),
-    urgent: yup_1.boolean()
 });
 const defaults = {
     firstName: 'Bill',
@@ -34,7 +33,7 @@ const Material = () => {
         defaults: Promise.resolve(defaults),
         validationSchema: schema,
         validateSubmitExit: true,
-        enableWarnings: true
+        logLevel: 'debug'
     });
     const onSubmit = (model) => {
         console.log(model);
@@ -48,6 +47,11 @@ const Material = () => {
     const firstName = initError('firstName');
     // Use built in Komo field hook
     const lastName = useField('lastName');
+    const MyError = ({ hook }) => {
+        if (hook.valid)
+            return null;
+        return (<span style={{ color: 'red' }}>{hook.message}</span>);
+    };
     return (<div>
 
       <h2>Material Design - Yup Validation</h2>
@@ -57,7 +61,8 @@ const Material = () => {
 
         <TextField_1.default name="firstName" error={firstName.invalid} inputRef={register} label={firstName.message} margin="normal" defaultValue="Bill"/><br /><br />
         <TextField_1.default name="lastName" error={lastName.invalid} inputRef={register} label={lastName.message} margin="normal"/><br /><br />
-        <Input_1.default name="lastName" inputRef={register} placeholder="Last Name"/><br /><br />
+        <MyError hook={lastName}/><br /><br />
+
         <Input_1.default name="email" inputRef={register} placeholder="Email"/><br /><br />
         <Input_1.default name="phone" inputRef={register({ path: 'numbers.home' })} placeholder="Phone"/><br /><br />
 

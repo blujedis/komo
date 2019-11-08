@@ -1,24 +1,18 @@
 import { IModel, KeyOf, IKomo, IUseFields } from './types';
-import { useCallback } from 'react';
+import { useCallback, BaseSyntheticEvent } from 'react';
+import { ValidationError } from 'yup';
+import { isUndefined } from './utils';
 
 export function initHooks<T extends IModel>(komo: IKomo<T>) {
 
-  function isErrorProp(prop: KeyOf<T>) {
-    return typeof komo.state.errors[prop] !== 'undefined';
-  }
+  const {
+    state, getElement, getModel, setModel, validateModelAt,
+    isTouched, isDirty } = komo;
 
-  function isTouched(prop: KeyOf<T>) {
-    return komo.state.touched.includes(prop);
-  }
-
-  function isDirty(prop: KeyOf<T>) {
-    return komo.state.dirty.includes(prop);
-  }
-
-  function hasError(prop: KeyOf<T>) {
-    if (!isTouched(prop))
-      return false;
-    return isErrorProp(prop);
+  function getErrors(prop: KeyOf<T>) {
+    if (!state.errors || !state.errors[prop] || !state.errors[prop].length)
+      return [];
+    return state.errors[prop];
   }
 
   /**
@@ -36,14 +30,35 @@ export function initHooks<T extends IModel>(komo: IKomo<T>) {
    */
   function useField(name: KeyOf<T>) {
 
-    return {
+    const field = {
 
-      get element() {
-        return komo.getElement(name);
+      register: komo.register.bind(komo),
+
+      // Getters //
+
+      get mounted() {
+        return state.mounted;
       },
 
-      get path() {
-        return komo.getElement(name);
+      get element() {
+        if (!field.mounted) {
+          // tslint:disable-next-line: no-console
+          console.warn(`Element for "${name}" is unavailable, the element has not mounted.`);
+          return null;
+        }
+        return getElement(name);
+      },
+
+      get errors() {
+        return getErrors(name);
+      },
+
+      get valid() {
+        return !field.errors.length;
+      },
+
+      get invalid() {
+        return !!field.errors.length;
       },
 
       get touched() {
@@ -54,31 +69,64 @@ export function initHooks<T extends IModel>(komo: IKomo<T>) {
         return isDirty(name);
       },
 
-      get errors() {
-        return komo.state.errors;
+      get name() {
+        return name;
+      },
+
+      get path() {
+        return field.element.path;
+      },
+
+      get value() {
+        return field.element.value;
+      },
+
+      get data() {
+        return getModel(field.path);
       },
 
       get message() {
-        if (!komo.state.errors || typeof komo.state.errors[name] === 'undefined')
-          return null;
-        return komo.state.errors[name][0].message;
+        if (field.valid) return null;
+        return state.errors[name][0].message;
       },
 
       get messages() {
-        if (!komo.state.errors || typeof komo.state.errors[name] === 'undefined')
+        if (field.valid)
           return null;
-        return komo.state.errors[name].map(e => e.message);
+        return field.errors.map(e => e.message);
       },
 
-      get valid() {
-        return !hasError(name);
+      // Setters //
+
+      set value(value: any) {
+        field.element.value = value + '';
       },
 
-      get invalid() {
-        return hasError(name);
+      set data(value: any) {
+        setModel(field.path, value);
+      },
+
+      // Events //
+
+      focus(e?: BaseSyntheticEvent) {
+        field.element.focus();
+      },
+
+      blur(e?: BaseSyntheticEvent) {
+        field.element.blur();
+      },
+
+      update(value: T[KeyOf<T>], modelValue?: any, validate: boolean = true) {
+        field.element.update(value, modelValue, validate);
+      },
+
+      validate() {
+        return validateModelAt(field.element);
       }
 
     };
+
+    return field;
 
   }
 

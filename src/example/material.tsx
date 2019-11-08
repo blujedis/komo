@@ -15,7 +15,6 @@ const schema = object({
     home: string(),
     mobile: string()
   }),
-  urgent: boolean()
 });
 
 const defaults = {
@@ -34,7 +33,7 @@ const Material: FC = () => {
     defaults: Promise.resolve(defaults),
     validationSchema: schema,
     validateSubmitExit: true,
-    enableWarnings: true
+    logLevel: 'debug'
   });
 
   const onSubmit = (model) => {

@@ -36,7 +36,7 @@ const User: FC = () => {
     },
     validationSchema: schema,
     enableNativeValidation: true,
-    enableWarnings: true
+    logLevel: 'debug'
   });
 
   const onSubmit = (model) => {

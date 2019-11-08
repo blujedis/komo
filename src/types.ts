@@ -1,6 +1,6 @@
 import { BaseSyntheticEvent, MutableRefObject, LegacyRef, FormEvent } from 'react';
-import { ObjectSchema, ValidateOptions, InferType } from 'yup';
-import { createLogger } from './utils';
+import { ObjectSchema, ValidateOptions, InferType, Shape, ObjectSchemaDefinition } from 'yup';
+import { createLogger, LogLevel } from './utils';
 
 // HELPERS //
 
@@ -155,6 +155,8 @@ export interface IFindField<T extends IModel> {
   (nameOrPath: string): IRegisteredElement<T>;
 }
 
+export type CastHandler<T extends IModel> = (value: any, path?: string, name?: KeyOf<T>) => any;
+
 // OPTIONS //
 
 export interface IOptions<T extends IModel> {
@@ -168,6 +170,11 @@ export interface IOptions<T extends IModel> {
    * A Yup ObjectSchema or custom function for validating form (default: undefined)
    */
   validationSchema?: ValidationSchema<T>;
+
+  /**
+   * When true 
+   */
+  validationSchemaPurge?: boolean;
 
   /**
    * When true validation is triggered on change (default: false)
@@ -196,9 +203,15 @@ export interface IOptions<T extends IModel> {
   validateInit?: boolean;
 
   /**
-   * When true internal warnings are logged to console (default: true)
+   * True to enable casting using Yup internally, false or null to disable or custom function
+   * for user defined model value casting.
    */
-  enableWarnings?: boolean;
+  castHandler?: boolean | CastHandler<T>;
+
+  /**
+   * Enables simple logging for warnings, info etc, set to null to disable. (default: info)
+   */
+  logLevel?: LogLevel;
 
   /**
    * When true and validationSchema is NOT user function native validation converted to yup ObjectSchema (default: true)
@@ -379,11 +392,6 @@ export interface IRegisteredElement<T extends IModel> extends IRegisterElement {
   // CUSTOM PROPS //
 
   /**
-   * Indicates element is bound to Komo.
-   */
-  komo?: boolean;
-
-  /**
    * The alternate model path for getting/setting field value.
    */
   path?: string;
@@ -432,29 +440,20 @@ export interface IRegisteredElement<T extends IModel> extends IRegisterElement {
   enableModelUpdate?: boolean;
 
   /**
-   * Validates the element using initialized validation configuration.
+   * Updates the form element's state and data model value triggering 
+   * all states such as touched, dirty as needed. Validation is triggered
+   * unless set to false or no validationSchema is present.
+   * 
+   * @param value the element value to be set.
+   * @param modelValue the model value to be set.
+   * @param validate when true validation is triggered after set (default: true)
+   */
+  update?: (value: any, modelValue?: any, validate?: boolean) => void;
+
+  /**
+   * Validates the element when validationSchema has been provided.
    */
   validate?: () => PromiseStrict<Partial<T>, Partial<ErrorModel<T>>>;
-
-  /**
-   * Sets element as touched.
-   */
-  touch?: () => void;
-
-  /**
-   * Sets element as untouched.
-   */
-  untouch?: () => void;
-
-  /**
-   * Set element as dirty.
-   */
-  dirty?: () => void;
-
-  /**
-   * Set elmement as undirty.
-   */
-  undirty?: () => void;
 
   /**
    * Unbinds events for the element.
@@ -465,11 +464,6 @@ export interface IRegisteredElement<T extends IModel> extends IRegisterElement {
    * Re initializes the element defaults.
    */
   reinit?: (options?: { defaultValue?: any, defaultChecked?: boolean }) => void;
-
-  /**
-   * Registers the element with Komo.
-   */
-  register?: () => void;
 
   /**
    * Unbinds and unregisters element from Komo.
@@ -560,11 +554,6 @@ export type ErrorMessageModel<T extends IModel> = { [K in ErrorKeys<T>]: string 
 
 // API //
 
-/**
- * Simple internal logger.
- */
-type Logger = ReturnType<typeof createLogger>;
-
 export interface IFormState<T extends IModel> {
 
   /**
@@ -590,7 +579,7 @@ export interface IFormState<T extends IModel> {
   /**
    * Boolean indicating if is mounted.
    */
-  isMounted: boolean;
+  mounted: boolean;
 
   /**
    * Boolean indicating if form is submitting.
@@ -630,14 +619,133 @@ export interface IFormState<T extends IModel> {
 }
 
 /**
- * The base API interface used by form field elements and form submit, reset handlers.
+ * Resulting object upon initializing useField.
  */
-export interface IBaseApi<T extends IModel> {
+export interface IUseField<T extends IModel> {
 
   /**
-   * Simple internal logger.
+   * Registers the element.
    */
-  log: Logger;
+  register: IRegister<T>;
+
+  // Getters //
+
+  /**
+   * Exposes access to the hook's bound element in your form. This allows 
+   * you to get/set properties directly on your element.
+   */
+  readonly element: IRegisteredElement<T>;
+
+  /**
+   * Returns the current errors for a field/element.
+   */
+  readonly errors: ErrorModel<T>;
+
+  /**
+   * Returns true if the field/element is valid or without errors.
+   */
+  readonly valid: boolean;
+
+  /**
+   * Returns true when the field/element has errors and is invalid.
+   */
+  readonly invalid: boolean;
+
+  /**
+   * Indicates if the field/element is touched.
+   */
+  readonly touched: boolean;
+
+  /**
+   * Indicates if the field/element is dirty.
+   */
+  readonly dirty: boolean;
+
+  /**
+   * The element name, name of hook.
+   */
+  readonly name: string;
+
+  /**
+   * The data path in your model which this field/element gets/sets data from.
+   */
+  readonly path: string;
+
+  /**
+   * Gets the element's current value.
+   */
+  value: string;
+
+  /**
+   * The current form's data model value.
+   */
+  data: any;
+
+  /**
+   * Returns the current top error for a field/element.
+   */
+  readonly message: string;
+
+  /**
+   * Returns current error messages for a field/element.
+   */
+  readonly messages: string[];
+
+  // Events //
+
+  /**
+   * Updates the value and model value for an element.
+   * When no modelValue is provided the value is used.
+   * 
+   * @param value the value to update to.
+   * @param modelValue optional model value.
+   * @param validate when NOT false validate the element.
+   */
+  update(value: any, modelValue?: any, validate?: boolean): void;
+
+  /**
+   * Sets focus for element.
+   * 
+   * @param event the react synthetice event.
+   */
+  focus(event?: BaseSyntheticEvent): void;
+
+  /**
+   * Causes the element to blur.
+   * 
+   * @param event the react synthetice event.
+   */
+  blur(event?: BaseSyntheticEvent): void;
+
+  /**
+   * Validates the field.
+   */
+  validate(): PromiseStrict<Partial<T>, Partial<ErrorModel<T>>>;
+
+}
+
+/**
+ * Resulting object upon initializing useFields.
+ */
+export type IUseFields<Fields extends string, T> = { [P in Fields]?: T };
+
+/**
+ * Create useField type returning IUseField.
+ */
+export type UseField<T extends IModel> = (name: KeyOf<T>) => IUseField<T>;
+
+/**
+ * Create useFields type returning IUseFields.
+ */
+export type UseFields<T extends IModel> =
+  <K extends KeyOf<T>>(...names: K[]) => IUseFields<K, IUseField<T>>;
+
+type BasePicked = 'render' | 'state' | 'getModel' | 'setModel' | 'validateModel' | 'validateModelAt' | 'setTouched' | 'removeTouched' | 'clearTouched' | 'setDirty' | 'removeDirty' | 'clearDirty' | 'setError' | 'removeError' | 'clearError' | 'getElement' | 'getDefault' | 'isTouched' | 'isDirty';
+
+/**
+ * The base API interface used by form field elements and form submit, reset handlers.
+ */
+export interface IKomoBase<T extends IModel> {
 
   /**
    * React MutableRefObject of registered elements.
@@ -702,14 +810,9 @@ export interface IBaseApi<T extends IModel> {
   /**
    * Triggers rerendering of the form.
    * 
-   * @param status optional status or tag event that's calling the rerender.
+   * @param status the status state calling the render.
    */
-  render(status: string): void;
-
-  /**
-   * Triggers rerendering of the form.
-   */
-  render(): string;
+  render(status?: string): void;
 
   // Model
 
@@ -887,6 +990,15 @@ export interface IBaseApi<T extends IModel> {
    */
   isDirty(name?: KeyOf<T>): boolean;
 
+  /**
+   * Compares value to default value return if has changed and is dirty.
+   * 
+   * @param name a form element name.
+   * @param value the value to be compared to default.
+   * @param defautlValue the default data in model.
+   */
+  isDirtyCompared(name: KeyOf<T>, value?: any, defautlValue?: any): boolean;
+
   // Error
 
   /**
@@ -930,8 +1042,28 @@ export interface IBaseApi<T extends IModel> {
    * Finds a field/element by name or path.
    * 
    * @param nameOrPath the name or path used to lookup element.
+   * @param asGroup when true will return all matching names such as in a radio group.
+   */
+  getElement(nameOrPath: string, asGroup: boolean): Array<IRegisteredElement<T>>;
+
+  /**
+   * Finds a field/element by name or path.
+   * 
+   * @param nameOrPath the name or path used to lookup element.
    */
   getElement(nameOrPath: string): IRegisteredElement<T>;
+
+  /**
+   * Gets the registered paths.
+   * 
+   * @param asPath when true registered paths are returned.
+   */
+  getRegistered(asPath?: boolean): Array<KeyOf<T>>;
+
+  /**
+   * Gets the registered names.
+   */
+  getRegistered(): Array<KeyOf<T>>;
 
   /**
    * Unregisters an element by instance.
@@ -949,79 +1081,7 @@ export interface IBaseApi<T extends IModel> {
 
 }
 
-
-/**
- * Resulting object upon initializing useField.
- */
-export interface IUseField<T extends IModel> {
-
-  /**
-   * Exposes access to the hook's bound element in your form. This allows 
-   * you to get/set properties directly on your element.
-   */
-  readonly element: IRegisteredElement<T>;
-
-  /**
-   * The data path in your model which this field/element gets/sets data from.
-   */
-  readonly path: string;
-
-  /**
-   * Indicates if the field/element is touched.
-   */
-  readonly touched: boolean;
-
-  /**
-   * Indicates if the field/element is dirty.
-   */
-  readonly dirty: boolean;
-
-  /**
-   * Returns the current errors for a field/element.
-   */
-  readonly errors: ErrorModel<T>;
-
-  /**
-   * Returns the current top error for a field/element.
-   */
-  readonly message: string;
-
-  /**
-   * Returns current error messages for a field/element.
-   */
-  readonly messages: string[];
-
-  /**
-   * Returns true if the field/element is valid or without errors.
-   */
-  readonly valid: boolean;
-
-  /**
-   * Returns true when the field/element has errors and is invalid.
-   */
-  readonly invalid: boolean;
-
-}
-
-/**
- * Resulting object upon initializing useFields.
- */
-export type IUseFields<Fields extends string, T> = { [P in Fields]: T };
-
-/**
- * Create useField type returning IUseField.
- */
-export type UseField<T extends IModel> = (name: Extract<keyof T, string>) => IUseField<T>;
-
-/**
- * Create useFields type returning IUseFields.
- */
-export type UseFields<T extends IModel> =
-  <K extends Extract<keyof T, string>>(...names: K[]) => IUseFields<K, IUseField<T>>;
-
-type BasePicked = 'render' | 'state' | 'getModel' | 'setModel' | 'validateModel' | 'validateModelAt' | 'setTouched' | 'removeTouched' | 'clearTouched' | 'setDirty' | 'removeDirty' | 'clearDirty' | 'setError' | 'removeError' | 'clearError' | 'getElement';
-
-export interface IKomoExtended<T extends IModel> extends Pick<IBaseApi<T>, BasePicked> {
+export interface IKomoForm<T extends IModel> extends Pick<IKomoBase<T>, BasePicked> {
 
   /**
    * Registers an element/field with Komo.
@@ -1061,14 +1121,14 @@ export interface IKomoExtended<T extends IModel> extends Pick<IBaseApi<T>, BaseP
    * 
    * @param name the name of the field/element to bind to.
    */
-  useField?: (name: Extract<keyof T, string>) => IUseField<T>;
+  useField?: (name: KeyOf<T>) => IUseField<T>;
 
   /**
    * Built in hook for exposing helpers to a given set of fields.
    * 
    * @param names the names of fields/elements you wish to create hooks for.
    */
-  useFields?<K extends Extract<keyof T, string>>(...names: K[]): IUseFields<K, IUseField<T>>;
+  useFields?<K extends KeyOf<T>>(...names: K[]): IUseFields<K, IUseField<Partial<T>>>;
 
   /**
    * Convenience method for generating hooks which receives the Komo api. Essentially this
@@ -1080,4 +1140,4 @@ export interface IKomoExtended<T extends IModel> extends Pick<IBaseApi<T>, BaseP
 
 }
 
-export interface IKomo<T extends IModel> extends Omit<IKomoExtended<T>, 'withHook'> { }
+export interface IKomo<T extends IModel> extends Omit<IKomoForm<T>, 'withKomo'> { }

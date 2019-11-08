@@ -1,6 +1,6 @@
 import { BaseSyntheticEvent, MutableRefObject, LegacyRef, FormEvent } from 'react';
 import { ObjectSchema, ValidateOptions } from 'yup';
-import { createLogger } from './utils';
+import { LogLevel } from './utils';
 /**
  * Extracts key from type as string.
  */
@@ -9,12 +9,6 @@ export declare type KeyOf<T> = Extract<keyof T, string>;
  * Extracts value from type using key of type as string.
  */
 export declare type ValueOf<T, K extends KeyOf<T>> = T[K];
-/**
- * Object contiaing useField hooks for convenience.
- */
-export declare type UseFields<Fields extends string, T> = {
-    [P in Fields]: T;
-};
 /**
  * Infers the return type of a passed function.
  */
@@ -128,6 +122,7 @@ export interface IFindField<T extends IModel> {
      */
     (nameOrPath: string): IRegisteredElement<T>;
 }
+export declare type CastHandler<T extends IModel> = (value: any, path?: string, name?: KeyOf<T>) => any;
 export interface IOptions<T extends IModel> {
     /**
      * Default model values (default: {})
@@ -137,6 +132,10 @@ export interface IOptions<T extends IModel> {
      * A Yup ObjectSchema or custom function for validating form (default: undefined)
      */
     validationSchema?: ValidationSchema<T>;
+    /**
+     * When true
+     */
+    validationSchemaPurge?: boolean;
     /**
      * When true validation is triggered on change (default: false)
      */
@@ -159,27 +158,81 @@ export interface IOptions<T extends IModel> {
      */
     validateInit?: boolean;
     /**
-     * When true internal warnings are logged to console (default: true)
+     * True to enable casting using Yup internally, false or null to disable or custom function
+     * for user defined model value casting.
      */
-    enableWarnings?: boolean;
+    castHandler?: boolean | CastHandler<T>;
+    /**
+     * Enables simple logging for warnings, info etc, set to null to disable. (default: info)
+     */
+    logLevel?: LogLevel;
     /**
      * When true and validationSchema is NOT user function native validation converted to yup ObjectSchema (default: true)
      */
     enableNativeValidation?: boolean;
 }
 /**
- * Internal options interface.
+ * Interface for custom registrations of an element.
  */
-export interface IOptionsInternal<T extends IModel> extends IOptions<T> {
+export interface IRegisterOptions<T extends IModel> {
     /**
-     * Komo populates initial model from defaults, or cast schema defaults.
+     * The name of the element.
      */
-    model?: T;
+    name?: KeyOf<T>;
+    /**
+     * The default value to use on resets.
+     */
+    defaultValue?: any;
+    /**
+     * The default value to use when is element type using "checked".
+     */
+    defaultChecked?: boolean;
+    /**
+     * Whether the element should be initialized as required.
+     */
+    required?: boolean;
+    /**
+     * Default for element should be a min of this value min="5".
+     */
+    min?: number;
+    /**
+     * Default for element should be a max of this value min="5".
+     */
+    max?: number;
+    /**
+     * Default element string should be a max of this length.
+     */
+    maxLength?: number;
+    /**
+     * Default element string should be a min of this length.
+     */
+    minLength?: number;
+    /**
+     * Default element should match this pattern.
+     */
+    pattern?: RegExp;
+    /**
+     * Alertnate path in model to get/set data from for element value.
+     */
+    path?: string;
+    /**
+     * Whether element should validate on change overrides main options.
+     */
+    validateChange?: boolean;
+    /**
+     * Whether element should validate on blur, overrides main options.
+     */
+    validateBlur?: boolean;
+    /**
+     * Whether or not native validation should be enabled, overrides main options.
+     */
+    enableNativeValidation?: boolean;
+    /**
+     * When true element auto updates the model on blur or change. This is not to be confused
+     * with validateChange or validateBlur. Set to false to update your model manually.
+     */
+    enableModelUpdate?: boolean;
 }
-/**
- * Type which when called returns an React ref of HTMLElement.
- */
-export declare type RegisterElement = (element: IRegisterElement) => LegacyRef<HTMLElement>;
 /**
  * Interface for registering an element, extends HTMLElement.
  */
@@ -234,68 +287,6 @@ export interface IRegisterElement extends Partial<HTMLElement> {
     maxLength?: string | number;
 }
 /**
- * Interface for custom registrations of an element.
- */
-export interface IRegisterOptions<T extends IModel> {
-    /**
-     * The name of the element.
-     */
-    name?: KeyOf<T>;
-    /**
-     * Alertnate path in model to get/set data from for element value.
-     */
-    path?: string;
-    /**
-     * The default value to use on resets.
-     */
-    defaultValue?: any;
-    /**
-     * The default value to use when is element type using "checked".
-     */
-    defaultChecked?: boolean;
-    /**
-     * Whether the element should be initialized as required.
-     */
-    required?: boolean;
-    /**
-     * Default for element should be a min of this value min="5".
-     */
-    min?: number;
-    /**
-     * Default for element should be a max of this value min="5".
-     */
-    max?: number;
-    /**
-     * Default element string should be a max of this length.
-     */
-    maxLength?: number;
-    /**
-     * Default element string should be a min of this length.
-     */
-    minLength?: number;
-    /**
-     * Default element should match this pattern.
-     */
-    pattern?: RegExp;
-    /**
-     * Whether element should validate on change overrides main options.
-     */
-    validateChange?: boolean;
-    /**
-     * Whether element should validate on blur, overrides main options.
-     */
-    validateBlur?: boolean;
-    /**
-     * Whether or not native validation should be enabled, overrides main options.
-     */
-    enableNativeValidation?: boolean;
-    /**
-     * When true element auto updates the model on blur or change. This is not to be confused
-     * with validateChange or validateBlur. Set to false to update your model manually.
-     */
-    enableModelUpdate?: boolean;
-}
-/**
  * The initialized registered element interface.
  */
 export interface IRegisteredElement<T extends IModel> extends IRegisterElement {
@@ -303,6 +294,14 @@ export interface IRegisteredElement<T extends IModel> extends IRegisterElement {
      * The name of the element.
      */
     name: KeyOf<T>;
+    /**
+     * The default value used when reset is called.
+     */
+    defaultValue?: any;
+    /**
+     * The default checked value when reset is called if applicable.
+     */
+    defaultChecked?: boolean;
     /**
      * The alternate model path for getting/setting field value.
      */
@@ -315,14 +314,6 @@ export interface IRegisteredElement<T extends IModel> extends IRegisterElement {
      * The initialized checked value if any.
      */
     initChecked?: boolean;
-    /**
-     * The default value used when reset is called.
-     */
-    defaultValue?: any;
-    /**
-     * The default checked value when reset is called if applicable.
-     */
-    defaultChecked?: boolean;
     /**
      * Same as defaultValue but some libs
      * override defaultValue.
@@ -351,7 +342,17 @@ export interface IRegisteredElement<T extends IModel> extends IRegisterElement {
      */
     enableModelUpdate?: boolean;
     /**
-     * Validates the element using initialized validation configuration.
+     * Updates the form element's state and data model value triggering
+     * all states such as touched, dirty as needed. Validation is triggered
+     * unless set to false or no validationSchema is present.
+     *
+     * @param value the element value to be set.
+     * @param modelValue the model value to be set.
+     * @param validate when true validation is triggered after set (default: true)
+     */
+    update?: (value: any, modelValue?: any, validate?: boolean) => void;
+    /**
+     * Validates the element when validationSchema has been provided.
      */
     validate?: () => PromiseStrict<Partial<T>, Partial<ErrorModel<T>>>;
     /**
@@ -359,9 +360,12 @@ export interface IRegisteredElement<T extends IModel> extends IRegisterElement {
      */
     unbind?: () => void;
     /**
-     * Rebind defaults values.
+     * Re initializes the element defaults.
      */
-    rebind?: () => void;
+    reinit?: (options?: {
+        defaultValue?: any;
+        defaultChecked?: boolean;
+    }) => void;
     /**
      * Unbinds and unregisters element from Komo.
      */
@@ -370,6 +374,25 @@ export interface IRegisteredElement<T extends IModel> extends IRegisterElement {
      * Resets the element to the default value.
      */
     reset?: () => void;
+}
+/**
+ * Type which when called returns an React ref of HTMLElement.
+ */
+export declare type RegisterElement = (element: IRegisterElement) => LegacyRef<HTMLElement>;
+/**
+ * Interface for registering an element.
+ */
+export interface IRegister<T extends IModel> {
+    /**
+     * Registers an element with Komo using custom options.
+     *
+     * @param options the element registration options.
+     */
+    (options: IRegisterOptions<T>): RegisterElement;
+    /**
+     * Registers an element with Komo directly without options.
+     */
+    (element: IRegisterElement): void;
 }
 /**
  * Form field/element validation error interface.
@@ -413,10 +436,6 @@ export declare type ErrorModel<T extends IModel> = {
 export declare type ErrorMessageModel<T extends IModel> = {
     [K in ErrorKeys<T>]: string | string[];
 };
-/**
- * Simple internal logger.
- */
-declare type Logger = ReturnType<typeof createLogger>;
 export interface IFormState<T extends IModel> {
     /**
      * The data model.
@@ -437,7 +456,7 @@ export interface IFormState<T extends IModel> {
     /**
      * Boolean indicating if is mounted.
      */
-    isMounted: boolean;
+    mounted: boolean;
     /**
      * Boolean indicating if form is submitting.
      */
@@ -468,13 +487,107 @@ export interface IFormState<T extends IModel> {
     isTouched: boolean;
 }
 /**
+ * Resulting object upon initializing useField.
+ */
+export interface IUseField<T extends IModel> {
+    /**
+     * Registers the element.
+     */
+    register: IRegister<T>;
+    /**
+     * Exposes access to the hook's bound element in your form. This allows
+     * you to get/set properties directly on your element.
+     */
+    readonly element: IRegisteredElement<T>;
+    /**
+     * Returns the current errors for a field/element.
+     */
+    readonly errors: ErrorModel<T>;
+    /**
+     * Returns true if the field/element is valid or without errors.
+     */
+    readonly valid: boolean;
+    /**
+     * Returns true when the field/element has errors and is invalid.
+     */
+    readonly invalid: boolean;
+    /**
+     * Indicates if the field/element is touched.
+     */
+    readonly touched: boolean;
+    /**
+     * Indicates if the field/element is dirty.
+     */
+    readonly dirty: boolean;
+    /**
+     * The element name, name of hook.
+     */
+    readonly name: string;
+    /**
+     * The data path in your model which this field/element gets/sets data from.
+     */
+    readonly path: string;
+    /**
+     * Gets the element's current value.
+     */
+    value: string;
+    /**
+     * The current form's data model value.
+     */
+    data: any;
+    /**
+     * Returns the current top error for a field/element.
+     */
+    readonly message: string;
+    /**
+     * Returns current error messages for a field/element.
+     */
+    readonly messages: string[];
+    /**
+     * Updates the value and model value for an element.
+     * When no modelValue is provided the value is used.
+     *
+     * @param value the value to update to.
+     * @param modelValue optional model value.
+     * @param validate when NOT false validate the element.
+     */
+    update(value: any, modelValue?: any, validate?: boolean): void;
+    /**
+     * Sets focus for element.
+     *
+     * @param event the react synthetice event.
+     */
+    focus(event?: BaseSyntheticEvent): void;
+    /**
+     * Causes the element to blur.
+     *
+     * @param event the react synthetice event.
+     */
+    blur(event?: BaseSyntheticEvent): void;
+    /**
+     * Validates the field.
+     */
+    validate(): PromiseStrict<Partial<T>, Partial<ErrorModel<T>>>;
+}
+/**
+ * Resulting object upon initializing useFields.
+ */
+export declare type IUseFields<Fields extends string, T> = {
+    [P in Fields]?: T;
+};
+/**
+ * Create useField type returning IUseField.
+ */
+export declare type UseField<T extends IModel> = (name: KeyOf<T>) => IUseField<T>;
+/**
+ * Create useFields type returning IUseFields.
+ */
+export declare type UseFields<T extends IModel> = <K extends KeyOf<T>>(...names: K[]) => IUseFields<K, IUseField<T>>;
+declare type BasePicked = 'render' | 'state' | 'getModel' | 'setModel' | 'validateModel' | 'validateModelAt' | 'setTouched' | 'removeTouched' | 'clearTouched' | 'setDirty' | 'removeDirty' | 'clearDirty' | 'setError' | 'removeError' | 'clearError' | 'getElement' | 'getDefault' | 'isTouched' | 'isDirty';
+/**
  * The base API interface used by form field elements and form submit, reset handlers.
  */
-export interface IBaseApi<T extends IModel> {
-    /**
-     * Simple internal logger.
-     */
-    log: Logger;
+export interface IKomoBase<T extends IModel> {
     /**
      * React MutableRefObject of registered elements.
      */
@@ -526,13 +639,9 @@ export interface IBaseApi<T extends IModel> {
     /**
      * Triggers rerendering of the form.
      *
-     * @param status optional status or tag event that's calling the rerender.
+     * @param status the status state calling the render.
      */
-    render(status: string): void;
-    /**
-     * Triggers rerendering of the form.
-     */
-    render(): string;
+    render(status?: string): void;
     /**
      * Gets the default value at a given model path or all default model values.
      *
@@ -676,6 +785,14 @@ export interface IBaseApi<T extends IModel> {
      */
     isDirty(name?: KeyOf<T>): boolean;
     /**
+     * Compares value to default value return if has changed and is dirty.
+     *
+     * @param name a form element name.
+     * @param value the value to be compared to default.
+     * @param defautlValue the default data in model.
+     */
+    isDirtyCompared(name: KeyOf<T>, value?: any, defautlValue?: any): boolean;
+    /**
      * Sets field/element error.
      *
      * @param name the field/element name to set error for.
@@ -709,8 +826,25 @@ export interface IBaseApi<T extends IModel> {
      * Finds a field/element by name or path.
      *
      * @param nameOrPath the name or path used to lookup element.
+     * @param asGroup when true will return all matching names such as in a radio group.
+     */
+    getElement(nameOrPath: string, asGroup: boolean): Array<IRegisteredElement<T>>;
+    /**
+     * Finds a field/element by name or path.
+     *
+     * @param nameOrPath the name or path used to lookup element.
      */
     getElement(nameOrPath: string): IRegisteredElement<T>;
+    /**
+     * Gets the registered paths.
+     *
+     * @param asPath when true registered paths are returned.
+     */
+    getRegistered(asPath?: boolean): Array<KeyOf<T>>;
+    /**
+     * Gets the registered names.
+     */
+    getRegistered(): Array<KeyOf<T>>;
     /**
      * Unregisters an element by instance.
      *
@@ -724,18 +858,55 @@ export interface IBaseApi<T extends IModel> {
      */
     unregister(name: KeyOf<T>): void;
 }
-declare type BasePicked = 'render' | 'state' | 'getModel' | 'setModel' | 'validateModel' | 'validateModelAt' | 'setTouched' | 'removeTouched' | 'clearTouched' | 'setDirty' | 'removeDirty' | 'clearDirty' | 'setError' | 'removeError' | 'clearError' | 'getElement';
-export interface IKomoExtended<T extends IModel> extends Pick<IBaseApi<T>, BasePicked> {
-    register: {
-        (options: IRegisterOptions<T>): RegisterElement;
-        (element: IRegisterElement): void;
-    };
+export interface IKomoForm<T extends IModel> extends Pick<IKomoBase<T>, BasePicked> {
+    /**
+     * Registers an element/field with Komo.
+     */
+    register: IRegister<T>;
+    /**
+     * Resets form clearing errors and restoring defaults. This is called by "handleReset".
+     *
+     * @param values optiona values to reset the form with.
+     */
     reset(values?: T): void;
+    /**
+     * Handles reset for the bound from.
+     *
+     * @param event the html form event on reset.
+     */
     handleReset(event: BaseSyntheticEvent): Promise<void>;
+    /**
+     * Handles reset for the bound from with suppiled new values.
+     *
+     * @param event the html form event on reset.
+     */
     handleReset(values: T): (event: BaseSyntheticEvent) => Promise<void>;
+    /**
+     * Handles form submission.
+     *
+     * @param handler the form submission handler used to submit the form.
+     */
     handleSubmit(handler: SubmitHandler<T>): (event: FormEvent<HTMLFormElement>) => Promise<void>;
+    /**
+     * Built in hook for exposing helpers to a given form field.
+     *
+     * @param name the name of the field/element to bind to.
+     */
+    useField?: (name: KeyOf<T>) => IUseField<T>;
+    /**
+     * Built in hook for exposing helpers to a given set of fields.
+     *
+     * @param names the names of fields/elements you wish to create hooks for.
+     */
+    useFields?<K extends KeyOf<T>>(...names: K[]): IUseFields<K, IUseField<Partial<T>>>;
+    /**
+     * Convenience method for generating hooks which receives the Komo api. Essentially this
+     * just makes your types play nicely.
+     *
+     * @param hook the hook which accepts the Komo api.
+     */
     withKomo?<R, H extends (hook: IKomo<T>) => R>(hook: H): InferReturn<H>;
 }
-export interface IKomo<T extends IModel> extends Omit<IKomoExtended<T>, 'withHook'> {
+export interface IKomo<T extends IModel> extends Omit<IKomoForm<T>, 'withKomo'> {
 }
 export {};

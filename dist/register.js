@@ -9,20 +9,161 @@ const typeMap = {
     url: 'string',
     checkbox: 'boolean'
 };
+let log;
+const { debug_register, debug_event } = utils_1.debuggers;
 /**
  * Creates initialized methods for binding and registering an element.
  *
  * @param api the base form api.
  */
 function initElement(api) {
-    const { options: formOptions, log, schemaAst, fields, unregister, setModel, getModel, getDefault, isTouched, isDirty, setDefault, mounted, setDirty, setTouched, removeDirty, isValidateBlur, isValidateChange, validateModelAt, isValidatable, removeError, setError, getElement, render } = api;
+    const { options: komoOptions, schemaAst, fields, unregister, setModel, getModel, isTouched, isDirty, setDefault, mounted, setDirty, setTouched, removeDirty, isValidateBlur, isValidateChange, validateModelAt, isValidatable, removeError, setError, render, getElement, isDirtyCompared } = api;
+    log = utils_1.getLogger();
     /**
-     * Resets the element to its defaults.
+     * Checks if the element is a duplicate and should be ignored.
+     * Radio groups never return true.
+     */
+    function isRegistered(element) {
+        if (mounted.current)
+            return true;
+        const exists = fields.current.has(element);
+        const elements = getElement(element.name, true);
+        // if only a single element, not a radio group.
+        if (elements.length === 1)
+            return exists || !elements.length;
+        // If group ensure name/value not dupe.
+        return exists || !!elements.filter(e => e.value === element.value).length;
+    }
+    // TODO: need to breatkout get set for each element type
+    // into it's own file, make it more clear.
+    /**
+     *
+     * @param element the element to set multiple select element for.
+     * @param values the array of values to set.
+     */
+    function setMultiple(element, values) {
+        values = !utils_1.isArray(values) ? [values] : values;
+        const result = [];
+        for (let i = 0; i < element.options.length; i++) {
+            const opt = element.options[i];
+            opt.selected = false;
+            opt.removeAttribute('selected');
+            if (values.includes(opt.value) || values.includes(opt.text)) {
+                opt.setAttribute('selected', 'true');
+                opt.selected = true;
+                result.push(opt.value || opt.text);
+            }
+        }
+        return result;
+    }
+    /**
+     * Get multiple values from select multiple.
+     *
+     * @param element the element to get select multiple values for.
+     */
+    function getMultiple(element) {
+        if (!utils_1.isSelectMultiple(element.type)) {
+            log.fatal(`Attempted to get as select multiple value but is type "${element.type}" and tag of ${element.tagName}`);
+            return;
+        }
+        const value = [];
+        // tslint:disable-next-line
+        for (let i = 0; i < element.options.length; i++) {
+            const opt = element.options[i];
+            if (opt.selected)
+                value.push(opt.value || opt.text);
+        }
+        return value;
+    }
+    /**
+     * Gets value of checked radio.
+     *
+     * @param element the radio element to get value for.
+     */
+    function getRadioValue(element) {
+        if (!utils_1.isRadio(element.type)) {
+            log.fatal(`Attempted to get as radio value but is type ${element.type} and tag of ${element.tagName}`);
+            return;
+        }
+        const radios = getElement(element.name, true);
+        const checked = radios.find(e => e.checked);
+        return (checked && checked.value) || '';
+    }
+    /**
+     * Find radios and set checked on value match.
+     *
+     * @param name the radio group name.
+     * @param value the value to match to set checked radio.
+     */
+    function setRadioChecked(name, value) {
+        const radios = getElement(name, true);
+        let nextChecked;
+        radios.forEach((radio) => {
+            if (utils_1.isEqual(radio.value, value)) {
+                radio.checked = true;
+                nextChecked = radio;
+            }
+            else {
+                radio.checked = false;
+            }
+        });
+        if (!nextChecked)
+            log.fatal(`Could not set radio group, value "${value} has no match.`);
+        return nextChecked;
+    }
+    /**
+     * Gets the data value from parsing element.
+     * This value will be used to set the model.
+     *
+     * @param element the registered element to be updated.
+     */
+    function getElementValue(element) {
+        let value;
+        if (utils_1.isRadio(element.type)) {
+            value = getRadioValue(element);
+        }
+        else if (utils_1.isCheckbox(element.type)) {
+            value = element.checked;
+        }
+        else if (element.multiple) {
+            value = getMultiple(element);
+        }
+        else {
+            value = element.value;
+        }
+        return value;
+    }
+    /**
+     * Sets the element's default value. be sure to pass the correct
+     * value type. Multiples for example needs an array of values.
      *
      * @param element the element to be reset.
-     * @param isInit when true is setting initial defaults.
+     * @param value the element value to set.
      */
-    function resetElement(element, isInit = false) {
+    function setElementValue(element, value) {
+        value = utils_1.isUndefined(value) ? '' : value;
+        if (utils_1.isRadio(element.type)) {
+            setRadioChecked(element.name, value);
+        }
+        else if (utils_1.isCheckbox(element.type)) {
+            if (utils_1.isBooleanLike(value) && (value === true || value === 'true'))
+                element.checked = true;
+            else
+                element.checked = false;
+        }
+        else if (element.multiple) {
+            value = setMultiple(element, value);
+        }
+        else {
+            element.value = value;
+        }
+    }
+    /**
+     * Sets the element's default value.
+     *
+     * @param element the element to be reset.
+     */
+    function setElementDefault(element, isReset = false) {
         let value;
         if (utils_1.isRadio(element.type)) {
             element.checked = element.defaultCheckedPersist;
@@ -30,93 +171,220 @@ function initElement(api) {
                 value = element.value;
         }
         else if (utils_1.isCheckbox(element.type)) {
-            value = element.defaultChecked = utils_1.isBooleanLike(element.defaultCheckedPersist);
-            element.checked = value;
+            element.checked = element.defaultChecked = utils_1.isBooleanLike(element.defaultCheckedPersist);
+            value = element.checked;
         }
         else if (element.multiple) {
-            value = [...element.defaultValuePersist];
-            for (let i = 0; i < element.options.length; i++) {
-                const opt = element.options[i];
-                if (value.includes(opt.value || opt.text)) {
-                    opt.setAttribute('selected', 'true');
-                    opt.selected = true;
-                }
-            }
+            value = setMultiple(element, [...element.defaultValuePersist]);
         }
         else {
             value = element.defaultValuePersist;
             element.value = value;
         }
+        // Don't set undefined unchecked
+        // radio will not have value.
+        if (utils_1.isUndefined(value))
+            return value;
         setModel(element.path, value);
-        if (isInit)
-            setDefault(element.path, value);
+        return value;
     }
     /**
-     * Updates the element on event changes.
+     * Sets the element's state after comparing value.
      *
-     * @param element the registered element to be updated.
-     * @param isBlur indicates the update event is of type blur.
+     * @param element the element to set state for.
+     * @param value the value used to compare state.
      */
-    function updateElement(element) {
-        // Previous value & flags.
-        const defaultValue = getDefault(element.path);
+    function setElementState(element, value) {
         const prevTouched = isTouched(element.name);
         const prevDirty = isDirty(element.name);
-        let value;
+        const dirtyCompared = isDirtyCompared(element.name, value);
         let dirty = false;
-        if (utils_1.isRadio(element.type)) {
-            const radios = [...fields.current.values()]
-                .filter(e => utils_1.isRadio(e.type) && e.name === element.name);
-            const checked = radios.find(e => e.checked);
-            value = (checked && checked.value) || '';
-        }
-        else if (utils_1.isCheckbox(element.type)) {
-            value = element.checked;
-        }
-        else if (element.multiple) {
-            value = [];
-            // tslint:disable-next-line
-            for (let i = 0; i < element.options.length; i++) {
-                const opt = element.options[i];
-                if (opt.selected)
-                    value.push(opt.value || opt.text);
-            }
-        }
-        else {
-            value = element.value;
-        }
-        dirty = utils_1.isArray(defaultValue)
-            ? !utils_1.isEqual(defaultValue, value)
-            : !utils_1.isEqual(defaultValue + '', value + '');
-        if (dirty)
+        let touched = false;
+        if (dirtyCompared) {
             setDirty(element.name);
-        if (!!dirty || prevTouched)
+            dirty = true;
+        }
+        if (!!dirtyCompared || prevTouched) {
             setTouched(element.name);
-        if (!dirty && prevDirty)
+            touched = true;
+        }
+        if (!dirtyCompared && prevDirty)
             removeDirty(element.name);
         // Updating the model here so if 
         // empty string set to undefined.
         if (value === '')
             value = undefined;
+        return {
+            dirty,
+            touched,
+            value,
+            modelValue: undefined
+        };
+    }
+    // Persists data to model.
+    function setElementModel(element, modelValue) {
+        const castHandler = komoOptions.castHandler;
+        modelValue = castHandler(modelValue, element.path, element.name);
         // Set the model value.
-        setModel(element.path, value);
+        setModel(element.path, modelValue);
+        return modelValue;
+    }
+    function updateStateAndModel(element, value, modelValue) {
+        // if no value is provided then
+        // get the normalized value.
+        value = utils_1.isUndefined(value) ? getElementValue(element) : value;
+        // Update the state.
+        const elementState = setElementState(element, value);
+        debug_event('update:state', element.name, elementState);
+        // Ensure the model value.
+        modelValue = utils_1.isUndefined(modelValue) ? value : modelValue;
+        // Update the model value.
+        elementState.modelValue = setElementModel(element, modelValue);
+        return elementState;
     }
     /**
-     * Binds and element and attaches specified event listeners.
+     * Parses the element for native validators building up an ast for use with Yup.
      *
-     * @param element the element to be bound.
+     * @param element the element to be parsed.
      */
-    function bindElement(element, rebind = false) {
-        if (!element || (fields.current.has(element) && !rebind))
-            return;
-        if (!element.name) {
-            log.warn(`Element of tag "${element.tagName}" could NOT be registered using name of undefined.`);
-            return;
+    function parseNativeValidators(element) {
+        const allowNative = !utils_1.isUndefined(element.enableNativeValidation) ?
+            element.enableNativeValidation : komoOptions.enableNativeValidation;
+        if (allowNative && !utils_1.isFunction(komoOptions.validationSchema)) {
+            const nativeValidators = validate_1.getNativeValidators(element);
+            const nativeValidatorTypes = validate_1.getNativeValidatorTypes(element);
+            if (nativeValidators.length || nativeValidatorTypes.length) {
+                schemaAst.current = schemaAst.current || {};
+                schemaAst.current[element.path] = schemaAst.current[element.path] || [];
+                const baseType = typeMap[element.type];
+                // Set the type.
+                schemaAst.current[element.path] = [[baseType || 'string', undefined]];
+                // These are basically sub types of string
+                // like email or string.
+                if (nativeValidatorTypes.length) {
+                    schemaAst.current[element.path].push([element.type, undefined]);
+                }
+                // Extend AST with each native validator.
+                if (nativeValidators.length)
+                    nativeValidators.forEach(k => {
+                        schemaAst.current[element.path].push([k, element[k]]);
+                    });
+            }
         }
+    }
+    /**
+     * Attaches blur/change events for element.
+     *
+     * @param element the element to attach events for.
+     */
+    function attachEvents(element) {
+        let events = [];
+        const handleBlur = async (e) => {
+            updateStateAndModel(element);
+            debug_event(element.name, element.value);
+            if (isValidateBlur(element)) {
+                await utils_1.me(element.validate());
+            }
+        };
+        const handleChange = async (e) => {
+            updateStateAndModel(element);
+            debug_event(element.name, element.value);
+            if (isValidateChange(element)) {
+                await utils_1.me(element.validate());
+            }
+        };
+        if (element.enableModelUpdate !== false) {
+            // Attach blur
+            utils_1.addListener(element, 'blur', handleBlur);
+            events = [['blur', handleBlur]];
+            // Attach change.
+            const changeEvent = utils_1.isTextLike(element.type) ? 'input' : 'change';
+            utils_1.addListener(element, changeEvent, handleChange);
+            events = [...events, [changeEvent, handleChange]];
+        }
+        return events;
+    }
+    /**
+     * Validates the model at key name.
+     *
+     * @param element the element to be validated.
+     * @param value the value to be validated.
+     */
+    async function validateElementModel(element, value) {
+        if (!isValidatable())
+            return Promise.resolve(value);
+        const { err, data } = await utils_1.me(validateModelAt(element));
+        if (err) {
+            setError(element.name, err[element.name]);
+            render('validate:invalid');
+            return Promise.reject(err);
+        }
+        // Model is valid remove all errors.
+        removeError(element.name);
+        // Render and update view.
+        render('validate:valid');
+        return Promise.resolve(data);
+    }
+    /**
+     * Extends the element with bound events.
+     *
+     * @param element the element to be extended.
+     */
+    function extendEvents(element, rebind = false) {
+        let events = [];
+        // Attach events return array of attach for unbinding.
+        // skip if just rebinding.
+        if (!rebind)
+            events = attachEvents(element);
+        // Update the model, value and state.
+        element.update = async (value, modelValue, validate = true) => {
+            // Select multiples use model array 
+            // to set it's slected values.
+            const setVal = element.multiple ? modelValue || value : value;
+            setElementValue(element, setVal);
+            updateStateAndModel(element, value, modelValue);
+            if (!validate) {
+                render('update:novalidate');
+                return;
+            }
+            await utils_1.me(validateElementModel(element, value));
+        };
+        element.validate = async () => {
+            const currentValue = getModel(element.path);
+            return validateElementModel(element, currentValue);
+        };
+        // Reset the element to initial values.
+        element.reset = () => {
+            setElementDefault(element);
+        };
+        element.reinit = (options) => {
+            bindElement(element, true);
+        };
+        // Unbind events helper.
+        element.unbind = () => {
+            if (!events.length)
+                return;
+            events.forEach(tuple => {
+                const [event, handler] = tuple;
+                utils_1.removeListener(element, event, handler);
+            });
+        };
+        // Unbind any events and then unref
+        // the lement from any collections.
+        element.unregister = () => {
+            unregister(element);
+        };
+        // Bind mutation observer.
+        utils_1.initObserver(element, element.unregister.bind(element));
+    }
+    /**
+     * Initializes the default values for the specified element.
+     *
+     * @param element the element to initialize default values vor.
+     */
+    function initDefaults(element) {
         // Normalize path, get default values.
         element.path = element.path || element.name;
-        if (!element.type)
-            element.setAttribute('type', 'text');
         // Get the model by key.
         const modelVal = getModel(element.path);
         if (utils_1.isRadio(element.type)) {
@@ -135,125 +403,44 @@ function initElement(api) {
             if (!Array.isArray(arr))
                 arr = [element.defaultValue];
             arr = arr.filter(v => !utils_1.isUndefined(v));
-            // Ensure initial value includes
-            // any default selected values in options.
-            for (let i = 0; i < element.options.length; i++) {
-                const opt = element.options[i];
-                if (opt.selected) {
-                    if (!arr.includes(opt.value || opt.text))
-                        arr.push(opt.value || opt.text);
-                }
-            }
+            const elementValues = getMultiple(element);
+            arr = [...arr, ...elementValues].reduce((a, c) => {
+                if (!a.includes(c))
+                    a.push(c);
+                return a;
+            }, []);
             element.defaultValue = element.defaultValuePersist = arr;
         }
         else {
-            element.defaultValue = element.defaultValuePersist = element.value || modelVal || '';
+            element.defaultValue = element.defaultValuePersist = element.initValue || element.value || modelVal || '';
         }
-        // NOTE: This should probably be refactored to
-        // own file for greater flexibility/options.
-        if (!rebind) {
-            const allowNative = !utils_1.isUndefined(element.enableNativeValidation) ?
-                element.enableNativeValidation : formOptions.enableNativeValidation;
-            if (allowNative && !utils_1.isFunction(formOptions.validationSchema)) {
-                const nativeValidators = validate_1.getNativeValidators(element);
-                const nativeValidatorTypes = validate_1.getNativeValidatorTypes(element);
-                if (nativeValidators.length || nativeValidatorTypes.length) {
-                    schemaAst.current = schemaAst.current || {};
-                    schemaAst.current[element.path] = schemaAst.current[element.path] || [];
-                    const baseType = typeMap[element.type];
-                    // Set the type.
-                    schemaAst.current[element.path] = [[baseType || 'string', undefined]];
-                    // These are basically sub types of string
-                    // like email or string.
-                    if (nativeValidatorTypes.length) {
-                        schemaAst.current[element.path].push([element.type, undefined]);
-                    }
-                    // Extend AST with each native validator.
-                    if (nativeValidators.length)
-                        nativeValidators.forEach(k => {
-                            schemaAst.current[element.path].push([k, element[k]]);
-                        });
-                }
-            }
-        }
-        // Set the Initial Value.
-        resetElement(element, true);
-        // No need to rebind events just rebinding defaults.
-        if (rebind)
-            return;
-        // Bind events
-        let events = [];
-        element.validate = async () => {
-            const currentValue = getModel(element.path);
-            if (!isValidatable())
-                return Promise.resolve(currentValue);
-            const { err, data } = await utils_1.me(validateModelAt(element));
-            if (err) {
-                setError(element.name, err[element.name]);
-                return Promise.reject(err);
-            }
-            removeError(element.name);
-            render();
-            return Promise.resolve(data);
-        };
-        // Reset the element to initial values.
-        element.reset = () => {
-            resetElement(element);
-        };
-        // Unbind events helper.
-        element.unbind = () => {
-            if (!events.length)
-                return;
-            events.forEach(tuple => {
-                const [event, handler] = tuple;
-                utils_1.removeListener(element, event, handler);
-            });
-        };
-        element.rebind = () => {
-            bindElement(element, true);
-        };
-        // Unbind any events and then unref
-        // the lement from any collections.
-        element.unregister = () => {
-            unregister(element);
-        };
-        const handleBlur = async (e) => {
-            updateElement(element);
-            if (isValidateBlur(element)) {
-                await utils_1.me(element.validate());
-            }
-        };
-        const handleChange = async (e) => {
-            updateElement(element);
-            if (isValidateChange(element)) {
-                await utils_1.me(element.validate());
-            }
-        };
-        if (element.enableModelUpdate !== false) {
-            // Attach blur
-            utils_1.addListener(element, 'blur', handleBlur);
-            events = [['blur', handleBlur]];
-            // Attach change.
-            const changeEvent = utils_1.isTextLike(element.type) ? 'input' : 'change';
-            utils_1.addListener(element, changeEvent, handleChange);
-            events = [...events, [changeEvent, handleChange]];
-        }
-        // Bind mutation observer.
-        utils_1.initObserver(element, element.unregister.bind(element));
-        // Add to current fields collection.
-        fields.current.add(element);
     }
     /**
-     * Checks if the element is a duplicate and should be ignored.
-     * Radio groups never return true.
+     * Binds and element and attaches specified event listeners.
+     *
+     * @param element the element to be bound.
      */
-    function isDuplicate(element) {
-        if (utils_1.isRadio(element.type))
-            return false;
-        const isDupe = fields.current.has(element) || getElement(element.name);
-        if (isDupe)
-            log.warn(`Duplicate field name "${element.name}" ignored, field is not bound.`);
-        return isDupe;
+    function bindElement(element, rebind = false) {
+        if (!element || (isRegistered(element) && !rebind))
+            return;
+        if (!element.name) {
+            log.warn(`Element of tag "${element.tagName}" could NOT be registered using name of undefined.`);
+            return;
+        }
+        // Normalizes the element and defaults for use with Komo.
+        initDefaults(element);
+        // NOTE: This should probably be refactored to
+        // own file for greater flexibility/options.
+        if (!rebind)
+            parseNativeValidators(element);
+        // Set the Initial Value.
+        const value = setElementDefault(element);
+        setDefault(element.path, value);
+        // Attach/extend element with events.
+        extendEvents(element, rebind);
+        // Add to current field to the collection.
+        if (!rebind)
+            fields.current.add(element);
     }
     function registerElement(elementOrOptions, options) {
         if (utils_1.isNullOrUndefined(elementOrOptions))
@@ -270,33 +457,39 @@ function initElement(api) {
             return (element) => {
                 // Extend element with options.
                 const _element = element;
-                if (!_element || isDuplicate(_element))
+                if (!_element || isRegistered(_element))
                     return;
+                debug_register('custom', _element.name);
                 _element.name = options.name || _element.name;
                 _element.path = options.path || _element.name;
                 _element.initValue = options.defaultValue;
                 _element.initChecked = options.defaultChecked;
-                _element.required = options.required || _element.required;
-                _element.min = options.min || _element.min;
-                _element.max = options.max || _element.max;
-                _element.pattern = options.pattern || _element.pattern;
                 _element.validateChange = options.validateChange;
                 _element.validateBlur = options.validateBlur;
                 _element.enableNativeValidation = options.enableNativeValidation;
                 _element.enableModelUpdate = options.enableModelUpdate;
-                let minLength = _element.minLength === -1 ? undefined : _element.minLength;
-                minLength = options.minLength || minLength;
-                let maxLength = _element.maxLength === -1 ? undefined : _element.maxLength;
-                maxLength = options.maxLength || maxLength;
-                if (minLength)
-                    _element.minLength = minLength;
-                if (maxLength)
-                    _element.maxLength = maxLength;
+                if (options.required)
+                    _element.required = options.required || _element.required;
+                if (options.min)
+                    _element.min = options.min;
+                if (options.max)
+                    _element.max = options.max;
+                if (options.pattern)
+                    _element.pattern = options.pattern;
+                // let minLength = _element.minLength === -1 ? undefined : _element.minLength;
+                // minLength = options.minLength || minLength;
+                // let maxLength = _element.maxLength === -1 ? undefined : _element.maxLength;
+                // maxLength = options.maxLength || maxLength;
+                if (options.minLength)
+                    _element.minLength = options.minLength;
+                if (options.maxLength)
+                    _element.maxLength = options.maxLength;
                 bindElement(_element);
             };
         }
-        if (!elementOrOptions || isDuplicate(elementOrOptions))
+        if (!elementOrOptions || isRegistered(elementOrOptions))
             return;
+        debug_register(elementOrOptions.name);
         // ONLY element was passed.
         bindElement(elementOrOptions);
     }

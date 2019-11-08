@@ -1,31 +1,37 @@
-import React, { FC, Fragment, memo } from 'react';
+import React, { FC } from 'react';
 import useForm from '..';
-import { IRegister } from '../';
+import JsonErrors from './jsonerrors';
 import { string, object, boolean, InferType } from 'yup';
-import { IUseField, UseField, KeyOf } from 'src/types';
 
-// Example using Yup Schema //
-
+/**
+ * Schema - our data model or schema using Yup.
+ */
 const schema = object({
   firstName: string().default('Bill'),
-  lastName: string().default('Lumbergh').required(),
+  lastName: string().required().default('Lumbergh'),
   email: string().email().default('come-in-on-sunday@initech.com'),
   numbers: object({
     home: string(),
     mobile: string()
   }).default({ home: '5551212', mobile: '6661456' }),
   urgent: boolean(),
-  message: string().default('').required()
+  message: string().required()
 });
 
-type Schema = InferType<typeof schema>;
+/**
+ * Inferred type using helper from Yup.
+ */
+type Schema = Partial<InferType<typeof schema>>;
 
+/**
+ * Our Default form component.
+ */
 const Default: FC = () => {
 
-  const { register, handleSubmit, handleReset, state, useField } = useForm({
+  const { register, handleSubmit, handleReset, state } = useForm<Schema>({
     validationSchema: schema,
     enableNativeValidation: true,
-    enableWarnings: true
+    logLevel: 'debug'
   });
 
   const onSubmit = (model) => {
@@ -34,38 +40,6 @@ const Default: FC = () => {
     console.log('count', state.submitCount);
     console.log('submitting', state.isSubmitting);
     console.log('submitted', state.isSubmitted);
-  };
-
-  // Manual error component.
-  const MyError = ({ name }) => {
-    if (!state.errors || typeof state.errors[name] === 'undefined' || !state.errors[name].length)
-      return null;
-    const err = state.errors[name][0];
-    return (<div style={{ color: 'red' }}>{err.message}</div>);
-  };
-
-  // Error component using hook.
-  const MyHookError = ({ message }: { message: string }) => {
-    if (!message) return null;
-    return (
-      <span style={{ color: 'red' }}>{message}</span>
-    );
-  };
-
-  // Advanced custom input that binds to Komo.
-  type InputProps =
-    { name?: KeyOf<Schema>, reg?: IRegister<Schema>, field?: UseField<Schema> } & Partial<HTMLInputElement>;
-  const MyInput = ({ reg, field }: InputProps) => {
-    //  const hook = field(name);
-    const name = 'lastName'
-    const capitalize = v => v.charAt(0).toUpperCase() + v.slice(1);
-    return (
-      <div>
-        <label htmlFor={name}>{capitalize(name)}: </label>
-        <input name={name} type="text" ref={register} />
-        {/* <MyHookError message={hook.message} /> */}
-      </div>
-    );
   };
 
   return (
@@ -79,10 +53,8 @@ const Default: FC = () => {
         <label htmlFor="firstName">First Name: </label>
         <input name="firstName" type="text" ref={register} /><br /><br />
 
-        <MyInput /> <br /><br />
-
-        {/* <label htmlFor="lastName">Last Name: </label>
-        <input type="text" name="lastName" ref={register} /><br /><br /> */}
+        <label htmlFor="lastName">Last Name: </label>
+        <input name="lastName" type="text" ref={register} /><br /><br />
 
         <label htmlFor="phone">Phone: </label>
         <input name="phone" type="text" ref={register({ path: 'numbers.home' })} /><br /><br />
@@ -110,15 +82,18 @@ const Default: FC = () => {
           <option value="audi">Audi</option>
         </select><br /><br />
 
-        <label htmlFor="filename">Last Name: </label>
+        <label htmlFor="filename">Filename: </label>
         <input type="file" name="filename" ref={register} /><br /><br />
 
         <label htmlFor="message">Message: </label>
         <textarea name="message" ref={register({ required: true, minLength: 5 })} >
-        </textarea><MyError name="message" /><br /><br />
+        </textarea>
 
         <input name="csrf" type="hidden" defaultValue="UYNL7_MMNG8_WRRV2_LIOP4" ref={register}></input>
 
+        <JsonErrors errors={state.errors} />
+
+        <br />
         <hr />
         <br />
 

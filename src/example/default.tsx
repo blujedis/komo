@@ -10,8 +10,8 @@ const schema = object({
   firstName: string().default('Bill'),
   lastName: string().required().default('Lumbergh'),
   email: string().email().default('come-in-on-sunday@initech.com'),
-  numbers: object({
-    home: string(),
+  numbers: object().shape({
+    home: string().required(),
     mobile: string()
   }).default({ home: '5551212', mobile: '6661456' }),
   urgent: boolean(),
@@ -57,7 +57,7 @@ const Default: FC = () => {
         <input name="lastName" type="text" ref={register} /><br /><br />
 
         <label htmlFor="phone">Phone: </label>
-        <input name="phone" type="text" ref={register({ path: 'numbers.home' })} /><br /><br />
+        <input name="phone" type="text" ref={register({ path: 'numbers.home', required: true })} /><br /><br />
 
         <label htmlFor="urgent">Urgent: </label>
         <input name="urgent" type="checkbox" ref={register({ defaultValue: true })} /><br /><br />

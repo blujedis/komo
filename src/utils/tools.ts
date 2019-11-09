@@ -144,4 +144,4 @@ export function getLogger() {
   return _logger || createLogger();
 }
 
-export const debuggers = createDebuggers('debug_register', 'debug_init', 'debug_event', 'debug_api', 'debug_validate');
+export const debuggers = createDebuggers('debug_register', 'debug_init', 'debug_event', 'debug_api', 'debug_validate', 'debug_set');

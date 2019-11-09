@@ -14,8 +14,8 @@ const schema = yup_1.object({
     firstName: yup_1.string().default('Bill'),
     lastName: yup_1.string().required().default('Lumbergh'),
     email: yup_1.string().email().default('come-in-on-sunday@initech.com'),
-    numbers: yup_1.object({
-        home: yup_1.string(),
+    numbers: yup_1.object().shape({
+        home: yup_1.string().required(),
         mobile: yup_1.string()
     }).default({ home: '5551212', mobile: '6661456' }),
     urgent: yup_1.boolean(),
@@ -51,7 +51,7 @@ const Default = () => {
         <input name="lastName" type="text" ref={register}/><br /><br />
 
         <label htmlFor="phone">Phone: </label>
-        <input name="phone" type="text" ref={register({ path: 'numbers.home' })}/><br /><br />
+        <input name="phone" type="text" ref={register({ path: 'numbers.home', required: true })}/><br /><br />
 
         <label htmlFor="urgent">Urgent: </label>
         <input name="urgent" type="checkbox" ref={register({ defaultValue: true })}/><br /><br />

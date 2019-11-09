@@ -10,7 +10,7 @@ const typeMap = {
     checkbox: 'boolean'
 };
 let log;
-const { debug_register, debug_event } = utils_1.debuggers;
+const { debug_register, debug_event, debug_set } = utils_1.debuggers;
 /**
  * Creates initialized methods for binding and registering an element.
  *
@@ -235,42 +235,12 @@ function initElement(api) {
         value = utils_1.isUndefined(value) ? getElementValue(element) : value;
         // Update the state.
         const elementState = setElementState(element, value);
-        debug_event('update:state', element.name, elementState);
+        debug_set('update', element.name, element.path, elementState);
         // Ensure the model value.
         modelValue = utils_1.isUndefined(modelValue) ? value : modelValue;
         // Update the model value.
         elementState.modelValue = setElementModel(element, modelValue);
         return elementState;
-    }
-    /**
-     * Parses the element for native validators building up an ast for use with Yup.
-     *
-     * @param element the element to be parsed.
-     */
-    function parseNativeValidators(element) {
-        const allowNative = !utils_1.isUndefined(element.enableNativeValidation) ?
-            element.enableNativeValidation : komoOptions.enableNativeValidation;
-        if (allowNative && !utils_1.isFunction(komoOptions.validationSchema)) {
-            const nativeValidators = validate_1.getNativeValidators(element);
-            const nativeValidatorTypes = validate_1.getNativeValidatorTypes(element);
-            if (nativeValidators.length || nativeValidatorTypes.length) {
-                schemaAst.current = schemaAst.current || {};
-                schemaAst.current[element.path] = schemaAst.current[element.path] || [];
-                const baseType = typeMap[element.type];
-                // Set the type.
-                schemaAst.current[element.path] = [[baseType || 'string', undefined]];
-                // These are basically sub types of string
-                // like email or string.
-                if (nativeValidatorTypes.length) {
-                    schemaAst.current[element.path].push([element.type, undefined]);
-                }
-                // Extend AST with each native validator.
-                if (nativeValidators.length)
-                    nativeValidators.forEach(k => {
-                        schemaAst.current[element.path].push([k, element[k]]);
-                    });
-            }
-        }
     }
     /**
      * Attaches blur/change events for element.
@@ -431,8 +401,12 @@ function initElement(api) {
         initDefaults(element);
         // NOTE: This should probably be refactored to
         // own file for greater flexibility/options.
-        if (!rebind)
-            parseNativeValidators(element);
+        if (!rebind) {
+            const allowNative = !utils_1.isUndefined(element.enableNativeValidation) ?
+                element.enableNativeValidation : komoOptions.enableNativeValidation;
+            if (allowNative && !utils_1.isFunction(komoOptions.validationSchema))
+                schemaAst.current = validate_1.parseNativeValidators(element, schemaAst.current);
+        }
         // Set the Initial Value.
         const value = setElementDefault(element);
         setDefault(element.path, value);
@@ -462,6 +436,11 @@ function initElement(api) {
                 debug_register('custom', _element.name);
                 _element.name = options.name || _element.name;
                 _element.path = options.path || _element.name;
+                // Komo only supports key/prop level paths
+                // you cannot select a value nested within
+                // an array for example. Such as used by lodash.
+                if (/\./g.test(_element.path) && /(\[|\])/g.test(_element.path))
+                    log.fatal(`Path "${_element.path}" is invalid, ONLY standard dot notation to prop/key levels supported.`);
                 _element.initValue = options.defaultValue;
                 _element.initChecked = options.defaultChecked;
                 _element.validateChange = options.validateChange;
@@ -476,10 +455,6 @@ function initElement(api) {
                     _element.max = options.max;
                 if (options.pattern)
                     _element.pattern = options.pattern;
-                // let minLength = _element.minLength === -1 ? undefined : _element.minLength;
-                // minLength = options.minLength || minLength;
-                // let maxLength = _element.maxLength === -1 ? undefined : _element.maxLength;
-                // maxLength = options.maxLength || maxLength;
                 if (options.minLength)
                     _element.minLength = options.minLength;
                 if (options.maxLength)

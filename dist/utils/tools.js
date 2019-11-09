@@ -98,5 +98,5 @@ function getLogger() {
     return _logger || createLogger();
 }
 exports.getLogger = getLogger;
-exports.debuggers = createDebuggers('debug_register', 'debug_init', 'debug_event', 'debug_api', 'debug_validate');
+exports.debuggers = createDebuggers('debug_register', 'debug_init', 'debug_event', 'debug_api', 'debug_validate', 'debug_set');
 //# sourceMappingURL=tools.js.map

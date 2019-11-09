@@ -96,3 +96,23 @@ export declare function castValue(value: any): any;
  * @param handler the cast handler or whether the handler is enabled.
  */
 export declare function normalizeCasting<T extends IModel>(handler: boolean | CastHandler<T>): (value: any, path: string, name: Extract<keyof T, string>) => void;
+/**
+ * Parses the element for native validators building up an ast for use with Yup.
+ * Only a minimal subset of yup validations are supported in converting from native
+ * validators or element type values.
+ *
+ * Parser supports converting type="element_type" for the following input.
+ *
+ * text = string
+ * number = number
+ * checkbox = boolean
+ *
+ * ONLY The following native validators are supported.
+ *
+ * email, url, range, required
+ * min, max, minLength, maxLength,
+ * pattern.
+ *
+ * @param element the element to be parsed.
+ */
+export declare function parseNativeValidators<T extends IModel>(element: IRegisteredElement<T>, schemaAst: ISchemaAst): ISchemaAst;

@@ -11,7 +11,7 @@ const schema = object({
   firstName: string().required(),
   lastName: string().required(),
   email: string().email(),
-  numbers: object({
+  numbers: object().shape({
     home: string(),
     mobile: string()
   }),

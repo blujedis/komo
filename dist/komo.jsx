@@ -226,14 +226,15 @@ function initApi(options) {
             log.error(`validateModelAt failed using missing or unknown element.`);
             return;
         }
-        let currentValue = getModel(element.path);
+        const currentValue = getModel(element.path);
         if (!_validator)
             return Promise.resolve(currentValue);
         opts = { ...opts, ...{ strict: false, abortEarly: false } };
-        if (utils_1.isFunction(options.validationSchema))
-            return _validator.validateAt(element.path, model.current);
-        currentValue = currentValue === '' ? undefined : currentValue;
-        return _validator.validateAt(element.path, currentValue, opts);
+        // if (isFunction(options.validationSchema))
+        //   return _validator.validateAt(element.path, model.current);
+        // currentValue = (currentValue as any) === '' ? undefined : currentValue;
+        // return _validator.validateAt(element.path, currentValue, opts);
+        return _validator.validateAt(element.path, model.current);
     }, [options.validationSchema, setError]);
     const isValidatable = () => validate_1.isYupSchema(options.validationSchema) || utils_1.isFunction(options.validationSchema);
     const isValidateChange = (nameOrElement) => {
@@ -464,16 +465,17 @@ function initForm(options) {
                 event.preventDefault();
                 event.persist();
             }
-            const _model = getModel();
             // Can't validate or is disabled.
             if (!isValidatable() || !formOptions.validateSubmit) {
                 await handleCallback(model, {}, event);
                 return;
             }
             clearError();
-            const { err } = await utils_1.me(validateModel(_model));
+            const { err } = await utils_1.me(validateModel());
+            console.log(err);
             if (err)
                 setError(err);
+            const _model = getModel();
             await handleCallback(_model, err, event);
         };
     }

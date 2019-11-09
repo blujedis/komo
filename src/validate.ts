@@ -1,4 +1,7 @@
-import { object, string, boolean, ValidationError, number, ObjectSchema, ValidateOptions, mixed } from 'yup';
+import {
+  object, string, boolean, ValidationError, number,
+  ObjectSchema, ValidateOptions, mixed, Schema, AnySchemaConstructor
+} from 'yup';
 import { set, get } from 'dot-prop';
 import {
   IModel, ErrorModel, ValidationSchema, IValidator, IRegisteredElement,
@@ -8,14 +11,24 @@ import {
   ValidateModelHandler,
   ErrorMessageModel,
   IValidationError,
-  CastHandler
+  CastHandler,
+  INativeValidators,
 } from './types';
 import {
   debuggers, isPromise, isTruthy, isString, isFunction, me,
   isNullOrUndefined, isEmpty, isPlainObject, isUndefined, isObject, isArray
 } from './utils';
+import { unstable_renderSubtreeIntoContainer } from 'react-dom';
 
 const { debug_validate } = debuggers;
+
+const typeToYup = {
+  range: 'number',
+  number: 'number',
+  email: 'string',
+  url: 'string',
+  checkbox: 'boolean'
+};
 
 /**
  * Lookup helper for element or prop in element.
@@ -91,17 +104,30 @@ export function yupToErrors<T extends IModel>(
  */
 export function astToSchema<T extends IModel>(ast: ISchemaAst, schema?: ObjectSchema<T>): ObjectSchema<T> {
 
-  let obj: any = {};
+  const obj = schema || object();
 
-  for (const k in ast) {
-    if (!ast.hasOwnProperty(k) || !ast[k].length) continue;
+  function getPath(path: string) {
+    const segments = path.split('.') as any;
+    return 'fields.' + segments.reduce((a, c, i) => {
+      const result = [...a, c, 'fields'];
+      if (i === segments.length - 1)
+        result.pop();
+      return result;
+    }, []).join('.');
+  }
 
-    const props = ast[k];
+  function getSchema(path: string, from: any, def: any = null) {
+    path = getPath(path);
+    return get(from || {}, path) || def;
+  }
 
-    const chain = props.reduce((a, c) => {
-      // tslint:disable-next-line
-      let [type, opts] = c as any;
+  function reducer(props: any[][], node?) {
 
+    return props.reduce((result, config) => {
+
+      let [type, opts] = config;
+
+      // strip out "length"
       type = type.replace(/length$/i, '');
 
       if (type === 'pattern') {
@@ -109,11 +135,12 @@ export function astToSchema<T extends IModel>(ast: ISchemaAst, schema?: ObjectSc
         opts = new RegExp(opts);
       }
 
-      if (type === 'required')
+      if (type === 'required') {
         opts = undefined;
+      }
 
-      if (a.out) {
-        a.out = a.out[type](opts);
+      if (result && result[type]) {
+        result = result[type](opts);
       }
 
       else {
@@ -122,21 +149,53 @@ export function astToSchema<T extends IModel>(ast: ISchemaAst, schema?: ObjectSc
           fn = boolean;
         if (type === 'number')
           fn = number;
-        a.out = fn(opts);
+        result = fn(opts);
       }
 
-      return a;
+      return result;
 
-    }, { out: undefined });
-
-    obj = set({ ...obj }, k, chain.out);
+    }, node);
 
   }
 
-  if (!schema)
-    return object(obj);
+  function shaper(key: string, props: any[][]) {
 
-  return schema.shape(obj);
+    // The current schema/node at path.
+    // the last segment in path is removed
+    // so if it exists is always the parent
+    // schema object containing "fields".
+    const current = getSchema(key, schema);
+    const isNested = /\./g.test(key);
+
+    if (isNested) {
+
+      const segments = [...key.split('.')];
+      const lastIdx = segments.length - 1;
+      const lastKey = segments[lastIdx];
+      const reduced = reducer(props, current);
+
+      segments.reduceRight((result, curr, i) => {
+        const nextPath = segments.slice(0, i + 1).join('.');
+        const parent = isString(result) ? getSchema(nextPath, schema) : result;
+        parent.fields[lastKey] = reduced;
+        return parent;
+      });
+
+    }
+    else {
+      // @ts-ignore
+      obj.fields[key] = reducer(props, current);
+    }
+
+  }
+
+  // Iterate each key in AST.
+  for (const k in ast) {
+    if (!ast.hasOwnProperty(k) || !ast[k].length) continue;
+    shaper(k, ast[k]);
+  }
+
+  return schema;
 
 }
 
@@ -232,8 +291,8 @@ export function normalizeValidator<T extends IModel>(
 
     };
 
-    validator.validateAt = (path: string, value: any, options?: ValidateOptions) => {
-      return (schema as ObjectSchema<T>).validateAt(path, { [path]: value } as any, options)
+    validator.validateAt = (path: string, model: T, options?: ValidateOptions) => {
+      return (schema as ObjectSchema<T>).validateAt(path, model, options)
         .then(res => {
           return set({}, path, res) as Partial<T>;
         })
@@ -410,5 +469,58 @@ export function normalizeCasting<T extends IModel>(handler: boolean | CastHandle
     value = castValue(value);
     (handler as CastHandler<T>)(value, path, name);
   };
+
+}
+
+/**
+ * Parses the element for native validators building up an ast for use with Yup.
+ * Only a minimal subset of yup validations are supported in converting from native
+ * validators or element type values.
+ * 
+ * Parser supports converting type="element_type" for the following input.
+ * 
+ * text = string
+ * number = number
+ * checkbox = boolean
+ * 
+ * ONLY The following native validators are supported.
+ * 
+ * email, url, range, required
+ * min, max, minLength, maxLength,
+ * pattern.
+ * 
+ * @param element the element to be parsed.
+ */
+export function parseNativeValidators<T extends IModel>(element: IRegisteredElement<T>, schemaAst: ISchemaAst) {
+
+  schemaAst = (schemaAst || {}) as ISchemaAst;
+
+  const nativeValidators = getNativeValidators(element);
+  const nativeValidatorTypes = getNativeValidatorTypes(element);
+
+  if (nativeValidators.length || nativeValidatorTypes.length) {
+
+    schemaAst[element.path] = schemaAst[element.path] || [];
+
+    const baseType = typeToYup[element.type];
+
+    // Set the type.
+    schemaAst[element.path] = [[baseType || 'string', undefined]];
+
+    // These are basically sub types of string
+    // like email or url.
+    if (nativeValidatorTypes.length) {
+      schemaAst[element.path].push([element.type as any, undefined]);
+    }
+
+    // Extend AST with each native validator.
+    if (nativeValidators.length)
+      nativeValidators.forEach(k => {
+        schemaAst[element.path].push([k as KeyOf<INativeValidators>, element[k]]);
+      });
+
+  }
+
+  return schemaAst;
 
 }

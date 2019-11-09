@@ -35,5 +35,5 @@ export declare function createLogger(level?: LogLevel): ILogger;
  */
 export declare function createDebuggers<K extends string>(...names: K[]): Debuggers<K>;
 export declare function getLogger(): ILogger;
-export declare const debuggers: Debuggers<"debug_register" | "debug_init" | "debug_event" | "debug_api" | "debug_validate">;
+export declare const debuggers: Debuggers<"debug_register" | "debug_init" | "debug_event" | "debug_api" | "debug_validate" | "debug_set">;
 export {};

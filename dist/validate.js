@@ -4,6 +4,13 @@ const yup_1 = require("yup");
 const dot_prop_1 = require("dot-prop");
 const utils_1 = require("./utils");
 const { debug_validate } = utils_1.debuggers;
+const typeToYup = {
+    range: 'number',
+    number: 'number',
+    email: 'string',
+    url: 'string',
+    checkbox: 'boolean'
+};
 /**
  * Lookup helper for element or prop in element.
  *
@@ -65,23 +72,34 @@ exports.yupToErrors = yupToErrors;
  * @param schema optional existing schema.
  */
 function astToSchema(ast, schema) {
-    let obj = {};
-    for (const k in ast) {
-        if (!ast.hasOwnProperty(k) || !ast[k].length)
-            continue;
-        const props = ast[k];
-        const chain = props.reduce((a, c) => {
-            // tslint:disable-next-line
-            let [type, opts] = c;
+    const obj = schema || yup_1.object();
+    function getPath(path) {
+        const segments = path.split('.');
+        return 'fields.' + segments.reduce((a, c, i) => {
+            const result = [...a, c, 'fields'];
+            if (i === segments.length - 1)
+                result.pop();
+            return result;
+        }, []).join('.');
+    }
+    function getSchema(path, from, def = null) {
+        path = getPath(path);
+        return dot_prop_1.get(from || {}, path) || def;
+    }
+    function reducer(props, node) {
+        return props.reduce((result, config) => {
+            let [type, opts] = config;
+            // strip out "length"
             type = type.replace(/length$/i, '');
             if (type === 'pattern') {
                 type = 'matches';
                 opts = new RegExp(opts);
             }
-            if (type === 'required')
+            if (type === 'required') {
                 opts = undefined;
-            if (a.out) {
-                a.out = a.out[type](opts);
+            }
+            if (result && result[type]) {
+                result = result[type](opts);
             }
             else {
                 let fn = yup_1.string;
@@ -89,15 +107,42 @@ function astToSchema(ast, schema) {
                     fn = yup_1.boolean;
                 if (type === 'number')
                     fn = yup_1.number;
-                a.out = fn(opts);
+                result = fn(opts);
             }
-            return a;
-        }, { out: undefined });
-        obj = dot_prop_1.set({ ...obj }, k, chain.out);
+            return result;
+        }, node);
     }
-    if (!schema)
-        return yup_1.object(obj);
-    return schema.shape(obj);
+    function shaper(key, props) {
+        // The current schema/node at path.
+        // the last segment in path is removed
+        // so if it exists is always the parent
+        // schema object containing "fields".
+        const current = getSchema(key, schema);
+        const isNested = /\./g.test(key);
+        if (isNested) {
+            const segments = [...key.split('.')];
+            const lastIdx = segments.length - 1;
+            const lastKey = segments[lastIdx];
+            const reduced = reducer(props, current);
+            segments.reduceRight((result, curr, i) => {
+                const nextPath = segments.slice(0, i + 1).join('.');
+                const parent = utils_1.isString(result) ? getSchema(nextPath, schema) : result;
+                parent.fields[lastKey] = reduced;
+                return parent;
+            });
+        }
+        else {
+            // @ts-ignore
+            obj.fields[key] = reducer(props, current);
+        }
+    }
+    // Iterate each key in AST.
+    for (const k in ast) {
+        if (!ast.hasOwnProperty(k) || !ast[k].length)
+            continue;
+        shaper(k, ast[k]);
+    }
+    return schema;
 }
 exports.astToSchema = astToSchema;
 /**
@@ -173,8 +218,8 @@ function normalizeValidator(schema, findField) {
                 return Promise.reject(yupToErrors(err, findField));
             });
         };
-        validator.validateAt = (path, value, options) => {
-            return schema.validateAt(path, { [path]: value }, options)
+        validator.validateAt = (path, model, options) => {
+            return schema.validateAt(path, model, options)
                 .then(res => {
                 return dot_prop_1.set({}, path, res);
             })
@@ -327,4 +372,46 @@ function normalizeCasting(handler) {
     };
 }
 exports.normalizeCasting = normalizeCasting;
+/**
+ * Parses the element for native validators building up an ast for use with Yup.
+ * Only a minimal subset of yup validations are supported in converting from native
+ * validators or element type values.
+ *
+ * Parser supports converting type="element_type" for the following input.
+ *
+ * text = string
+ * number = number
+ * checkbox = boolean
+ *
+ * ONLY The following native validators are supported.
+ *
+ * email, url, range, required
+ * min, max, minLength, maxLength,
+ * pattern.
+ *
+ * @param element the element to be parsed.
+ */
+function parseNativeValidators(element, schemaAst) {
+    schemaAst = (schemaAst || {});
+    const nativeValidators = getNativeValidators(element);
+    const nativeValidatorTypes = getNativeValidatorTypes(element);
+    if (nativeValidators.length || nativeValidatorTypes.length) {
+        schemaAst[element.path] = schemaAst[element.path] || [];
+        const baseType = typeToYup[element.type];
+        // Set the type.
+        schemaAst[element.path] = [[baseType || 'string', undefined]];
+        // These are basically sub types of string
+        // like email or url.
+        if (nativeValidatorTypes.length) {
+            schemaAst[element.path].push([element.type, undefined]);
+        }
+        // Extend AST with each native validator.
+        if (nativeValidators.length)
+            nativeValidators.forEach(k => {
+                schemaAst[element.path].push([k, element[k]]);
+            });
+    }
+    return schemaAst;
+}
+exports.parseNativeValidators = parseNativeValidators;
 //# sourceMappingURL=validate.js.map

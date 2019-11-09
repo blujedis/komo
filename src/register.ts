@@ -4,12 +4,12 @@ import {
   initObserver, isBooleanLike, isString, isUndefined, isNullOrUndefined, me, isFunction,
   isObject, ILogger, debuggers, isSelectMultiple, getLogger, isEqual, isArray
 } from './utils';
-import { getNativeValidators, getNativeValidatorTypes } from './validate';
+import { getNativeValidators, getNativeValidatorTypes, parseNativeValidators } from './validate';
 import {
   IRegisterElement, IRegisterOptions, IRegisteredElement,
   IModel, INativeValidators, KeyOf, IKomoBase, RegisterElement, CastHandler, PromiseStrict, ErrorModel
 } from './types';
-import { findDOMNode } from 'react-dom';
+
 const typeMap = {
   range: 'number',
   number: 'number',
@@ -19,7 +19,7 @@ const typeMap = {
 };
 
 let log: ILogger;
-const { debug_register, debug_event } = debuggers;
+const { debug_register, debug_event, debug_set } = debuggers;
 
 /**
  * Creates initialized methods for binding and registering an element.
@@ -333,7 +333,7 @@ export function initElement<T extends IModel>(api?: IKomoBase<T>) {
     // Update the state.
     const elementState = setElementState(element, value);
 
-    debug_event('update:state', element.name, elementState);
+    debug_set('update', element.name, element.path, elementState);
 
     // Ensure the model value.
     modelValue = isUndefined(modelValue) ? value : modelValue;
@@ -343,48 +343,6 @@ export function initElement<T extends IModel>(api?: IKomoBase<T>) {
 
     return elementState;
 
-  }
-
-  /**
-   * Parses the element for native validators building up an ast for use with Yup.
-   * 
-   * @param element the element to be parsed.
-   */
-  function parseNativeValidators(element: IRegisteredElement<T>) {
-
-    const allowNative = !isUndefined(element.enableNativeValidation) ?
-      element.enableNativeValidation : komoOptions.enableNativeValidation;
-
-    if (allowNative && !isFunction(komoOptions.validationSchema)) {
-
-      const nativeValidators = getNativeValidators(element);
-      const nativeValidatorTypes = getNativeValidatorTypes(element);
-
-      if (nativeValidators.length || nativeValidatorTypes.length) {
-
-        schemaAst.current = schemaAst.current || {};
-        schemaAst.current[element.path] = schemaAst.current[element.path] || [];
-
-        const baseType = typeMap[element.type];
-
-        // Set the type.
-        schemaAst.current[element.path] = [[baseType || 'string', undefined]];
-
-        // These are basically sub types of string
-        // like email or string.
-        if (nativeValidatorTypes.length) {
-          schemaAst.current[element.path].push([element.type as any, undefined]);
-        }
-
-        // Extend AST with each native validator.
-        if (nativeValidators.length)
-          nativeValidators.forEach(k => {
-            schemaAst.current[element.path].push([k as KeyOf<INativeValidators>, element[k]]);
-          });
-
-      }
-
-    }
   }
 
   /**
@@ -601,8 +559,15 @@ export function initElement<T extends IModel>(api?: IKomoBase<T>) {
 
     // NOTE: This should probably be refactored to
     // own file for greater flexibility/options.
-    if (!rebind)
-      parseNativeValidators(element);
+    if (!rebind) {
+
+      const allowNative = !isUndefined(element.enableNativeValidation) ?
+        element.enableNativeValidation : komoOptions.enableNativeValidation;
+
+      if (allowNative && !isFunction(komoOptions.validationSchema))
+        schemaAst.current = parseNativeValidators(element, schemaAst.current);
+
+    }
 
     // Set the Initial Value.
     const value = setElementDefault(element);
@@ -661,7 +626,15 @@ export function initElement<T extends IModel>(api?: IKomoBase<T>) {
         debug_register('custom', _element.name);
 
         _element.name = options.name || _element.name;
+
         _element.path = options.path || _element.name;
+
+        // Komo only supports key/prop level paths
+        // you cannot select a value nested within
+        // an array for example. Such as used by lodash.
+        if (/\./g.test(_element.path) && /(\[|\])/g.test(_element.path))
+          log.fatal(`Path "${_element.path}" is invalid, ONLY standard dot notation to prop/key levels supported.`);
+
         _element.initValue = options.defaultValue;
         _element.initChecked = options.defaultChecked;
         _element.validateChange = options.validateChange;
@@ -680,12 +653,6 @@ export function initElement<T extends IModel>(api?: IKomoBase<T>) {
 
         if (options.pattern)
           _element.pattern = options.pattern;
-
-        // let minLength = _element.minLength === -1 ? undefined : _element.minLength;
-        // minLength = options.minLength || minLength;
-
-        // let maxLength = _element.maxLength === -1 ? undefined : _element.maxLength;
-        // maxLength = options.maxLength || maxLength;
 
         if (options.minLength)
           _element.minLength = options.minLength;

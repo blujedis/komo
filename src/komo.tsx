@@ -325,19 +325,21 @@ function initApi<T extends IModel>(options: IOptions<T>) {
       return;
     }
 
-    let currentValue = getModel(element.path);
+    const currentValue = getModel(element.path);
 
     if (!_validator)
       return Promise.resolve(currentValue) as Promise<Partial<T>>;
 
     opts = { ...opts, ...{ strict: false, abortEarly: false } };
 
-    if (isFunction(options.validationSchema))
-      return _validator.validateAt(element.path, model.current);
+    // if (isFunction(options.validationSchema))
+    //   return _validator.validateAt(element.path, model.current);
 
-    currentValue = (currentValue as any) === '' ? undefined : currentValue;
+    // currentValue = (currentValue as any) === '' ? undefined : currentValue;
 
-    return _validator.validateAt(element.path, currentValue, opts);
+    // return _validator.validateAt(element.path, currentValue, opts);
+
+    return _validator.validateAt(element.path, model.current);
 
   }, [options.validationSchema, setError]);
 
@@ -662,8 +664,6 @@ function initForm<T extends IModel>(options?: IOptions<T>) {
         event.persist();
       }
 
-      const _model = getModel();
-
       // Can't validate or is disabled.
       if (!isValidatable() || !formOptions.validateSubmit) {
         await handleCallback(model, {} as any, event);
@@ -672,10 +672,14 @@ function initForm<T extends IModel>(options?: IOptions<T>) {
 
       clearError();
 
-      const { err } = await me<T, ErrorModel<T>>(validateModel(_model));
+      const { err } = await me<T, ErrorModel<T>>(validateModel());
+
+      console.log(err);
 
       if (err)
         setError(err);
+
+      const _model = getModel();
 
       await handleCallback(_model, err as any, event);
 

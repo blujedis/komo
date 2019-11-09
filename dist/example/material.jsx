@@ -14,7 +14,7 @@ const schema = yup_1.object({
     firstName: yup_1.string().required(),
     lastName: yup_1.string().required(),
     email: yup_1.string().email(),
-    numbers: yup_1.object({
+    numbers: yup_1.object().shape({
         home: yup_1.string(),
         mobile: yup_1.string()
     }),

@@ -1,7 +1,5 @@
 import { IModel, KeyOf, IKomo, IUseFields } from './types';
 import { useCallback, BaseSyntheticEvent } from 'react';
-import { ValidationError } from 'yup';
-import { isUndefined } from './utils';
 
 export function initHooks<T extends IModel>(komo: IKomo<T>) {
 
@@ -30,6 +28,25 @@ export function initHooks<T extends IModel>(komo: IKomo<T>) {
    */
   function useField(name: KeyOf<T>) {
 
+    const unavailableMsg = prop => {
+      if (prop)
+        return `Prop "${prop}" undefined, element ${name} is unavailable or not mounted.`;
+      return `Element "${name}" is unavailable or not mounted.`;
+    };
+
+    const getElementOrProp = (prop?: string, message?: string, def: any = null) => {
+      const element = getElement(name);
+      message = message || unavailableMsg(prop);
+      if (!element || !state.mounted) {
+        // tslint:disable-next-line: no-console
+        console.warn(message);
+        return def;
+      }
+      if (!prop)
+        return element;
+      return element[prop];
+    };
+
     const field = {
 
       register: komo.register.bind(komo),
@@ -41,12 +58,7 @@ export function initHooks<T extends IModel>(komo: IKomo<T>) {
       },
 
       get element() {
-        if (!field.mounted) {
-          // tslint:disable-next-line: no-console
-          console.warn(`Element for "${name}" is unavailable, the element has not mounted.`);
-          return null;
-        }
-        return getElement(name);
+        return getElementOrProp();
       },
 
       get errors() {
@@ -74,11 +86,11 @@ export function initHooks<T extends IModel>(komo: IKomo<T>) {
       },
 
       get path() {
-        return field.element.path;
+        return getElementOrProp('path');
       },
 
       get value() {
-        return field.element.value;
+        return getElementOrProp('value');
       },
 
       get data() {
@@ -99,7 +111,10 @@ export function initHooks<T extends IModel>(komo: IKomo<T>) {
       // Setters //
 
       set value(value: any) {
-        field.element.value = value + '';
+        const element = getElementOrProp();
+        if (!element)
+          return;
+        element.value = value + '';
       },
 
       set data(value: any) {
@@ -109,19 +124,27 @@ export function initHooks<T extends IModel>(komo: IKomo<T>) {
       // Events //
 
       focus(e?: BaseSyntheticEvent) {
-        field.element.focus();
+        const element = getElementOrProp();
+        if (element)
+          element.focus();
       },
 
       blur(e?: BaseSyntheticEvent) {
-        field.element.blur();
+        const element = getElementOrProp();
+        if (element)
+          element.blur();
       },
 
       update(value: T[KeyOf<T>], modelValue?: any, validate: boolean = true) {
-        field.element.update(value, modelValue, validate);
+        const element = getElementOrProp();
+        if (element)
+          element.update(value, modelValue, validate);
       },
 
       validate() {
-        return validateModelAt(field.element);
+        const element = getElementOrProp();
+        if (element)
+          return validateModelAt(element);
       }
 
     };

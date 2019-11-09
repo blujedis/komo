@@ -14,8 +14,8 @@ import {
 } from './types';
 import { initHooks } from './hooks';
 import {
-  debuggers, createLogger, isString, me, isUndefined, isFunction,
-  merge, extend, ILogger, isPlainObject, isObject, isArray, isEqual, toDefault
+  debuggers, isString, me, isUndefined, isFunction,
+  merge, extend, isPlainObject, isObject, isArray, isEqual, toDefault
 } from './utils';
 import {
   normalizeValidator, astToSchema, promisifyDefaults, parseYupDefaults, isYupSchema, normalizeCasting
@@ -34,11 +34,8 @@ const DEFAULTS: IOptions<any> = {
   validateChange: false,
   validateInit: false,
   validationSchemaPurge: true,
-  validateNative: false,
-  logLevel: 'log'
+  validateNative: false
 };
-
-let log: ILogger = createLogger();
 
 const { debug_api, debug_init } = debuggers;
 
@@ -115,7 +112,8 @@ function initApi<T extends IModel>(options: IOptions<T>) {
   const setDefault = useCallback((pathOrModel: string | T, value?: any) => {
 
     if (!pathOrModel) {
-      log.error(`Cannot set default value using key or model of undefined.`);
+      // tslint:disable-next-line: no-console
+      console.error(`Cannot set default value using key or model of undefined.`);
       return;
     }
 
@@ -159,7 +157,8 @@ function initApi<T extends IModel>(options: IOptions<T>) {
   const setModel = useCallback((pathOrModel: string | T, value?: any) => {
 
     if (!pathOrModel) {
-      log.error(`Cannot set default value using key or model of undefined.`);
+      // tslint:disable-next-line: no-console
+      console.error(`Cannot set default value using key or model of undefined.`);
       return;
     }
 
@@ -321,7 +320,8 @@ function initApi<T extends IModel>(options: IOptions<T>) {
       getElement(nameOrElement as KeyOf<T>) : nameOrElement as IRegisteredElement<T>;
 
     if (!element) {
-      log.error(`validateModelAt failed using missing or unknown element.`);
+      // tslint:disable-next-line: no-console
+      console.error(`validateModelAt failed using missing or unknown element.`);
       return;
     }
 
@@ -371,7 +371,8 @@ function initApi<T extends IModel>(options: IOptions<T>) {
       element as IRegisteredElement<T>;
 
     if (!_element) {
-      log.warn(`Failed to unregister element of undefined.`);
+      // tslint:disable-next-line: no-console
+      console.warn(`Failed to unregister element of undefined.`);
       return;
     }
 
@@ -511,7 +512,7 @@ function initForm<T extends IModel>(options?: IOptions<T>) {
   const {
     options: formOptions, defaults, render, clearDirty, clearTouched, clearError, setModel,
     fields, submitCount, submitting, submitted, validateModel, getModel, syncDefaults, state,
-    isValidatable, errors, setError, unregister, mounted, initSchema, model, getRegistered, getElement
+    isValidatable, errors, setError, unregister, mounted, initSchema, model, getRegistered
   } = base;
 
   useEffect(() => {
@@ -632,7 +633,8 @@ function initForm<T extends IModel>(options?: IOptions<T>) {
 
     if (!handler) {
       // Submit called but no handler!!
-      log.warn(`Cannot handleSubmit using submit handler of undefined.\n      Pass handler as "onSubmit={handleSubmit(your_submit_handler)}".\n      Or pass in options as "options.onSubmit".`);
+      // tslint:disable-next-line: no-console
+      console.warn(`Cannot handleSubmit using submit handler of undefined.\n      Pass handler as "onSubmit={handleSubmit(your_submit_handler)}".\n      Or pass in options as "options.onSubmit".`);
       return;
     }
 
@@ -641,7 +643,8 @@ function initForm<T extends IModel>(options?: IOptions<T>) {
       const errorKeys = Object.keys(errors.current);
 
       if (errorKeys.length && formOptions.validateSubmitExit) {
-        log.warn(`Failed to submit invalid form with the following error properties: "${errorKeys.join(', ')}"`);
+        // tslint:disable-next-line: no-console
+        console.warn(`Failed to submit invalid form with the following error properties: "${errorKeys.join(', ')}"`);
         return;
       }
 
@@ -666,7 +669,7 @@ function initForm<T extends IModel>(options?: IOptions<T>) {
 
       // Can't validate or is disabled.
       if (!isValidatable() || !formOptions.validateSubmit) {
-        await handleCallback(model, {} as any, event);
+        await handleCallback(model.current, {} as any, event);
         return;
       }
 
@@ -674,14 +677,10 @@ function initForm<T extends IModel>(options?: IOptions<T>) {
 
       const { err } = await me<T, ErrorModel<T>>(validateModel());
 
-      console.log(err);
-
       if (err)
         setError(err);
 
-      const _model = getModel();
-
-      await handleCallback(_model, err as any, event);
+      await handleCallback(model.current, err as any, event);
 
     };
 
@@ -740,8 +739,6 @@ function initForm<T extends IModel>(options?: IOptions<T>) {
 export function initKomo<T extends IModel>(options?: IOptions<T>) {
 
   options = { ...DEFAULTS, ...options } as IOptions<T>;
-
-  log = createLogger(options.logLevel);
 
   const normalizeYup = parseYupDefaults(options.validationSchema, options.validationSchemaPurge);
   options.validationSchema = normalizeYup.schema;

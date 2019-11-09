@@ -2,23 +2,15 @@
 import {
   isRadio, isCheckbox, addListener, isTextLike, removeListener,
   initObserver, isBooleanLike, isString, isUndefined, isNullOrUndefined, me, isFunction,
-  isObject, ILogger, debuggers, isSelectMultiple, getLogger, isEqual, isArray
+  isObject, debuggers, isSelectMultiple, isEqual, isArray
 } from './utils';
-import { getNativeValidators, getNativeValidatorTypes, parseNativeValidators } from './validate';
+import { parseNativeValidators } from './validate';
 import {
   IRegisterElement, IRegisterOptions, IRegisteredElement,
-  IModel, INativeValidators, KeyOf, IKomoBase, RegisterElement, CastHandler, PromiseStrict, ErrorModel
+  IModel, IKomoBase, RegisterElement, CastHandler, PromiseStrict, ErrorModel
 } from './types';
 
-const typeMap = {
-  range: 'number',
-  number: 'number',
-  email: 'string',
-  url: 'string',
-  checkbox: 'boolean'
-};
 
-let log: ILogger;
 const { debug_register, debug_event, debug_set } = debuggers;
 
 /**
@@ -35,8 +27,6 @@ export function initElement<T extends IModel>(api?: IKomoBase<T>) {
     validateModelAt, isValidatable, removeError, setError, render, getElement,
     isDirtyCompared
   } = api;
-
-  log = getLogger();
 
   /**
    * Checks if the element is a duplicate and should be ignored.
@@ -99,7 +89,8 @@ export function initElement<T extends IModel>(api?: IKomoBase<T>) {
   function getMultiple(element: IRegisteredElement<T>) {
 
     if (!isSelectMultiple(element.type)) {
-      log.fatal(
+      // tslint:disable-next-line: no-console
+      console.error(
         `Attempted to get as select multiple value but is type "${element.type}" and tag of ${element.tagName}`);
       return;
     }
@@ -125,7 +116,8 @@ export function initElement<T extends IModel>(api?: IKomoBase<T>) {
   function getRadioValue(element: IRegisteredElement<T>) {
 
     if (!isRadio(element.type)) {
-      log.fatal(`Attempted to get as radio value but is type ${element.type} and tag of ${element.tagName}`);
+      // tslint:disable-next-line: no-console
+      console.error(`Attempted to get as radio value but is type ${element.type} and tag of ${element.tagName}`);
       return;
     }
 
@@ -160,7 +152,8 @@ export function initElement<T extends IModel>(api?: IKomoBase<T>) {
     });
 
     if (!nextChecked)
-      log.fatal(`Could not set radio group, value "${value} has no match.`);
+      // tslint:disable-next-line: no-console
+      console.warn(`Could not set radio group, value "${value} has no match.`);
 
     return nextChecked;
 
@@ -550,7 +543,8 @@ export function initElement<T extends IModel>(api?: IKomoBase<T>) {
     if (!element || (isRegistered(element) && !rebind)) return;
 
     if (!element.name) {
-      log.warn(`Element of tag "${element.tagName}" could NOT be registered using name of undefined.`);
+      // tslint:disable-next-line: no-console
+      console.warn(`Element of tag "${element.tagName}" could NOT be registered using name of undefined.`);
       return;
     }
 
@@ -595,7 +589,7 @@ export function initElement<T extends IModel>(api?: IKomoBase<T>) {
    */
   function registerElement(element: IRegisterElement): void;
   function registerElement(
-    elementOrOptions: string | IRegisterElement | IRegisterOptions<T>,
+    elementOrOptions: IRegisterElement | IRegisterOptions<T>,
     options?: IRegisterOptions<T>) {
 
     if (isNullOrUndefined(elementOrOptions))
@@ -633,7 +627,8 @@ export function initElement<T extends IModel>(api?: IKomoBase<T>) {
         // you cannot select a value nested within
         // an array for example. Such as used by lodash.
         if (/\./g.test(_element.path) && /(\[|\])/g.test(_element.path))
-          log.fatal(`Path "${_element.path}" is invalid, ONLY standard dot notation to prop/key levels supported.`);
+          // tslint:disable-next-line: no-console
+          console.error(`Path "${_element.path}" is invalid, ONLY standard dot notation to prop/key levels supported.`);
 
         _element.initValue = options.defaultValue;
         _element.initChecked = options.defaultChecked;

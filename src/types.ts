@@ -216,7 +216,7 @@ export interface IOptions<T extends IModel> {
   /**
    * Enables simple logging for warnings, info etc, set to null to disable. (default: info)
    */
-  logLevel?: LogLevel;
+  // logLevel?: LogLevel;
 
 }
 
@@ -230,7 +230,7 @@ export interface IRegisterOptions<T extends IModel> {
   /**
    * The name of the element.
    */
-  name?: KeyOf<T>;
+  name?: string | KeyOf<T>;
 
   /**
    * The default value to use on resets.
@@ -500,7 +500,6 @@ export interface IRegister<T extends IModel> {
   (element: IRegisterElement): void;
 
 }
-
 
 // ERRORS //
 

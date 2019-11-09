@@ -35,7 +35,7 @@ const User: FC = () => {
       }
     },
     validationSchema: schema,
-    enableNativeValidation: true,
+    validateNative: true,
     logLevel: 'debug'
   });
 

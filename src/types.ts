@@ -203,6 +203,11 @@ export interface IOptions<T extends IModel> {
   validateInit?: boolean;
 
   /**
+   * When true and validationSchema is NOT user function native validation converted to yup ObjectSchema (default: true)
+   */
+  validateNative?: boolean;
+
+  /**
    * True to enable casting using Yup internally, false or null to disable or custom function
    * for user defined model value casting.
    */
@@ -212,11 +217,6 @@ export interface IOptions<T extends IModel> {
    * Enables simple logging for warnings, info etc, set to null to disable. (default: info)
    */
   logLevel?: LogLevel;
-
-  /**
-   * When true and validationSchema is NOT user function native validation converted to yup ObjectSchema (default: true)
-   */
-  enableNativeValidation?: boolean;
 
 }
 

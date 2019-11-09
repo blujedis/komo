@@ -12,6 +12,10 @@ import { KeyOf, UseField } from 'src/types';
 const schema = object({
   firstName: string().default('Bill'),
   lastName: string().default('Lumbergh').required(),
+  phone: object().shape({
+    home: string().required(),
+    mobile: string()
+  })
 });
 
 /**
@@ -20,7 +24,9 @@ const schema = object({
 type Schema = Partial<InferType<typeof schema>>;
 
 // Advanced custom input that binds to Komo.
-type InputProps = { name: KeyOf<Schema>; hook: UseField<Schema>; } & InputHTMLAttributes<HTMLInputElement>;
+type InputProps = {
+  name: KeyOf<Schema>; path?: string, hook: UseField<Schema>;
+} & InputHTMLAttributes<HTMLInputElement>;
 
 /**
  * Simple component to display our errors.
@@ -37,14 +43,14 @@ const ErrorMessage = ({ errors }) => {
  * Custom input message text field.
  */
 const TextInput = (props: InputProps) => {
-  const { hook, ...clone } = props;
+  const { hook, path, ...clone } = props;
   const { name } = clone;
   const field = props.hook(name);
   const capitalize = v => v.charAt(0).toUpperCase() + v.slice(1);
   return (
     <div>
       <label htmlFor={name}>{capitalize(name)}: </label>
-      <input type="text" ref={field.register} {...clone} />
+      <input type="text" ref={field.register({ path: props.path })} {...clone} />
       <ErrorMessage errors={field.errors} />
     </div>
   );
@@ -54,7 +60,7 @@ const Advanced: FC = () => {
 
   const { register, handleSubmit, handleReset, state, useField } = useForm<Schema>({
     validationSchema: schema,
-    enableNativeValidation: true,
+    validateNative: true,
     logLevel: 'debug'
   });
 
@@ -99,6 +105,8 @@ const Advanced: FC = () => {
         <input name="firstName" type="text" ref={register} /><br /><br />
 
         <TextInput name="lastName" hook={useField} onChange={onLastChange} /><br />
+
+        <TextInput name="phone" path="phone.home" hook={useField} /><br />
 
         <button type="button" onClick={lastName.focus}>Set LastName Focus</button><br /><br />
 

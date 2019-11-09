@@ -34,7 +34,7 @@ const DEFAULTS: IOptions<any> = {
   validateChange: false,
   validateInit: false,
   validationSchemaPurge: true,
-  enableNativeValidation: false,
+  validateNative: false,
   logLevel: 'log'
 };
 

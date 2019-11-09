@@ -562,7 +562,7 @@ export function initElement<T extends IModel>(api?: IKomoBase<T>) {
     if (!rebind) {
 
       const allowNative = !isUndefined(element.enableNativeValidation) ?
-        element.enableNativeValidation : komoOptions.enableNativeValidation;
+        element.enableNativeValidation : komoOptions.validateNative;
 
       if (allowNative && !isFunction(komoOptions.validationSchema))
         schemaAst.current = parseNativeValidators(element, schemaAst.current);

@@ -7,7 +7,7 @@ import {
 import { parseNativeValidators } from './validate';
 import {
   IRegisterElement, IRegisterOptions, IRegisteredElement,
-  IModel, IKomoBase, RegisterElement, CastHandler, PromiseStrict, ErrorModel
+  IModel, IKomoBase, RegisterElement, CastHandler, PromiseStrict, ErrorModel, KeyOf
 } from './types';
 
 
@@ -619,7 +619,7 @@ export function initElement<T extends IModel>(api?: IKomoBase<T>) {
 
         debug_register('custom', _element.name);
 
-        _element.name = options.name || _element.name;
+        _element.name = (options.name || _element.name) as KeyOf<T>;
 
         _element.path = options.path || _element.name;
 

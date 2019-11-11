@@ -2,14 +2,6 @@
 Object.defineProperty(exports, "__esModule", { value: true });
 const utils_1 = require("./utils");
 const validate_1 = require("./validate");
-const typeMap = {
-    range: 'number',
-    number: 'number',
-    email: 'string',
-    url: 'string',
-    checkbox: 'boolean'
-};
-let log;
 const { debug_register, debug_event, debug_set } = utils_1.debuggers;
 /**
  * Creates initialized methods for binding and registering an element.
@@ -18,7 +10,6 @@ const { debug_register, debug_event, debug_set } = utils_1.debuggers;
  */
 function initElement(api) {
     const { options: komoOptions, schemaAst, fields, unregister, setModel, getModel, isTouched, isDirty, setDefault, mounted, setDirty, setTouched, removeDirty, isValidateBlur, isValidateChange, validateModelAt, isValidatable, removeError, setError, render, getElement, isDirtyCompared } = api;
-    log = utils_1.getLogger();
     /**
      * Checks if the element is a duplicate and should be ignored.
      * Radio groups never return true.
@@ -63,7 +54,8 @@ function initElement(api) {
      */
     function getMultiple(element) {
         if (!utils_1.isSelectMultiple(element.type)) {
-            log.fatal(`Attempted to get as select multiple value but is type "${element.type}" and tag of ${element.tagName}`);
+            // tslint:disable-next-line: no-console
+            console.error(`Attempted to get as select multiple value but is type "${element.type}" and tag of ${element.tagName}`);
             return;
         }
         const value = [];
@@ -82,7 +74,8 @@ function initElement(api) {
      */
     function getRadioValue(element) {
         if (!utils_1.isRadio(element.type)) {
-            log.fatal(`Attempted to get as radio value but is type ${element.type} and tag of ${element.tagName}`);
+            // tslint:disable-next-line: no-console
+            console.error(`Attempted to get as radio value but is type ${element.type} and tag of ${element.tagName}`);
             return;
         }
         const radios = getElement(element.name, true);
@@ -108,7 +101,8 @@ function initElement(api) {
             }
         });
         if (!nextChecked)
-            log.fatal(`Could not set radio group, value "${value} has no match.`);
+            // tslint:disable-next-line: no-console
+            console.warn(`Could not set radio group, value "${value} has no match.`);
         return nextChecked;
     }
     /**
@@ -394,7 +388,8 @@ function initElement(api) {
         if (!element || (isRegistered(element) && !rebind))
             return;
         if (!element.name) {
-            log.warn(`Element of tag "${element.tagName}" could NOT be registered using name of undefined.`);
+            // tslint:disable-next-line: no-console
+            console.warn(`Element of tag "${element.tagName}" could NOT be registered using name of undefined.`);
             return;
         }
         // Normalizes the element and defaults for use with Komo.
@@ -403,7 +398,7 @@ function initElement(api) {
         // own file for greater flexibility/options.
         if (!rebind) {
             const allowNative = !utils_1.isUndefined(element.enableNativeValidation) ?
-                element.enableNativeValidation : komoOptions.enableNativeValidation;
+                element.enableNativeValidation : komoOptions.validateNative;
             if (allowNative && !utils_1.isFunction(komoOptions.validationSchema))
                 schemaAst.current = validate_1.parseNativeValidators(element, schemaAst.current);
         }
@@ -434,13 +429,14 @@ function initElement(api) {
                 if (!_element || isRegistered(_element))
                     return;
                 debug_register('custom', _element.name);
-                _element.name = options.name || _element.name;
+                _element.name = (options.name || _element.name);
                 _element.path = options.path || _element.name;
                 // Komo only supports key/prop level paths
                 // you cannot select a value nested within
                 // an array for example. Such as used by lodash.
                 if (/\./g.test(_element.path) && /(\[|\])/g.test(_element.path))
-                    log.fatal(`Path "${_element.path}" is invalid, ONLY standard dot notation to prop/key levels supported.`);
+                    // tslint:disable-next-line: no-console
+                    console.error(`Path "${_element.path}" is invalid, ONLY standard dot notation to prop/key levels supported.`);
                 _element.initValue = options.defaultValue;
                 _element.initChecked = options.defaultChecked;
                 _element.validateChange = options.validateChange;

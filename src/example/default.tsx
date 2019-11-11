@@ -30,8 +30,7 @@ const Default: FC = () => {
 
   const { register, handleSubmit, handleReset, state } = useForm<Schema>({
     validationSchema: schema,
-    validateNative: true,
-    logLevel: 'debug'
+    validateNative: true
   });
 
   const onSubmit = (model) => {

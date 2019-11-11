@@ -1,6 +1,5 @@
 import { BaseSyntheticEvent, MutableRefObject, LegacyRef, FormEvent } from 'react';
 import { ObjectSchema, ValidateOptions } from 'yup';
-import { LogLevel } from './utils';
 /**
  * Extracts key from type as string.
  */
@@ -158,18 +157,14 @@ export interface IOptions<T extends IModel> {
      */
     validateInit?: boolean;
     /**
+     * When true and validationSchema is NOT user function native validation converted to yup ObjectSchema (default: true)
+     */
+    validateNative?: boolean;
+    /**
      * True to enable casting using Yup internally, false or null to disable or custom function
      * for user defined model value casting.
      */
     castHandler?: boolean | CastHandler<T>;
-    /**
-     * Enables simple logging for warnings, info etc, set to null to disable. (default: info)
-     */
-    logLevel?: LogLevel;
-    /**
-     * When true and validationSchema is NOT user function native validation converted to yup ObjectSchema (default: true)
-     */
-    enableNativeValidation?: boolean;
 }
 /**
  * Interface for custom registrations of an element.
@@ -178,7 +173,7 @@ export interface IRegisterOptions<T extends IModel> {
     /**
      * The name of the element.
      */
-    name?: KeyOf<T>;
+    name?: string | KeyOf<T>;
     /**
      * The default value to use on resets.
      */

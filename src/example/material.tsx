@@ -32,8 +32,7 @@ const Material: FC = () => {
   const { register, handleSubmit, handleReset, state, useField } = useForm({
     defaults: Promise.resolve(defaults),
     validationSchema: schema,
-    validateSubmitExit: true,
-    logLevel: 'debug'
+    validateSubmitExit: true
   });
 
   const onSubmit = (model) => {

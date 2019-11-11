@@ -2,7 +2,7 @@
 Object.defineProperty(exports, "__esModule", { value: true });
 const react_1 = require("react");
 function initHooks(komo) {
-    const { state, getElement, getModel, setModel, validateModelAt, isTouched, isDirty } = komo;
+    const { state, getElement, getModel, setModel, validateModelAt, isTouched, isDirty, getDefault } = komo;
     function getErrors(prop) {
         if (!state.errors || !state.errors[prop] || !state.errors[prop].length)
             return [];
@@ -22,6 +22,23 @@ function initHooks(komo) {
      * @param def the default message value, typically empty string ''.
      */
     function useField(name) {
+        const unavailableMsg = prop => {
+            if (prop)
+                return `Prop "${prop}" undefined, element ${name} is unavailable or not mounted.`;
+            return `Element "${name}" is unavailable or not mounted.`;
+        };
+        const getElementOrProp = (prop, message, def = null) => {
+            const element = getElement(name);
+            message = message || unavailableMsg(prop);
+            if (!element || !state.mounted) {
+                // tslint:disable-next-line: no-console
+                console.warn(message);
+                return def;
+            }
+            if (!prop)
+                return element;
+            return element[prop];
+        };
         const field = {
             register: komo.register.bind(komo),
             // Getters //
@@ -29,12 +46,7 @@ function initHooks(komo) {
                 return state.mounted;
             },
             get element() {
-                if (!field.mounted) {
-                    // tslint:disable-next-line: no-console
-                    console.warn(`Element for "${name}" is unavailable, the element has not mounted.`);
-                    return null;
-                }
-                return getElement(name);
+                return getElementOrProp();
             },
             get errors() {
                 return getErrors(name);
@@ -55,13 +67,16 @@ function initHooks(komo) {
                 return name;
             },
             get path() {
-                return field.element.path;
+                return getElementOrProp('path');
             },
             get value() {
-                return field.element.value;
+                return getElementOrProp('value');
             },
             get data() {
                 return getModel(field.path);
+            },
+            get default() {
+                return getDefault(field.path);
             },
             get message() {
                 if (field.valid)
@@ -75,23 +90,34 @@ function initHooks(komo) {
             },
             // Setters //
             set value(value) {
-                field.element.value = value + '';
+                const element = getElementOrProp();
+                if (!element)
+                    return;
+                element.value = value + '';
             },
             set data(value) {
                 setModel(field.path, value);
             },
             // Events //
             focus(e) {
-                field.element.focus();
+                const element = getElementOrProp();
+                if (element)
+                    element.focus();
             },
             blur(e) {
-                field.element.blur();
+                const element = getElementOrProp();
+                if (element)
+                    element.blur();
             },
             update(value, modelValue, validate = true) {
-                field.element.update(value, modelValue, validate);
+                const element = getElementOrProp();
+                if (element)
+                    element.update(value, modelValue, validate);
             },
             validate() {
-                return validateModelAt(field.element);
+                const element = getElementOrProp();
+                if (element)
+                    return validateModelAt(element);
             }
         };
         return field;

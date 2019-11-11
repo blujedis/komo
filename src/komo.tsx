@@ -332,13 +332,6 @@ function initApi<T extends IModel>(options: IOptions<T>) {
 
     opts = { ...opts, ...{ strict: false, abortEarly: false } };
 
-    // if (isFunction(options.validationSchema))
-    //   return _validator.validateAt(element.path, model.current);
-
-    // currentValue = (currentValue as any) === '' ? undefined : currentValue;
-
-    // return _validator.validateAt(element.path, currentValue, opts);
-
     return _validator.validateAt(element.path, model.current);
 
   }, [options.validationSchema, setError]);

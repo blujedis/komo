@@ -27,8 +27,7 @@ const schema = yup_1.object({
 const Default = () => {
     const { register, handleSubmit, handleReset, state } = __1.default({
         validationSchema: schema,
-        enableNativeValidation: true,
-        logLevel: 'debug'
+        validateNative: true
     });
     const onSubmit = (model) => {
         console.log(model);

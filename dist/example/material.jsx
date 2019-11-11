@@ -32,8 +32,7 @@ const Material = () => {
     const { register, handleSubmit, handleReset, state, useField } = __1.default({
         defaults: Promise.resolve(defaults),
         validationSchema: schema,
-        validateSubmitExit: true,
-        logLevel: 'debug'
+        validateSubmitExit: true
     });
     const onSubmit = (model) => {
         console.log(model);

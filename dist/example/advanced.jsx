@@ -14,6 +14,10 @@ const yup_1 = require("yup");
 const schema = yup_1.object({
     firstName: yup_1.string().default('Bill'),
     lastName: yup_1.string().default('Lumbergh').required(),
+    phone: yup_1.object().shape({
+        home: yup_1.string().required(),
+        mobile: yup_1.string()
+    })
 });
 /**
  * Simple component to display our errors.
@@ -29,21 +33,20 @@ const ErrorMessage = ({ errors }) => {
  * Custom input message text field.
  */
 const TextInput = (props) => {
-    const { hook, ...clone } = props;
+    const { hook, path, ...clone } = props;
     const { name } = clone;
     const field = props.hook(name);
     const capitalize = v => v.charAt(0).toUpperCase() + v.slice(1);
     return (<div>
       <label htmlFor={name}>{capitalize(name)}: </label>
-      <input type="text" ref={field.register} {...clone}/>
+      <input type="text" ref={field.register({ path: props.path })} {...clone}/>
       <ErrorMessage errors={field.errors}/>
     </div>);
 };
 const Advanced = () => {
     const { register, handleSubmit, handleReset, state, useField } = __1.default({
         validationSchema: schema,
-        enableNativeValidation: true,
-        logLevel: 'debug'
+        validateNative: true
     });
     const onSubmit = (model) => {
         console.log(model);
@@ -81,6 +84,8 @@ const Advanced = () => {
         <input name="firstName" type="text" ref={register}/><br /><br />
 
         <TextInput name="lastName" hook={useField} onChange={onLastChange}/><br />
+
+        <TextInput name="phone" path="phone.home" hook={useField}/><br />
 
         <button type="button" onClick={lastName.focus}>Set LastName Focus</button><br /><br />
 

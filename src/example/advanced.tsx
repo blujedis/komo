@@ -60,8 +60,7 @@ const Advanced: FC = () => {
 
   const { register, handleSubmit, handleReset, state, useField } = useForm<Schema>({
     validationSchema: schema,
-    validateNative: true,
-    logLevel: 'debug'
+    validateNative: true
   });
 
   const onSubmit = (model) => {

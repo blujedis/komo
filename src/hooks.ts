@@ -5,7 +5,8 @@ export function initHooks<T extends IModel>(komo: IKomo<T>) {
 
   const {
     state, getElement, getModel, setModel, validateModelAt,
-    isTouched, isDirty } = komo;
+    isTouched, isDirty, getDefault
+  } = komo;
 
   function getErrors(prop: KeyOf<T>) {
     if (!state.errors || !state.errors[prop] || !state.errors[prop].length)
@@ -95,6 +96,10 @@ export function initHooks<T extends IModel>(komo: IKomo<T>) {
 
       get data() {
         return getModel(field.path);
+      },
+
+      get default() {
+        return getDefault(field.path);
       },
 
       get message() {

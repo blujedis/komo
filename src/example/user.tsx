@@ -35,8 +35,7 @@ const User: FC = () => {
       }
     },
     validationSchema: schema,
-    validateNative: true,
-    logLevel: 'debug'
+    validateNative: true
   });
 
   const onSubmit = (model) => {

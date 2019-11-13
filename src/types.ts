@@ -681,6 +681,11 @@ export interface IUseField<T extends IModel> {
   data: any;
 
   /**
+   * Gets default value by path.
+   */
+  readonly default: string;
+
+  /**
    * Returns the current top error for a field/element.
    */
   readonly message: string;

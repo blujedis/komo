@@ -17,11 +17,16 @@ const schema = object({
 
 /**
  * Inferred type using helper from Yup.
+ * We have to manually include fullName
+ * since it's not derived and an essentially
+ * as if a component in its own file.
  */
-type Schema = InferType<typeof schema> & { fullName: any };
+type Schema = InferType<typeof schema> & { fullName?: any };
 
 type Props = {
-  name: KeyOf<Schema>; path?: string, hook: UseField<Schema>;
+  name: KeyOf<Schema>; 
+  path?: string, 
+  hook: UseField<Schema>;
 } & InputHTMLAttributes<HTMLInputElement>;
 
 const VirtualUnbound: FC<Props> = ({ name, path, hook }) => {

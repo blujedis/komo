@@ -9,7 +9,7 @@ import {
   IRegisterElement, IRegisterOptions, IRegisteredElement,
   IModel, IKomoBase, RegisterElement, CastHandler, PromiseStrict, ErrorModel, KeyOf
 } from './types';
-
+import { elementType } from 'prop-types';
 
 const { debug_register, debug_event, debug_set } = debuggers;
 
@@ -91,7 +91,7 @@ export function initElement<T extends IModel>(api?: IKomoBase<T>) {
     if (!isSelectMultiple(element.type)) {
       // tslint:disable-next-line: no-console
       console.error(
-        `Attempted to get as select multiple value but is type "${element.type}" and tag of ${element.tagName}`);
+        `Attempted to get as select multiple value but is type "${element.type}" and tag of ${element.tagName || 'null'}`);
       return;
     }
 
@@ -117,7 +117,7 @@ export function initElement<T extends IModel>(api?: IKomoBase<T>) {
 
     if (!isRadio(element.type)) {
       // tslint:disable-next-line: no-console
-      console.error(`Attempted to get as radio value but is type ${element.type} and tag of ${element.tagName}`);
+      console.error(`Attempted to get as radio value but is type ${element.type} and tag of ${element.tagName || 'null'}`);
       return;
     }
 
@@ -269,25 +269,27 @@ export function initElement<T extends IModel>(api?: IKomoBase<T>) {
    */
   function setElementState(element: IRegisteredElement<T>, value: any) {
 
-    const prevTouched = isTouched(element.name);
-    const prevDirty = isDirty(element.name);
-    const dirtyCompared = isDirtyCompared(element.name, value);
+    const name = !element.virtual ? element.name : element.virtual;
+
+    const prevTouched = isTouched(name);
+    const prevDirty = isDirty(name);
+    const dirtyCompared = isDirtyCompared(name, value);
 
     let dirty = false;
     let touched = false;
 
     if (dirtyCompared) {
-      setDirty(element.name);
+      setDirty(name);
       dirty = true;
     }
 
     if (!!dirtyCompared || prevTouched) {
-      setTouched(element.name);
+      setTouched(name);
       touched = true;
     }
 
     if (!dirtyCompared && prevDirty)
-      removeDirty(element.name);
+      removeDirty(name);
 
     // Updating the model here so if 
     // empty string set to undefined.
@@ -303,7 +305,12 @@ export function initElement<T extends IModel>(api?: IKomoBase<T>) {
 
   }
 
-  // Persists data to model.
+  /**
+   * Calls "setModel" persisting data to model.
+   * 
+   * @param element the element to set model for.
+   * @param modelValue the value to be set.
+   */
   function setElementModel(element: IRegisteredElement<T>, modelValue: any) {
 
     const castHandler = komoOptions.castHandler as CastHandler<T>;
@@ -326,7 +333,7 @@ export function initElement<T extends IModel>(api?: IKomoBase<T>) {
     // Update the state.
     const elementState = setElementState(element, value);
 
-    debug_set('update', element.name, element.path, elementState);
+    debug_set('update', element.name, element.path, element.virtual, elementState);
 
     // Ensure the model value.
     modelValue = isUndefined(modelValue) ? value : modelValue;
@@ -346,6 +353,10 @@ export function initElement<T extends IModel>(api?: IKomoBase<T>) {
   function attachEvents(element: IRegisteredElement<T>) {
 
     let events = [];
+
+    // Cannot attach events to virtuals.
+    if (element.virtual)
+      return events;
 
     const handleBlur = async (e: Event) => {
       updateStateAndModel(element);
@@ -419,8 +430,8 @@ export function initElement<T extends IModel>(api?: IKomoBase<T>) {
     let events = [];
 
     // Attach events return array of attach for unbinding.
-    // skip if just rebinding.
-    if (!rebind)
+    // skip if rebinding or if is a virtual element.
+    if (!rebind && !element.virtual)
       events = attachEvents(element);
 
     // Update the model, value and state.
@@ -472,7 +483,8 @@ export function initElement<T extends IModel>(api?: IKomoBase<T>) {
     };
 
     // Bind mutation observer.
-    initObserver(element as any, element.unregister.bind(element));
+    if (!element.virtual)
+      initObserver(element as any, element.unregister.bind(element));
 
   }
 
@@ -544,8 +556,14 @@ export function initElement<T extends IModel>(api?: IKomoBase<T>) {
 
     if (!element.name) {
       // tslint:disable-next-line: no-console
-      console.warn(`Element of tag "${element.tagName}" could NOT be registered using name of undefined.`);
+      console.warn(`Element of tag "${element.tagName || 'null'}" could NOT be registered using name of undefined.`);
       return;
+    }
+
+    // If virtual element can only have type of "text".
+    if (element.virtual) {
+      element.type = 'text';
+      element.multiple = false; // shouldn't be set but just in case.
     }
 
     // Normalizes the element and defaults for use with Komo.
@@ -575,6 +593,53 @@ export function initElement<T extends IModel>(api?: IKomoBase<T>) {
     if (!rebind)
       fields.current.add(element as IRegisteredElement<any>);
 
+    return element;
+
+  }
+
+  /**
+   * Normalizes the element merging user options with element options/config.
+   * 
+   * @param element the element to be normalized.
+   * @param options user provided options to initialize with.
+   */
+  function normalizeElement(element: IRegisteredElement<T>, options: IRegisterOptions<T> = {}) {
+
+    element.name = (options.name || element.name) as KeyOf<T>;
+    element.path = options.path || element.name;
+
+    element.initValue = options.defaultValue;
+    element.initChecked = options.defaultChecked;
+    element.validateChange = options.validateChange;
+    element.validateBlur = options.validateBlur;
+    element.enableNativeValidation = options.enableNativeValidation;
+    element.enableModelUpdate = options.enableModelUpdate;
+
+    if (options.required)
+      element.required = options.required || element.required;
+
+    if (options.min)
+      element.min = options.min;
+
+    if (options.max)
+      element.max = options.max;
+
+    if (options.pattern)
+      element.pattern = options.pattern;
+
+    if (options.minLength)
+      element.minLength = options.minLength;
+
+    if (options.maxLength)
+      element.maxLength = options.maxLength;
+
+    if (element.virtual) {
+      element.type = 'text';
+      element.multiple = false;
+    }
+
+    return element;
+
   }
 
   /**
@@ -582,12 +647,12 @@ export function initElement<T extends IModel>(api?: IKomoBase<T>) {
    * 
    * @param options options to register element with.
    */
-  function registerElement(options: IRegisterOptions<T>): RegisterElement;
+  function registerElement(options: IRegisterOptions<T>): RegisterElement<T>;
 
   /**
    * Registers an element with Komo context.
    */
-  function registerElement(element: IRegisterElement): void;
+  function registerElement(element: IRegisterElement): IRegisteredElement<T>;
   function registerElement(
     elementOrOptions: IRegisterElement | IRegisterOptions<T>,
     options?: IRegisterOptions<T>) {
@@ -596,7 +661,8 @@ export function initElement<T extends IModel>(api?: IKomoBase<T>) {
       return;
 
     const hasElement = arguments.length === 1 && isObject(elementOrOptions) &&
-      (elementOrOptions as any).nodeName ? elementOrOptions as IRegisterElement : null;
+      (elementOrOptions as any).nodeName ||
+      (elementOrOptions as any).virtual ? elementOrOptions as IRegisterElement : null;
 
     // No element just config return callback to get element.
     if (!hasElement) {
@@ -617,45 +683,14 @@ export function initElement<T extends IModel>(api?: IKomoBase<T>) {
         if (!_element || isRegistered(_element))
           return;
 
-        debug_register('custom', _element.name);
+        normalizeElement(_element, options);
 
-        _element.name = (options.name || _element.name) as KeyOf<T>;
+        if (_element.virtual)
+          debug_register('virtual', _element.name, _element.path, _element.virtual);
+        else
+          debug_register('custom', _element.name, _element.path, _element.virtual);
 
-        _element.path = options.path || _element.name;
-
-        // Komo only supports key/prop level paths
-        // you cannot select a value nested within
-        // an array for example. Such as used by lodash.
-        if (/\./g.test(_element.path) && /(\[|\])/g.test(_element.path))
-          // tslint:disable-next-line: no-console
-          console.error(`Path "${_element.path}" is invalid, ONLY standard dot notation to prop/key levels supported.`);
-
-        _element.initValue = options.defaultValue;
-        _element.initChecked = options.defaultChecked;
-        _element.validateChange = options.validateChange;
-        _element.validateBlur = options.validateBlur;
-        _element.enableNativeValidation = options.enableNativeValidation;
-        _element.enableModelUpdate = options.enableModelUpdate;
-
-        if (options.required)
-          _element.required = options.required || _element.required;
-
-        if (options.min)
-          _element.min = options.min;
-
-        if (options.max)
-          _element.max = options.max;
-
-        if (options.pattern)
-          _element.pattern = options.pattern;
-
-        if (options.minLength)
-          _element.minLength = options.minLength;
-
-        if (options.maxLength)
-          _element.maxLength = options.maxLength;
-
-        bindElement(_element);
+        return bindElement(_element);
 
       };
 
@@ -667,7 +702,7 @@ export function initElement<T extends IModel>(api?: IKomoBase<T>) {
     debug_register((elementOrOptions as any).name);
 
     // ONLY element was passed.
-    bindElement(elementOrOptions as IRegisteredElement<T>);
+    return bindElement(elementOrOptions as IRegisteredElement<T>);
 
   }
 

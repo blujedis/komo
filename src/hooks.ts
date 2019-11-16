@@ -25,7 +25,6 @@ export function initHooks<T extends IModel>(komo: IKomo<T>) {
    * <span>{firstName.required}</span>
    * 
    * @param name the name of the field to create hook for.
-   * @param def the default message value, typically empty string ''.
    */
   function useField(name: KeyOf<T>) {
 
@@ -38,14 +37,14 @@ export function initHooks<T extends IModel>(komo: IKomo<T>) {
     const getElementOrProp = (prop?: string, message?: string, def: any = null) => {
       const element = getElement(name);
       message = message || unavailableMsg(prop);
-      if (!element || !state.mounted) {
+      if (!element && state.mounted) {
         // tslint:disable-next-line: no-console
         console.warn(message);
         return def;
       }
       if (!prop)
-        return element;
-      return element[prop];
+        return element || def;
+      return element[prop] || def;
     };
 
     const field = {

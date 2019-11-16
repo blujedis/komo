@@ -13,5 +13,5 @@
   "stripInternal": "true",
   "suppressExcessPropertyErrors": "true",
   "suppressImplicitAnyIndexErrors": "true",
-  "exclude": "**/*+(e2e|spec|debug).ts"
+  "exclude": ["**/*+(e2e|spec|debug).ts*", "**/example*"]
 }

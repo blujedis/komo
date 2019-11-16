@@ -1,6 +1,7 @@
 import { useRef, useEffect, FormEvent, useState, useCallback, BaseSyntheticEvent } from 'react';
 import { initElement } from './register';
-import { get, set } from 'dot-prop';
+import get from 'lodash.get';
+import set from 'lodash.set';
 import {
   IOptions, IModel, KeyOf, IRegisteredElement, ErrorModel,
   SubmitHandler,
@@ -70,7 +71,6 @@ function initApi<T extends IModel>(options: IOptions<T>) {
     asGroup: boolean): Array<IRegisteredElement<T>>;
   function _getElement(namePathOrElement: string | IRegisteredElement<T>): IRegisteredElement<T>;
   function _getElement(namePathOrElement: string | IRegisteredElement<T>, asGroup: boolean = false) {
-    // if (typeof namePathOrElement === 'object')
     if (isObject(namePathOrElement))
       return namePathOrElement;
     const filtered = [...fields.current.values()]
@@ -342,6 +342,9 @@ function initApi<T extends IModel>(options: IOptions<T>) {
     let element = nameOrElement as IRegisteredElement<T>;
     if (isString(nameOrElement))
       element = getElement(nameOrElement as KeyOf<T>);
+    // if a virtual check the name it's mapped to.
+    if (element.virtual)
+      element = getElement(element.virtual);
     return isUndefined(element.validateChange) ? options.validateChange : element.validateChange;
   };
 
@@ -349,6 +352,8 @@ function initApi<T extends IModel>(options: IOptions<T>) {
     let element = nameOrElement as IRegisteredElement<T>;
     if (isString(nameOrElement))
       element = getElement(nameOrElement as KeyOf<T>);
+    if (element.virtual)
+      element = getElement(element.virtual);
     return isUndefined(element.validateBlur) ? options.validateBlur : element.validateBlur;
   };
 
@@ -538,10 +543,12 @@ function initForm<T extends IModel>(options?: IOptions<T>) {
               setError(valErr);
           }).finally(() => {
             mounted.current = true;
+            render('form:effect:validate'); // this may not be needed.
           });
       }
       else {
         mounted.current = true;
+        render('form:effect');
       }
 
     };

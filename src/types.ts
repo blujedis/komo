@@ -213,11 +213,6 @@ export interface IOptions<T extends IModel> {
    */
   castHandler?: boolean | CastHandler<T>;
 
-  /**
-   * Enables simple logging for warnings, info etc, set to null to disable. (default: info)
-   */
-  // logLevel?: LogLevel;
-
 }
 
 // REGISTER //
@@ -278,6 +273,11 @@ export interface IRegisterOptions<T extends IModel> {
    * Alertnate path in model to get/set data from for element value.
    */
   path?: string;
+
+  /**
+   * Maps to an existing model prop virtually.
+   */
+  virtual?: string | KeyOf<T>;
 
   /**
    * Whether element should validate on change overrides main options.
@@ -392,6 +392,11 @@ export interface IRegisteredElement<T extends IModel> extends IRegisterElement {
   // CUSTOM PROPS //
 
   /**
+   * An alias name for virtual elements.
+   */
+  virtual?: KeyOf<T>;
+
+  /**
    * The alternate model path for getting/setting field value.
    */
   path?: string;
@@ -480,7 +485,8 @@ export interface IRegisteredElement<T extends IModel> extends IRegisterElement {
 /**
  * Type which when called returns an React ref of HTMLElement.
  */
-export type RegisterElement = (element: IRegisterElement) => LegacyRef<HTMLElement>;
+export type RegisterElement<T extends IModel> = 
+  (element: IRegisterElement) => IRegisteredElement<T>;
 
 /**
  * Interface for registering an element.
@@ -492,7 +498,7 @@ export interface IRegister<T extends IModel> {
    * 
    * @param options the element registration options.
    */
-  (options: IRegisterOptions<T>): RegisterElement;
+  (options: IRegisterOptions<T>): RegisterElement<T>;
 
   /**
    * Registers an element with Komo directly without options.

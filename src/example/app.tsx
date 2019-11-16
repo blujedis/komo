@@ -1,10 +1,19 @@
 import React, { FC } from 'react';
-import { Route, Router } from 'wouter';
+import { Route, Router, Switch } from 'wouter';
 import Default from './default';
 import User from './user';
 import Material from './material';
 import Menu from './menu';
 import Advanced from './advanced';
+import Virtual from './virtual';
+
+const NotFound: FC = (props) => {
+  return (
+    <div>
+      404 - Not Found
+    </div>
+  );
+};
 
 const App: FC = () => {
 
@@ -14,10 +23,14 @@ const App: FC = () => {
         <div>
           <Menu />
         </div>
-        <Route path="/" component={Default} />
-        <Route path="/user" component={User} />
-        <Route path="/material" component={Material} />
-        <Route path="/advanced" component={Advanced} />
+        <Switch>
+          <Route path="/" component={Default} />
+          <Route path="/user" component={User} />
+          <Route path="/material" component={Material} />
+          <Route path="/advanced" component={Advanced} />
+          <Route path="/virtual" component={Virtual} />
+          <Route path="/:404*" component={NotFound} />
+        </Switch>
       </div>
     </Router>
   );

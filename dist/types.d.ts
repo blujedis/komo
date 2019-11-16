@@ -107,7 +107,7 @@ export declare type SubmitHandler<T extends IModel> = (model?: T, errors?: Error
 /**
  * Interface for finding elements.
  */
-export interface IFindField<T extends IModel> {
+export interface IGetElement<T extends IModel> {
     /**
      * Simply returns element here for normalization.
      *
@@ -122,15 +122,15 @@ export interface IFindField<T extends IModel> {
     (nameOrPath: string): IRegisteredElement<T>;
 }
 export declare type CastHandler<T extends IModel> = (value: any, path?: string, name?: KeyOf<T>) => any;
-export interface IOptions<T extends IModel> {
+export interface IOptions<T extends IModel, D extends IModel = {}> {
     /**
      * Default model values (default: {})
      */
-    defaults?: Partial<T> | Promise<Partial<T>>;
+    defaults?: Partial<D> | Promise<Partial<D>>;
     /**
      * A Yup ObjectSchema or custom function for validating form (default: undefined)
      */
-    validationSchema?: ValidationSchema<T>;
+    validationSchema?: ValidationSchema<T & Partial<D>>;
     /**
      * When true
      */
@@ -164,7 +164,7 @@ export interface IOptions<T extends IModel> {
      * True to enable casting using Yup internally, false or null to disable or custom function
      * for user defined model value casting.
      */
-    castHandler?: boolean | CastHandler<T>;
+    castHandler?: boolean | CastHandler<T & Partial<D>>;
 }
 /**
  * Interface for custom registrations of an element.

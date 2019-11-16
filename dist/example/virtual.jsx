@@ -30,7 +30,7 @@ const VirtualUnbound = ({ name, path, hook }) => {
     };
     return (<>
       <label htmlFor="fullName">Full Name: </label>
-      <input name="fullName" type="text" onBlur={onBlur} defaultValue={field.value}/><br /><br />
+      <input type="text" onBlur={onBlur} defaultValue={field.value}/><br /><br />
     </>);
 };
 /**
@@ -39,7 +39,10 @@ const VirtualUnbound = ({ name, path, hook }) => {
 const Virtual = () => {
     const { handleSubmit, handleReset, state, useField } = __1.default({
         validationSchema: schema,
-        validateNative: true
+        validateNative: true,
+        defaults: {
+            fullName: ''
+        }
     });
     const onSubmit = (model) => {
         console.log(model);

@@ -2,7 +2,7 @@ import React, { FC, InputHTMLAttributes, useEffect, useRef } from 'react';
 import useForm from '..';
 import JsonErrors from './jsonerrors';
 import { string, object, InferType } from 'yup';
-import { KeyOf, UseField, IRegisteredElement } from '../types';
+import { KeyOf, UseField } from '../types';
 
 /**
  * Schema - our data model or schema using Yup.
@@ -18,15 +18,15 @@ const schema = object({
 /**
  * Inferred type using helper from Yup.
  */
-type Schema = Partial<InferType<typeof schema>>;
+type Schema = InferType<typeof schema> & { fullName: any };
 
 type Props = {
-  name: string | KeyOf<Schema>; path?: string, hook: UseField<Schema>;
+  name: KeyOf<Schema>; path?: string, hook: UseField<Schema>;
 } & InputHTMLAttributes<HTMLInputElement>;
 
 const VirtualUnbound: FC<Props> = ({ name, path, hook }) => {
 
-  const field = hook(name as any);
+  const field = hook(name);
 
   field.register({
     name,
@@ -42,7 +42,7 @@ const VirtualUnbound: FC<Props> = ({ name, path, hook }) => {
   return (
     <>
       <label htmlFor="fullName">Full Name: </label>
-      <input name="fullName" type="text" onBlur={onBlur} defaultValue={field.value} /><br /><br />
+      <input  type="text" onBlur={onBlur} defaultValue={field.value} /><br /><br />
     </>
   );
 
@@ -53,9 +53,12 @@ const VirtualUnbound: FC<Props> = ({ name, path, hook }) => {
  */
 const Virtual: FC = () => {
 
-  const { handleSubmit, handleReset, state, useField } = useForm<Schema>({
+  const { handleSubmit, handleReset, state, useField } = useForm({
     validationSchema: schema,
-    validateNative: true
+    validateNative: true,
+    defaults: {
+      fullName: ''
+    }
   });
 
   const onSubmit = (model) => {

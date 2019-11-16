@@ -138,7 +138,7 @@ export type SubmitHandler<T extends IModel> =
 /**
  * Interface for finding elements.
  */
-export interface IFindField<T extends IModel> {
+export interface IGetElement<T extends IModel> {
 
   /**
    * Simply returns element here for normalization.
@@ -153,23 +153,24 @@ export interface IFindField<T extends IModel> {
    * @param nameOrPath the path or name used to lookup the element.
    */
   (nameOrPath: string): IRegisteredElement<T>;
+
 }
 
 export type CastHandler<T extends IModel> = (value: any, path?: string, name?: KeyOf<T>) => any;
 
 // OPTIONS //
 
-export interface IOptions<T extends IModel> {
+export interface IOptions<T extends IModel, D extends IModel = {}> {
 
   /**
    * Default model values (default: {})
    */
-  defaults?: Partial<T> | Promise<Partial<T>>;
+  defaults?: Partial<D> | Promise<Partial<D>>;
 
   /**
    * A Yup ObjectSchema or custom function for validating form (default: undefined)
    */
-  validationSchema?: ValidationSchema<T>;
+  validationSchema?: ValidationSchema<T & Partial<D>>;
 
   /**
    * When true 
@@ -211,7 +212,7 @@ export interface IOptions<T extends IModel> {
    * True to enable casting using Yup internally, false or null to disable or custom function
    * for user defined model value casting.
    */
-  castHandler?: boolean | CastHandler<T>;
+  castHandler?: boolean | CastHandler<T & Partial<D>>;
 
 }
 
@@ -485,7 +486,7 @@ export interface IRegisteredElement<T extends IModel> extends IRegisterElement {
 /**
  * Type which when called returns an React ref of HTMLElement.
  */
-export type RegisterElement<T extends IModel> = 
+export type RegisterElement<T extends IModel> =
   (element: IRegisterElement) => IRegisteredElement<T>;
 
 /**

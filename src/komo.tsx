@@ -736,25 +736,27 @@ function initForm<T extends IModel>(options?: IOptions<T>) {
  * 
  * @param options the komo options.
  */
-export function initKomo<T extends IModel>(options?: IOptions<T>) {
+export function initKomo<T extends IModel, D extends IModel = {}>(options?: IOptions<T, D>) {
 
-  options = { ...DEFAULTS, ...options } as IOptions<T>;
+  type Model = T & Partial<D>;
+
+  options = { ...DEFAULTS, ...options } as IOptions<Model>;
 
   const normalizeYup = parseYupDefaults(options.validationSchema, options.validationSchemaPurge);
   options.validationSchema = normalizeYup.schema;
-  options.defaults = promisifyDefaults(options.defaults, normalizeYup.defaults) as Promise<T>;
+  options.defaults = promisifyDefaults(options.defaults, normalizeYup.defaults) as Promise<Model>;
   options.castHandler = normalizeCasting(options.castHandler);
 
-  const api = initForm<T>(options);
+  const api = initForm<Model>(options);
 
-  function initWithKomo<F extends (komo: IKomo<T>) => any>(handler: F) {
+  function initWithKomo<F extends (komo: IKomo<Model>) => any>(handler: F) {
     return handler(api);
   }
 
   api.withKomo = initWithKomo;
-  const hooks = initHooks<T>(api);
+  const hooks = initHooks<Model>(api);
   const komo = extend(api, hooks);
 
-  return komo as IKomo<T>;
+  return komo as IKomo<Model>;
 
 }

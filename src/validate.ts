@@ -8,7 +8,7 @@ import {
   IModel, ErrorModel, ValidationSchema, IValidator, IRegisteredElement,
   ISchemaAst,
   KeyOf,
-  IFindField,
+  IGetElement,
   ValidateModelHandler,
   ErrorMessageModel,
   IValidationError,
@@ -35,7 +35,7 @@ const typeToYup = {
  * 
  * @param findField the core lookup helper for finding elements.
  */
-export function lookup<T extends IModel>(findField: IFindField<T>) {
+export function lookup<T extends IModel>(findField: IGetElement<T>) {
 
   const getElement = (pathOrElement: string | IRegisteredElement<T>) => {
     if (!isString(pathOrElement))
@@ -58,14 +58,15 @@ export function lookup<T extends IModel>(findField: IFindField<T>) {
  * Parses yup error to friendly form errors.
  * 
  * @param error the emitted yup error.
+ * @param getElement a method which gets an element.
  */
 export function yupToErrors<T extends IModel>(
-  error: ValidationError, findField?: IFindField<T>): ErrorModel<T> {
+  error: ValidationError, getElement?: IGetElement<T>): ErrorModel<T> {
 
   const errors: ErrorModel<T> = {} as any;
 
   if (!error.inner || !error.inner.length) {
-    const key = lookup(findField).at(error.path, 'name');
+    const key = lookup(getElement).at(error.path, 'name');
     errors[key] = errors[key] || [];
     errors[key].push({
       type: error.type,
@@ -79,7 +80,7 @@ export function yupToErrors<T extends IModel>(
   else {
 
     for (const err of error.inner) {
-      const key = lookup(findField).at(err.path, 'name');
+      const key = lookup(getElement).at(err.path, 'name');
       errors[key] = errors[key] || [];
       errors[key].push({
         type: err.type,
@@ -234,7 +235,7 @@ export function ensureErrorModel<T extends IModel>(
  * @param schema the yup schema or user function for validation.
  */
 export function normalizeValidator<T extends IModel>(
-  schema: ValidationSchema<T>, findField?: IFindField<T>): IValidator<T> {
+  schema: ValidationSchema<T>, findField?: IGetElement<T>): IValidator<T> {
 
   let validator: IValidator<T>;
 

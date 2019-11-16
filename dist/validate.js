@@ -39,11 +39,12 @@ exports.lookup = lookup;
  * Parses yup error to friendly form errors.
  *
  * @param error the emitted yup error.
+ * @param getElement a method which gets an element.
  */
-function yupToErrors(error, findField) {
+function yupToErrors(error, getElement) {
     const errors = {};
     if (!error.inner || !error.inner.length) {
-        const key = lookup(findField).at(error.path, 'name');
+        const key = lookup(getElement).at(error.path, 'name');
         errors[key] = errors[key] || [];
         errors[key].push({
             type: error.type,
@@ -55,7 +56,7 @@ function yupToErrors(error, findField) {
     }
     else {
         for (const err of error.inner) {
-            const key = lookup(findField).at(err.path, 'name');
+            const key = lookup(getElement).at(err.path, 'name');
             errors[key] = errors[key] || [];
             errors[key].push({
                 type: err.type,

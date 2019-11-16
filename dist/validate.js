@@ -1,7 +1,11 @@
 "use strict";
+var __importDefault = (this && this.__importDefault) || function (mod) {
+    return (mod && mod.__esModule) ? mod : { "default": mod };
+};
 Object.defineProperty(exports, "__esModule", { value: true });
 const yup_1 = require("yup");
-const dot_prop_1 = require("dot-prop");
+const lodash_get_1 = __importDefault(require("lodash.get"));
+const lodash_set_1 = __importDefault(require("lodash.set"));
 const utils_1 = require("./utils");
 const { debug_validate } = utils_1.debuggers;
 const typeToYup = {
@@ -84,7 +88,7 @@ function astToSchema(ast, schema) {
     }
     function getSchema(path, from, def = null) {
         path = getPath(path);
-        return dot_prop_1.get(from || {}, path) || def;
+        return lodash_get_1.default(from || {}, path) || def;
     }
     function reducer(props, node) {
         return props.reduce((result, config) => {
@@ -221,7 +225,7 @@ function normalizeValidator(schema, findField) {
         validator.validateAt = (path, model, options) => {
             return schema.validateAt(path, model, options)
                 .then(res => {
-                return dot_prop_1.set({}, path, res);
+                return lodash_set_1.default({}, path, res);
             })
                 .catch(err => {
                 return Promise.reject(yupToErrors(err, findField));

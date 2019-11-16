@@ -21,12 +21,12 @@ const schema = object({
 type Schema = Partial<InferType<typeof schema>>;
 
 type Props = {
-  name: KeyOf<Schema>; path?: string, hook: UseField<Schema>;
+  name: string | KeyOf<Schema>; path?: string, hook: UseField<Schema>;
 } & InputHTMLAttributes<HTMLInputElement>;
 
 const VirtualUnbound: FC<Props> = ({ name, path, hook }) => {
 
-  const field = hook(name);
+  const field = hook(name as any);
 
   field.register({
     name,

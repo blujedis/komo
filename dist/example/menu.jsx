@@ -10,7 +10,8 @@ const Menu = () => {
       <wouter_1.Link href="/">Default</wouter_1.Link>&nbsp;&nbsp;|&nbsp;&nbsp;
       <wouter_1.Link href="/user">User Validation</wouter_1.Link>&nbsp;&nbsp;|&nbsp;&nbsp;
       <wouter_1.Link href="/material">Material Design</wouter_1.Link>&nbsp;&nbsp;|&nbsp;&nbsp;
-      <wouter_1.Link href="/advanced">Advanced</wouter_1.Link>
+      <wouter_1.Link href="/advanced">Advanced</wouter_1.Link>&nbsp;&nbsp;|&nbsp;&nbsp;
+      <wouter_1.Link href="/virtual">Virtual</wouter_1.Link>
     </div>);
 };
 exports.default = Menu;

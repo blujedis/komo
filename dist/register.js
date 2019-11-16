@@ -55,7 +55,7 @@ function initElement(api) {
     function getMultiple(element) {
         if (!utils_1.isSelectMultiple(element.type)) {
             // tslint:disable-next-line: no-console
-            console.error(`Attempted to get as select multiple value but is type "${element.type}" and tag of ${element.tagName}`);
+            console.error(`Attempted to get as select multiple value but is type "${element.type}" and tag of ${element.tagName || 'null'}`);
             return;
         }
         const value = [];
@@ -75,7 +75,7 @@ function initElement(api) {
     function getRadioValue(element) {
         if (!utils_1.isRadio(element.type)) {
             // tslint:disable-next-line: no-console
-            console.error(`Attempted to get as radio value but is type ${element.type} and tag of ${element.tagName}`);
+            console.error(`Attempted to get as radio value but is type ${element.type} and tag of ${element.tagName || 'null'}`);
             return;
         }
         const radios = getElement(element.name, true);
@@ -189,21 +189,22 @@ function initElement(api) {
      * @param value the value used to compare state.
      */
     function setElementState(element, value) {
-        const prevTouched = isTouched(element.name);
-        const prevDirty = isDirty(element.name);
-        const dirtyCompared = isDirtyCompared(element.name, value);
+        const name = !element.virtual ? element.name : element.virtual;
+        const prevTouched = isTouched(name);
+        const prevDirty = isDirty(name);
+        const dirtyCompared = isDirtyCompared(name, value);
         let dirty = false;
         let touched = false;
         if (dirtyCompared) {
-            setDirty(element.name);
+            setDirty(name);
             dirty = true;
         }
         if (!!dirtyCompared || prevTouched) {
-            setTouched(element.name);
+            setTouched(name);
             touched = true;
         }
         if (!dirtyCompared && prevDirty)
-            removeDirty(element.name);
+            removeDirty(name);
         // Updating the model here so if 
         // empty string set to undefined.
         if (value === '')
@@ -215,7 +216,12 @@ function initElement(api) {
             modelValue: undefined
         };
     }
-    // Persists data to model.
+    /**
+     * Calls "setModel" persisting data to model.
+     *
+     * @param element the element to set model for.
+     * @param modelValue the value to be set.
+     */
     function setElementModel(element, modelValue) {
         const castHandler = komoOptions.castHandler;
         modelValue = castHandler(modelValue, element.path, element.name);
@@ -229,7 +235,7 @@ function initElement(api) {
         value = utils_1.isUndefined(value) ? getElementValue(element) : value;
         // Update the state.
         const elementState = setElementState(element, value);
-        debug_set('update', element.name, element.path, elementState);
+        debug_set('update', element.name, element.path, element.virtual, elementState);
         // Ensure the model value.
         modelValue = utils_1.isUndefined(modelValue) ? value : modelValue;
         // Update the model value.
@@ -243,6 +249,9 @@ function initElement(api) {
      */
     function attachEvents(element) {
         let events = [];
+        // Cannot attach events to virtuals.
+        if (element.virtual)
+            return events;
         const handleBlur = async (e) => {
             updateStateAndModel(element);
             debug_event(element.name, element.value);
@@ -297,8 +306,8 @@ function initElement(api) {
     function extendEvents(element, rebind = false) {
         let events = [];
         // Attach events return array of attach for unbinding.
-        // skip if just rebinding.
-        if (!rebind)
+        // skip if rebinding or if is a virtual element.
+        if (!rebind && !element.virtual)
             events = attachEvents(element);
         // Update the model, value and state.
         element.update = async (value, modelValue, validate = true) => {
@@ -339,7 +348,8 @@ function initElement(api) {
             unregister(element);
         };
         // Bind mutation observer.
-        utils_1.initObserver(element, element.unregister.bind(element));
+        if (!element.virtual)
+            utils_1.initObserver(element, element.unregister.bind(element));
     }
     /**
      * Initializes the default values for the specified element.
@@ -389,8 +399,13 @@ function initElement(api) {
             return;
         if (!element.name) {
             // tslint:disable-next-line: no-console
-            console.warn(`Element of tag "${element.tagName}" could NOT be registered using name of undefined.`);
+            console.warn(`Element of tag "${element.tagName || 'null'}" could NOT be registered using name of undefined.`);
             return;
+        }
+        // If virtual element can only have type of "text".
+        if (element.virtual) {
+            element.type = 'text';
+            element.multiple = false; // shouldn't be set but just in case.
         }
         // Normalizes the element and defaults for use with Komo.
         initDefaults(element);
@@ -410,12 +425,47 @@ function initElement(api) {
         // Add to current field to the collection.
         if (!rebind)
             fields.current.add(element);
+        return element;
+    }
+    /**
+     * Normalizes the element merging user options with element options/config.
+     *
+     * @param element the element to be normalized.
+     * @param options user provided options to initialize with.
+     */
+    function normalizeElement(element, options = {}) {
+        element.name = (options.name || element.name);
+        element.path = options.path || element.name;
+        element.initValue = options.defaultValue;
+        element.initChecked = options.defaultChecked;
+        element.validateChange = options.validateChange;
+        element.validateBlur = options.validateBlur;
+        element.enableNativeValidation = options.enableNativeValidation;
+        element.enableModelUpdate = options.enableModelUpdate;
+        if (options.required)
+            element.required = options.required || element.required;
+        if (options.min)
+            element.min = options.min;
+        if (options.max)
+            element.max = options.max;
+        if (options.pattern)
+            element.pattern = options.pattern;
+        if (options.minLength)
+            element.minLength = options.minLength;
+        if (options.maxLength)
+            element.maxLength = options.maxLength;
+        if (element.virtual) {
+            element.type = 'text';
+            element.multiple = false;
+        }
+        return element;
     }
     function registerElement(elementOrOptions, options) {
         if (utils_1.isNullOrUndefined(elementOrOptions))
             return;
         const hasElement = arguments.length === 1 && utils_1.isObject(elementOrOptions) &&
-            elementOrOptions.nodeName ? elementOrOptions : null;
+            elementOrOptions.nodeName ||
+            elementOrOptions.virtual ? elementOrOptions : null;
         // No element just config return callback to get element.
         if (!hasElement) {
             if (!utils_1.isString(elementOrOptions)) {
@@ -428,41 +478,19 @@ function initElement(api) {
                 const _element = element;
                 if (!_element || isRegistered(_element))
                     return;
-                debug_register('custom', _element.name);
-                _element.name = (options.name || _element.name);
-                _element.path = options.path || _element.name;
-                // Komo only supports key/prop level paths
-                // you cannot select a value nested within
-                // an array for example. Such as used by lodash.
-                if (/\./g.test(_element.path) && /(\[|\])/g.test(_element.path))
-                    // tslint:disable-next-line: no-console
-                    console.error(`Path "${_element.path}" is invalid, ONLY standard dot notation to prop/key levels supported.`);
-                _element.initValue = options.defaultValue;
-                _element.initChecked = options.defaultChecked;
-                _element.validateChange = options.validateChange;
-                _element.validateBlur = options.validateBlur;
-                _element.enableNativeValidation = options.enableNativeValidation;
-                _element.enableModelUpdate = options.enableModelUpdate;
-                if (options.required)
-                    _element.required = options.required || _element.required;
-                if (options.min)
-                    _element.min = options.min;
-                if (options.max)
-                    _element.max = options.max;
-                if (options.pattern)
-                    _element.pattern = options.pattern;
-                if (options.minLength)
-                    _element.minLength = options.minLength;
-                if (options.maxLength)
-                    _element.maxLength = options.maxLength;
-                bindElement(_element);
+                normalizeElement(_element, options);
+                if (_element.virtual)
+                    debug_register('virtual', _element.name, _element.path, _element.virtual);
+                else
+                    debug_register('custom', _element.name, _element.path, _element.virtual);
+                return bindElement(_element);
             };
         }
         if (!elementOrOptions || isRegistered(elementOrOptions))
             return;
         debug_register(elementOrOptions.name);
         // ONLY element was passed.
-        bindElement(elementOrOptions);
+        return bindElement(elementOrOptions);
     }
     return registerElement;
 }

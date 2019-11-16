@@ -10,16 +10,26 @@ const user_1 = __importDefault(require("./user"));
 const material_1 = __importDefault(require("./material"));
 const menu_1 = __importDefault(require("./menu"));
 const advanced_1 = __importDefault(require("./advanced"));
+const virtual_1 = __importDefault(require("./virtual"));
+const NotFound = (props) => {
+    return (<div>
+      404 - Not Found
+    </div>);
+};
 const App = () => {
     return (<wouter_1.Router>
       <div style={{ padding: '24px' }}>
         <div>
           <menu_1.default />
         </div>
-        <wouter_1.Route path="/" component={default_1.default}/>
-        <wouter_1.Route path="/user" component={user_1.default}/>
-        <wouter_1.Route path="/material" component={material_1.default}/>
-        <wouter_1.Route path="/advanced" component={advanced_1.default}/>
+        <wouter_1.Switch>
+          <wouter_1.Route path="/" component={default_1.default}/>
+          <wouter_1.Route path="/user" component={user_1.default}/>
+          <wouter_1.Route path="/material" component={material_1.default}/>
+          <wouter_1.Route path="/advanced" component={advanced_1.default}/>
+          <wouter_1.Route path="/virtual" component={virtual_1.default}/>
+          <wouter_1.Route path="/:404*" component={NotFound}/>
+        </wouter_1.Switch>
       </div>
     </wouter_1.Router>);
 };

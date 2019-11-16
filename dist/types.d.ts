@@ -1,4 +1,4 @@
-import { BaseSyntheticEvent, MutableRefObject, LegacyRef, FormEvent } from 'react';
+import { BaseSyntheticEvent, MutableRefObject, FormEvent } from 'react';
 import { ObjectSchema, ValidateOptions } from 'yup';
 /**
  * Extracts key from type as string.
@@ -211,6 +211,10 @@ export interface IRegisterOptions<T extends IModel> {
      */
     path?: string;
     /**
+     * Maps to an existing model prop virtually.
+     */
+    virtual?: string | KeyOf<T>;
+    /**
      * Whether element should validate on change overrides main options.
      */
     validateChange?: boolean;
@@ -298,6 +302,10 @@ export interface IRegisteredElement<T extends IModel> extends IRegisterElement {
      */
     defaultChecked?: boolean;
     /**
+     * An alias name for virtual elements.
+     */
+    virtual?: KeyOf<T>;
+    /**
      * The alternate model path for getting/setting field value.
      */
     path?: string;
@@ -373,7 +381,7 @@ export interface IRegisteredElement<T extends IModel> extends IRegisterElement {
 /**
  * Type which when called returns an React ref of HTMLElement.
  */
-export declare type RegisterElement = (element: IRegisterElement) => LegacyRef<HTMLElement>;
+export declare type RegisterElement<T extends IModel> = (element: IRegisterElement) => IRegisteredElement<T>;
 /**
  * Interface for registering an element.
  */
@@ -383,7 +391,7 @@ export interface IRegister<T extends IModel> {
      *
      * @param options the element registration options.
      */
-    (options: IRegisterOptions<T>): RegisterElement;
+    (options: IRegisterOptions<T>): RegisterElement<T>;
     /**
      * Registers an element with Komo directly without options.
      */
@@ -530,6 +538,10 @@ export interface IUseField<T extends IModel> {
      * The current form's data model value.
      */
     data: any;
+    /**
+     * Gets default value by path.
+     */
+    readonly default: string;
     /**
      * Returns the current top error for a field/element.
      */

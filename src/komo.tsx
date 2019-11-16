@@ -190,7 +190,7 @@ function initApi<T extends IModel>(options: IOptions<T>) {
   const getModel = (path?: string) => {
     if (!path)
       return model.current;
-    return get<T>(model.current, path) as any;
+    return get<T>(model.current, path as any) as any;
   };
 
   // TOUCHED // 

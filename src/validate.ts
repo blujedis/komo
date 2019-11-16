@@ -1,8 +1,9 @@
 import {
   object, string, boolean, ValidationError, number,
-  ObjectSchema, ValidateOptions, mixed, Schema, AnySchemaConstructor
+  ObjectSchema, ValidateOptions, mixed
 } from 'yup';
-import { set, get } from 'dot-prop';
+import get from 'lodash.get';
+import set from 'lodash.set';
 import {
   IModel, ErrorModel, ValidationSchema, IValidator, IRegisteredElement,
   ISchemaAst,
@@ -18,7 +19,6 @@ import {
   debuggers, isPromise, isTruthy, isString, isFunction, me,
   isNullOrUndefined, isEmpty, isPlainObject, isUndefined, isObject, isArray
 } from './utils';
-import { unstable_renderSubtreeIntoContainer } from 'react-dom';
 
 const { debug_validate } = debuggers;
 

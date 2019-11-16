@@ -1,8 +1,12 @@
 "use strict";
+var __importDefault = (this && this.__importDefault) || function (mod) {
+    return (mod && mod.__esModule) ? mod : { "default": mod };
+};
 Object.defineProperty(exports, "__esModule", { value: true });
 const react_1 = require("react");
 const register_1 = require("./register");
-const dot_prop_1 = require("dot-prop");
+const lodash_get_1 = __importDefault(require("lodash.get"));
+const lodash_set_1 = __importDefault(require("lodash.set"));
 const hooks_1 = require("./hooks");
 const utils_1 = require("./utils");
 const validate_1 = require("./validate");
@@ -42,7 +46,6 @@ function initApi(options) {
         debug_api('rendered', status);
     };
     function _getElement(namePathOrElement, asGroup = false) {
-        // if (typeof namePathOrElement === 'object')
         if (utils_1.isObject(namePathOrElement))
             return namePathOrElement;
         const filtered = [...fields.current.values()]
@@ -68,7 +71,7 @@ function initApi(options) {
     const getDefault = (path) => {
         if (!path)
             return defaults.current;
-        return dot_prop_1.get(defaults.current, path);
+        return lodash_get_1.default(defaults.current, path);
     };
     const setDefault = react_1.useCallback((pathOrModel, value) => {
         if (!pathOrModel) {
@@ -80,7 +83,7 @@ function initApi(options) {
         if (utils_1.isString(pathOrModel)) {
             if (value === '')
                 value = undefined;
-            dot_prop_1.set(current, pathOrModel, value);
+            lodash_set_1.default(current, pathOrModel, value);
             defaults.current = current;
         }
         else {
@@ -109,7 +112,7 @@ function initApi(options) {
         if (utils_1.isString(pathOrModel)) {
             if (value === '')
                 value = undefined;
-            dot_prop_1.set(current, pathOrModel, value);
+            lodash_set_1.default(current, pathOrModel, value);
             model.current = current;
         }
         else {
@@ -123,7 +126,7 @@ function initApi(options) {
     const getModel = (path) => {
         if (!path)
             return model.current;
-        return dot_prop_1.get(model.current, path);
+        return lodash_get_1.default(model.current, path);
     };
     // TOUCHED // 
     const setTouched = (name) => {
@@ -238,12 +241,17 @@ function initApi(options) {
         let element = nameOrElement;
         if (utils_1.isString(nameOrElement))
             element = getElement(nameOrElement);
+        // if a virtual check the name it's mapped to.
+        if (element.virtual)
+            element = getElement(element.virtual);
         return utils_1.isUndefined(element.validateChange) ? options.validateChange : element.validateChange;
     };
     const isValidateBlur = (nameOrElement) => {
         let element = nameOrElement;
         if (utils_1.isString(nameOrElement))
             element = getElement(nameOrElement);
+        if (element.virtual)
+            element = getElement(element.virtual);
         return utils_1.isUndefined(element.validateBlur) ? options.validateBlur : element.validateBlur;
     };
     const unregister = react_1.useCallback((element) => {
@@ -384,10 +392,12 @@ function initForm(options) {
                         setError(valErr);
                 }).finally(() => {
                     mounted.current = true;
+                    render('form:effect:validate'); // this may not be needed.
                 });
             }
             else {
                 mounted.current = true;
+                render('form:effect');
             }
         };
         init();

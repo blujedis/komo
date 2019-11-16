@@ -87,6 +87,7 @@ const Default = () => {
         <jsonerrors_1.default errors={state.errors}/>
 
         <br />
+        <br />
         <hr />
         <br />
 

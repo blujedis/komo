@@ -9,7 +9,6 @@ import {
   IRegisterElement, IRegisterOptions, IRegisteredElement,
   IModel, IKomoBase, RegisterElement, CastHandler, PromiseStrict, ErrorModel, KeyOf
 } from './types';
-import { elementType } from 'prop-types';
 
 const { debug_register, debug_event, debug_set } = debuggers;
 
@@ -226,7 +225,7 @@ export function initElement<T extends IModel>(api?: IKomoBase<T>) {
    * 
    * @param element the element to be reset.
    */
-  function setElementDefault(element: IRegisteredElement<T>, isReset: boolean = false) {
+  function setElementDefault(element: IRegisteredElement<T>) {
 
     let value;
 
@@ -269,7 +268,7 @@ export function initElement<T extends IModel>(api?: IKomoBase<T>) {
    */
   function setElementState(element: IRegisteredElement<T>, value: any) {
 
-    const name = !element.virtual ? element.name : element.virtual;
+    const name = element.name;
 
     const prevTouched = isTouched(name);
     const prevDirty = isDirty(name);

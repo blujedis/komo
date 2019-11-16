@@ -24,19 +24,19 @@ const schema = object({
 type Schema = InferType<typeof schema> & { fullName?: any };
 
 type Props = {
-  name: KeyOf<Schema>; 
-  path?: string, 
+  name: KeyOf<Schema>;
+  path?: string,
   hook: UseField<Schema>;
 } & InputHTMLAttributes<HTMLInputElement>;
 
-const VirtualUnbound: FC<Props> = ({ name, path, hook }) => {
+const VirtualField: FC<Props> = ({ name, path, hook }) => {
 
   const field = hook(name);
 
   field.register({
     name,
-    path: 'name',
-    virtual: 'name'
+    path: 'phone.cc',
+    virtual: true
   });
 
   const onBlur = (e) => {
@@ -46,8 +46,8 @@ const VirtualUnbound: FC<Props> = ({ name, path, hook }) => {
 
   return (
     <>
-      <label htmlFor="fullName">Full Name: </label>
-      <input  type="text" onBlur={onBlur} defaultValue={field.value} /><br /><br />
+      <label htmlFor="countrycode">Full Name: </label>
+      <input name="countrycode" type="text" onBlur={onBlur} defaultValue={field.value} /><br /><br />
     </>
   );
 
@@ -82,7 +82,7 @@ const Virtual: FC = () => {
 
       <form noValidate onSubmit={handleSubmit(onSubmit)} onReset={handleReset}>
 
-        <VirtualUnbound name="fullName" hook={useField} />
+        <VirtualField name="fullName" hook={useField} />
 
         <JsonErrors errors={state.errors} />
 

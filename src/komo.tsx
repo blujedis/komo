@@ -520,12 +520,12 @@ function initForm<T extends IModel>(options?: IOptions<T>) {
       if (mounted.current)
         return;
 
-      debug_init('fields', getRegistered());
-      debug_init('schema', options.validationSchema);
+      debug_init('mount:fields', getRegistered());
+      debug_init('mount:schema', options.validationSchema);
 
       const { err, data } = await me(options.defaults as Promise<Partial<T>>);
 
-      debug_init('defaults', data);
+      debug_init('mount:defaults', data);
       if (err && isPlainObject(err))
         debug_init('err', err);
 

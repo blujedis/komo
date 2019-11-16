@@ -336,6 +336,37 @@ const onFirstBlur = (e) => lastName.focus();
 }
 ```
 
+### Virtual Elements
+
+Some times you have a complex component that requires you to create a virtual registration that maps to you model's validation. Komo does this quite easily.
+
+```tsx
+const VirtualField: FC<Props> = ({ name, path, hook }) => {
+
+  const field = hook(name);
+
+  field.register({
+    name,
+    path: 'name',
+    virtual: 'name'
+  });
+
+  const onBlur = (e) => {
+    const value = e.target.value;
+    field.update(value);
+  };
+
+  return (
+    <>
+      <label htmlFor="fullName">Full Name: </label>
+      <input name="fullName" type="text" onBlur={onBlur} defaultValue={field.value} /><br /><br />
+    </>
+  );
+
+};
+
+```
+
 ## Casting Model
 
 By default Komo will attemp to cast your data before persisting to model. For example a string of "true" will become an actual boolean <code>true</code>.

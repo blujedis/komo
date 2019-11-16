@@ -19,6 +19,7 @@ import {
   debuggers, isPromise, isTruthy, isString, isFunction, me,
   isNullOrUndefined, isEmpty, isPlainObject, isUndefined, isObject, isArray
 } from './utils';
+import Virtual from './example/virtual';
 
 const { debug_validate } = debuggers;
 
@@ -29,30 +30,6 @@ const typeToYup = {
   url: 'string',
   checkbox: 'boolean'
 };
-
-/**
- * Lookup helper for element or prop in element.
- * 
- * @param findField the core lookup helper for finding elements.
- */
-export function lookup<T extends IModel>(findField: IGetElement<T>) {
-
-  const getElement = (pathOrElement: string | IRegisteredElement<T>) => {
-    if (!isString(pathOrElement))
-      return pathOrElement as IRegisteredElement<T>;
-    return findField(pathOrElement as string);
-  };
-
-  return {
-    element: (pathOrElement: string | IRegisteredElement<T>) => getElement(pathOrElement),
-    at: <K extends KeyOf<IRegisteredElement<T>>>(
-      pathOrElement: string | IRegisteredElement<T>, prop: K) => {
-      const element = getElement(pathOrElement);
-      return element[prop];
-    }
-  };
-
-}
 
 /**
  * Parses yup error to friendly form errors.
@@ -66,7 +43,9 @@ export function yupToErrors<T extends IModel>(
   const errors: ErrorModel<T> = {} as any;
 
   if (!error.inner || !error.inner.length) {
-    const key = lookup(getElement).at(error.path, 'name');
+    const element = getElement(error.path);
+    const key = element['name'];
+    const mapTo = element['virtual'] || '';
     errors[key] = errors[key] || [];
     errors[key].push({
       type: error.type,
@@ -80,7 +59,9 @@ export function yupToErrors<T extends IModel>(
   else {
 
     for (const err of error.inner) {
-      const key = lookup(getElement).at(err.path, 'name');
+      const element = getElement(err.path);
+      const key = element['name'];
+      const mapTo = element['virtual'] || '';
       errors[key] = errors[key] || [];
       errors[key].push({
         type: err.type,

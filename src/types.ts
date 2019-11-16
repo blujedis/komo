@@ -278,7 +278,7 @@ export interface IRegisterOptions<T extends IModel> {
   /**
    * Maps to an existing model prop virtually.
    */
-  virtual?: string | KeyOf<T>;
+  virtual?: boolean; // string | KeyOf<T>;
 
   /**
    * Whether element should validate on change overrides main options.
@@ -395,7 +395,7 @@ export interface IRegisteredElement<T extends IModel> extends IRegisterElement {
   /**
    * An alias name for virtual elements.
    */
-  virtual?: KeyOf<T>;
+  virtual?: boolean; // KeyOf<T>;
 
   /**
    * The alternate model path for getting/setting field value.
@@ -529,6 +529,11 @@ export interface IValidationError {
    * The model path which caused the error e.g. "user.email".
    */
   path?: string;
+
+  /**
+   * Virtual path the error is mapped to if virtual is present.
+   */
+  mapTo?: string;
 
   /**
    * The current model value at the specified path.

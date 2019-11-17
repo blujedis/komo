@@ -1,17 +1,16 @@
-import React, { FC, InputHTMLAttributes, useEffect, useRef } from 'react';
+import React, { FC, InputHTMLAttributes } from 'react';
 import useForm from '..';
 import JsonErrors from './jsonerrors';
 import { string, object, InferType } from 'yup';
-import { KeyOf, UseField } from '../types';
+import { IUseFieldHook } from '../types';
 
 /**
  * Schema - our data model or schema using Yup.
  */
 const schema = object({
-  name: string().default('Bill Lumbergh').required(),
-  phone: object({
-    cc: string().default('1'),
-    number: string().default('8135279989')
+  name: object({
+    first: string().default('Bill').required(),
+    last: string().default('Lumbergh').required(),
   })
 });
 
@@ -21,34 +20,56 @@ const schema = object({
  * since it's not derived and an essentially
  * as if a component in its own file.
  */
-type Schema = InferType<typeof schema> & { fullName?: any };
+type Schema = InferType<typeof schema>;
 
-type Props = {
-  name: KeyOf<Schema>;
-  path?: string,
-  hook: UseField<Schema>;
-} & InputHTMLAttributes<HTMLInputElement>;
+type Props = { hook: IUseFieldHook<Schema>; } & InputHTMLAttributes<HTMLInputElement>;
 
-const VirtualField: FC<Props> = ({ name, path, hook }) => {
+const VirtualField: FC<Props> = ({ name, hook }) => {
 
-  const field = hook(name);
+  const fullName = hook(name, true);
+  const first = hook('first');
+  const last = hook('last');
 
-  field.register({
-    name,
-    path: 'phone.cc',
-    virtual: true
+  fullName.register({
+    defaultValue: (model) => {
+      if (model.name && model.name.first && model.name.last)
+        return model.name.first + ' ' + model.name.last;
+      return '';
+    },
+    required: true
   });
 
   const onBlur = (e) => {
-    const value = e.target.value;
-    field.update(value);
+    // We trim here so we don't end up with ' ' as space.
+    fullName.update((first.value + ' ' + last.value).trim());
   };
 
   return (
     <>
-      <label htmlFor="countrycode">Full Name: </label>
-      <input name="countrycode" type="text" onBlur={onBlur} defaultValue={field.value} /><br /><br />
+      <p>
+        <span>Virtual Value: </span><span style={{ fontWeight: 'bolder' }}>{fullName.value}</span>
+      </p>
+
+      <label htmlFor="first">First Name: </label>
+      <input
+        name="first"
+        type="text"
+        onBlur={onBlur}
+        ref={first.register({ path: 'name.first', validateBlur: false })} />
+
+      <br /><br />
+
+      <label htmlFor="last">Last Name: </label>
+      <input
+        name="last"
+        type="text"
+        onBlur={onBlur}
+        ref={last.register({ path: 'name.last', validateBlur: false })} />
+
+      <br /><br />
+
     </>
+
   );
 
 };
@@ -60,15 +81,12 @@ const Virtual: FC = () => {
 
   const { handleSubmit, handleReset, state, useField } = useForm({
     validationSchema: schema,
-    validateNative: true,
-    defaults: {
-      fullName: ''
-    }
+    validateNative: true
   });
 
   const onSubmit = (model) => {
-    console.log(model);
-    console.log(state.errors);
+    console.log('model:', model);
+    console.log('errors:', state.errors);
     console.log('count', state.submitCount);
     console.log('submitting', state.isSubmitting);
     console.log('submitted', state.isSubmitted);
@@ -81,6 +99,11 @@ const Virtual: FC = () => {
       <hr /><br />
 
       <form noValidate onSubmit={handleSubmit(onSubmit)} onReset={handleReset}>
+
+        <p>
+          At first blush this may seem redundant but there are use cases where you
+          need to interact with the model but have complex nested components.
+        </p>
 
         <VirtualField name="fullName" hook={useField} />
 

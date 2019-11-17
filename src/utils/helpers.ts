@@ -4,7 +4,7 @@ export { isEqual };
 
 // PRIVATE //
 
-type TagType = string | Partial<{ type: string; }>;
+type ElementType = string | Partial<{ type: string; }>;
 
 /**
  * Checks if value is matching tag type.
@@ -12,13 +12,22 @@ type TagType = string | Partial<{ type: string; }>;
  * @param tag the tag type or object containing type. 
  * @param match the value to match. 
  */
-function isTagType(tag: TagType, match: string) {
+function isElementType(tag: ElementType, match: string) {
   const compare = ((typeof tag === 'object' ? tag.type : tag) || '').toLowerCase();
   if (!compare) return false;
   return compare.startsWith(match);
 }
 
 // PUBLIC //
+
+/**
+ * Non operation function.
+ * 
+ * @param def a default value to return for noop.
+ */
+export function noop(def?: any) {
+  return (...args: any[]) => def || undefined;
+}
 
 /**
  * Promise wrapper that returns an object when used
@@ -40,8 +49,8 @@ export const me = <T, E = Error>(promise: PromiseStrict<T, E>) => {
  * 
  * @param value the string or object containing type to inspect.
  */
-export function isRadio(value: TagType) {
-  return isTagType(value, 'radio');
+export function isRadio(value: ElementType) {
+  return isElementType(value, 'radio');
 }
 
 /**
@@ -49,8 +58,8 @@ export function isRadio(value: TagType) {
  * 
  * @param value the string or object containing type to inspect.
  */
-export function isCheckbox(value: TagType) {
-  return isTagType(value, 'checkbox');
+export function isCheckbox(value: ElementType) {
+  return isElementType(value, 'checkbox');
 }
 
 /**
@@ -58,8 +67,8 @@ export function isCheckbox(value: TagType) {
  * 
  * @param value the string or object containing type to inspect.
  */
-export function isSelect(value: TagType) {
-  return isTagType(value, 'select');
+export function isSelect(value: ElementType) {
+  return isElementType(value, 'select');
 }
 
 /**
@@ -67,8 +76,8 @@ export function isSelect(value: TagType) {
  * 
  * @param value the string or object containing type to inspect.
  */
-export function isSelectOne(value: TagType) {
-  return isTagType(value, 'select-one');
+export function isSelectOne(value: ElementType) {
+  return isElementType(value, 'select-one');
 }
 
 /**
@@ -76,17 +85,17 @@ export function isSelectOne(value: TagType) {
  * 
  * @param value the string or object containing type to inspect.
  */
-export function isSelectMultiple(value: TagType) {
-  return isTagType(value, 'select-multiple');
+export function isSelectMultiple(value: ElementType) {
+  return isElementType(value, 'select-multiple');
 }
 
 /**
- * Checks if value or value.type is "input".
+ * Checks if value or value.type is "text".
  * 
  * @param value the string or object containing type to inspect.
  */
-export function isInput(value: TagType) {
-  return isTagType(value, 'input');
+export function isText(value: ElementType) {
+  return isElementType(value, 'text');
 }
 
 /**
@@ -94,8 +103,8 @@ export function isInput(value: TagType) {
  * 
  * @param value the string or object containing type to inspect.
  */
-export function isTextarea(value: TagType) {
-  return isTagType(value, 'textarea');
+export function isTextarea(value: ElementType) {
+  return isElementType(value, 'textarea');
 }
 
 /**
@@ -103,8 +112,8 @@ export function isTextarea(value: TagType) {
  * 
  * @param value the string or object containing type to inspect.
  */
-export function isHidden(value: TagType) {
-  return isTagType(value, 'hidden');
+export function isHidden(value: ElementType) {
+  return isElementType(value, 'hidden');
 }
 
 /**
@@ -112,8 +121,8 @@ export function isHidden(value: TagType) {
  * 
  * @param value the string or object containing type to inspect.
  */
-export function isFile(value: TagType) {
-  return isTagType(value, 'file');
+export function isFile(value: ElementType) {
+  return isElementType(value, 'file');
 }
 
 /**
@@ -121,12 +130,22 @@ export function isFile(value: TagType) {
  * 
  * @param value the string or object containing type to inspect.
  */
-export function isTextLike(value: TagType) {
+export function isTextLike(value: ElementType) {
   const type = (value as any).type || value;
   return !['select-one', 'select-multiple', 'radio',
     'checkbox', 'file', 'submit', 'reset'].includes(type);
 }
 
+/**
+ * Checks if element is of type that should prevent enter key submits.
+ * 
+ * @param value the value to check element type.
+ */
+export function isPreventEnter(value: ElementType) {
+  const type = (value as any).type || value;
+  return ['select-one', 'select-multiple', 'text',
+   'textarea', 'file'].includes(type);
+}
 
 /**
  * Checks loosely if value is a promise.
@@ -152,7 +171,7 @@ export function isBooleanLike(value: any) {
  * @param value the value to inspect.
  */
 export function isTruthy(value: unknown) {
-  return (typeof value !== undefined &&
+  return (typeof value !== 'undefined' &&
     value !== undefined &&
     value !== null &&
     value !== false &&
@@ -166,7 +185,7 @@ export function isTruthy(value: unknown) {
  * @param value the value to inspect.
  */
 export function isUndefined(value: unknown) {
-  return value === undefined;
+  return typeof value === 'undefined';
 }
 
 /**
@@ -276,8 +295,39 @@ export function merge<T, S>(target: T, source: S) {
  */
 export function extend<T, S>(target: T, source: S) {
   for (const k in source) {
-    if (isUndefined(source[k]))continue;
+    if (isUndefined(source[k])) continue;
     target[k as any] = source[k];
   }
   return target as T & S;
+}
+
+/**
+ * Checks if an object is an element.
+ * 
+ * @param value the value to inspect as element.
+ */
+export function isElement(value: unknown) {
+  // @ts-ignore
+  if (!isObject(value) || !value.nodeName) return false;
+  return value instanceof Element || value instanceof HTMLDocument;
+}
+
+/**
+ * Checks if an object is an element or is a virtual.
+ * 
+ * @param value the value to inspect as element or virtual.
+ */
+export function isVirtual(value: unknown) {
+  if (!isObject(value)) return false;
+  // @ts-ignore
+  return (value || {}).virtual;
+}
+
+/**
+ * Checks if an object is an element or a virtual element.
+ * 
+ * @param value the value to inspect as element or virtual.
+ */
+export function isElementOrVirtual(value: unknown) {
+  return isElement(value) || isVirtual(value);
 }

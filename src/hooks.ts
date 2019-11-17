@@ -1,11 +1,12 @@
-import { IModel, KeyOf, IKomo, IUseFields } from './types';
+import { IModel, KeyOf, IKomo, IUseFields, IUseField } from './types';
 import { useCallback, BaseSyntheticEvent } from 'react';
+import { isUndefined, isString, isObject } from './utils';
 
 export function initHooks<T extends IModel>(komo: IKomo<T>) {
 
   const {
     state, getElement, getModel, setModel, validateModelAt,
-    isTouched, isDirty, getDefault
+    isTouched, isDirty, getDefault, render
   } = komo;
 
   function getErrors(prop: KeyOf<T>) {
@@ -13,6 +14,21 @@ export function initHooks<T extends IModel>(komo: IKomo<T>) {
       return [];
     return state.errors[prop];
   }
+
+  /**
+   * Creates hook to form field element.
+   * 
+   * @example
+   * const firstName= useField('key', true);
+   * 
+   * @example
+   * <input name="firstName" type="text" error={firstName.invalid} required />
+   * <span>{firstName.required}</span>
+   * 
+   * @param name the name of the field to create hook for.
+   * @param virtual when true is virtual property.
+   */
+  function useField<K extends string>(name: K, virtual: boolean): IUseField<Record<K, T>>;
 
   /**
    * Creates hook to form field element.
@@ -26,30 +42,55 @@ export function initHooks<T extends IModel>(komo: IKomo<T>) {
    * 
    * @param name the name of the field to create hook for.
    */
-  function useField(name: KeyOf<T>) {
+  function useField(name: KeyOf<T>): IUseField<T>;
+
+  function useField<K extends string>(virtualOrName: K | KeyOf<T>, virtual?: boolean): any {
+
+    const name = virtual ? virtualOrName as KeyOf<Record<K, T>> : virtualOrName as KeyOf<T>;
 
     const unavailableMsg = prop => {
       if (prop)
-        return `Prop "${prop}" undefined, element ${name} is unavailable or not mounted.`;
+        return `Prop "${prop}" undefined, element "${name}" is unavailable or not mounted.`;
       return `Element "${name}" is unavailable or not mounted.`;
     };
 
     const getElementOrProp = (prop?: string, message?: string, def: any = null) => {
       const element = getElement(name);
       message = message || unavailableMsg(prop);
+      if (!element && !state.mounted) return;
       if (!element && state.mounted) {
         // tslint:disable-next-line: no-console
         console.warn(message);
         return def;
       }
-      if (!prop)
+      if (isUndefined(prop))
         return element || def;
-      return element[prop] || def;
+      const val = element[prop];
+      return isUndefined(val) ? def : val;
     };
 
     const field = {
 
-      register: komo.register.bind(komo),
+      // register: komo.register.bind(komo),
+
+      register: (elementOrOptions) => {
+
+        // binds hidden prop so we know this 
+        // is a hooked element or virtual.
+        if (isObject(elementOrOptions)) {
+
+          elementOrOptions.__hooked__ = true;
+          elementOrOptions.virtual = virtual;
+
+          // Virtual props must use same name.
+          if (elementOrOptions.virtual)
+            elementOrOptions.name = name;
+
+        }
+
+        return komo.register(elementOrOptions);
+
+      },
 
       // Getters //
 
@@ -90,7 +131,7 @@ export function initHooks<T extends IModel>(komo: IKomo<T>) {
       },
 
       get value() {
-        return getElementOrProp('value');
+        return getElementOrProp('value', null, '');
       },
 
       get data() {
@@ -139,17 +180,62 @@ export function initHooks<T extends IModel>(komo: IKomo<T>) {
           element.blur();
       },
 
-      update(value: T[KeyOf<T>], modelValue?: any, validate: boolean = true) {
+      update(value: any, modelValue?: any, validate: boolean = true) {
         const element = getElementOrProp();
         if (element)
           element.update(value, modelValue, validate);
       },
 
+      // updateAt(key: string, value: any, modelValue?: any, validate: boolean = true) {
+      //   const element = getElement(key);
+      //   if (!element)
+      //     // tslint:disable-next-line: no-console
+      //     console.warn(`Cannot UPDATE unknown element at "${key}".`);
+      //   else
+      //     element.update(value, modelValue, validate);
+      // },
+
+      // setValueAt(key: string, value: any) {
+      //   const el = getElement(key);
+      //   if (!el)
+      //     // tslint:disable-next-line: no-console
+      //     console.warn(`Cannot set VALUE for known element at "${key}".`);
+      //   else
+      //     el.value = value;
+      // },
+
+      // setDataAt(nameOrPath: string, value: any) {
+      //   const element = getElement(nameOrPath);
+      //   if (!element)
+      //     // tslint:disable-next-line: no-console
+      //     console.warn(`Cannot set DATA for known element at "${nameOrPath}".`);
+      //   else
+      //     element.value = value;
+      // },
+
       validate() {
         const element = getElementOrProp();
         if (element)
           return validateModelAt(element);
-      }
+      },
+
+      validateAt(...names: string[]) {
+
+        const promises = names.reduce((a, c) => {
+          const el = getElement(c);
+          if (!el) {
+            // tslint:disable-next-line: no-console
+            console.warn(`Cannot validate at unknown element "${c}".`);
+            return a;
+          }
+          a = [...a, validateModelAt(el)];
+        }, []);
+
+        return Promise.all(promises);
+
+      },
+
+      render
 
     };
 
@@ -161,7 +247,21 @@ export function initHooks<T extends IModel>(komo: IKomo<T>) {
    * Creates and object containing use field hooks for form.
    * 
    * @example
-   * const { firstName, lastName } = useFields('firstName', 'lastName');
+   * const { firstName, lastName } = useFields(true, 'firstName', 'lastName');
+   * 
+   * @example
+   * <input name="firstName" type="text" error={firstName.invalid} required />
+   * <span>{firstName.required}</span>
+   * 
+   * @param keys the field names you wish to create hooks for.
+   */
+  function useFields<A extends string>(vanity: boolean, ...keys: A[]): IUseFields<A, IUseField<Record<A, T>>>;
+
+  /**
+   * Creates and object containing use field hooks for form.
+   * 
+   * @example
+   * const { firstName, lastName } = useFields(true, 'firstName', 'lastName');
    * 
    * @example
    * <input name="firstName" type="text" error={firstName.invalid} required />
@@ -169,11 +269,17 @@ export function initHooks<T extends IModel>(komo: IKomo<T>) {
    * 
    * @param names the field names you wish to create hooks for.
    */
-  function useFields<K extends KeyOf<T>>(...names: K[]) {
+  function useFields<K extends KeyOf<T>>(...names: K[]): IUseFields<K, IUseField<T>>;
+
+  function useFields<K extends KeyOf<T>>(vanity: string | boolean, ...names: K[]) {
+    if (isString(vanity)) {
+      names.unshift(vanity as any);
+      vanity = undefined;
+    }
     return names.reduce((result, prop) => {
-      result[prop as any] = useField(prop);
+      result[prop as any] = useField(prop, vanity as any);
       return result;
-    }, {}) as IUseFields<K, ReturnType<typeof useField>>;
+    }, {});
   }
 
   return {

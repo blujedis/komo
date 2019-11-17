@@ -338,33 +338,98 @@ const onFirstBlur = (e) => lastName.focus();
 
 ### Virtual Elements
 
-Some times you have a complex component that requires you to create a virtual registration that maps to you model's validation. Komo does this quite easily.
+Some times you have a complex component that requires you to create a virtual registration where you might have other bound elements you wish to get values from and/or validate. That's where virtual elements come in.
+
+Komo's hooks make this a snap! Let's walk through it.
+
+#### Consider a Nested Model
+
+Let's say you want to create a virtual element called **fullName** which is simply a concatenation
+of both <code>name.first</code> and <code>name.last</code>. We only want to trigger validation for fullName.
+
+```js
+const model = {
+  name: {
+    first: 'Milton',
+    last: 'Waddams'
+  }
+}
+```
+
+#### Virtual Component
+
+We create a virtual element below by passing in the second arg in our useField hook 
+<code>const fullName = hook(name, true);</code>. This tells Komo not wire up data binding
+events as we typically would for an element.
 
 ```tsx
-const VirtualField: FC<Props> = ({ name, path, hook }) => {
+const VirtualField: FC<Props> = ({ name, hook }) => {
 
-  const field = hook(name);
+  // Below we create hooks for our Virtual (fullName)
 
-  field.register({
-    name,
-    path: 'name',
-    virtual: 'name'
+  const fullName = hook(name, true);
+
+  // The below to element hooks are created dynamically.
+  // meaning we didn't pass them into our model.
+
+  const first = hook('first');
+  const last = hook('last');
+
+  // We register our virtual element.
+  // Note we derive our default value from
+  // the vaules of the two bound elements.
+
+  fullName.register({
+
+    defaultValue: (model) => {
+      if (model.name && model.name.first && model.name.last)
+        return model.name.first + ' ' + model.name.last;
+      return '';
+    },
+
+    required: true
+
   });
 
+  // On blur listener to update our virtual element.
+
   const onBlur = (e) => {
-    const value = e.target.value;
-    field.update(value);
+    // We trim here so we don't end up with ' ' as space.
+    fullName.update((first.value + ' ' + last.value).trim());
   };
+
+  // Finally we return our simple component
+  // registering our bound elements as usual.
 
   return (
     <>
-      <label htmlFor="fullName">Full Name: </label>
-      <input name="fullName" type="text" onBlur={onBlur} defaultValue={field.value} /><br /><br />
+      <p>
+        <span>Virtual Value: </span><span style={{ fontWeight: 'bolder' }}>{fullName.value}</span>
+      </p>
+
+      <label htmlFor="first">First Name: </label>
+      <input
+        name="first"
+        type="text"
+        onBlur={onBlur}
+        ref={first.register({ path: 'name.first', validateBlur: false })} />
+
+      <br /><br />
+
+      <label htmlFor="last">Last Name: </label>
+      <input
+        name="last"
+        type="text"
+        onBlur={onBlur}
+        ref={last.register({ path: 'name.last', validateBlur: false })} />
+
+      <br /><br />
+
     </>
+
   );
 
 };
-
 ```
 
 ## Casting Model
@@ -373,7 +438,7 @@ By default Komo will attemp to cast your data before persisting to model. For ex
 
 This feature can be disabled by setting <code>options.castHandler</code> to false or null.
 
-You can also pass your own synchronous function that casts the value and simply returns it. 
+You can also pass your own function that casts the value and simply returns it. 
 
 Although your model will likely be converted to a string using <code>JSON.stringify</code> before posting 
 to your server, casting the model value only allows you to do checks against the model state as you'd expect.

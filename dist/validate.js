@@ -16,26 +16,6 @@ const typeToYup = {
     checkbox: 'boolean'
 };
 /**
- * Lookup helper for element or prop in element.
- *
- * @param findField the core lookup helper for finding elements.
- */
-function lookup(findField) {
-    const getElement = (pathOrElement) => {
-        if (!utils_1.isString(pathOrElement))
-            return pathOrElement;
-        return findField(pathOrElement);
-    };
-    return {
-        element: (pathOrElement) => getElement(pathOrElement),
-        at: (pathOrElement, prop) => {
-            const element = getElement(pathOrElement);
-            return element[prop];
-        }
-    };
-}
-exports.lookup = lookup;
-/**
  * Parses yup error to friendly form errors.
  *
  * @param error the emitted yup error.
@@ -44,7 +24,8 @@ exports.lookup = lookup;
 function yupToErrors(error, getElement) {
     const errors = {};
     if (!error.inner || !error.inner.length) {
-        const key = lookup(getElement).at(error.path, 'name');
+        const element = getElement(error.path);
+        const key = element.name;
         errors[key] = errors[key] || [];
         errors[key].push({
             type: error.type,
@@ -56,7 +37,8 @@ function yupToErrors(error, getElement) {
     }
     else {
         for (const err of error.inner) {
-            const key = lookup(getElement).at(err.path, 'name');
+            const element = getElement(err.path);
+            const key = element.name;
             errors[key] = errors[key] || [];
             errors[key].push({
                 type: err.type,
@@ -312,17 +294,33 @@ function parseYupDefaults(schema, purge) {
             schema,
             defaults: {}
         };
+    // If init default clone and set as default.
     if (_schema.__INIT_DEFAULTS__)
         _schema = _schema.clone().default(_schema.__INIT_DEFAULTS__);
+    // Clone the default values.
     const defaults = { ..._schema.default() };
-    if (purge) {
-        const fields = _schema.fields;
+    // Iterate all fields and delete defaults
+    // this is required when setting defaults
+    // with Yup otherwise your form will never
+    // throw an error for your field as well
+    // yup says....NOPE!!!
+    const purgeFields = (s) => {
+        const fields = s.fields;
         for (const k in fields) {
             if (utils_1.isUndefined(fields[k]))
                 continue;
-            delete fields[k]._default;
-            delete fields[k]._defaultDefault;
+            if (fields[k].fields) {
+                purgeFields(fields[k]);
+            }
+            else {
+                delete fields[k]._default;
+                delete fields[k]._defaultDefault;
+            }
         }
+    };
+    if (purge) {
+        purgeFields(_schema);
+        // Store the init defaults.
         _schema.__INIT_DEFAULTS__ = { ...defaults };
     }
     return {

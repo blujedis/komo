@@ -7,6 +7,7 @@ const react_1 = require("react");
 const register_1 = require("./register");
 const lodash_get_1 = __importDefault(require("lodash.get"));
 const lodash_set_1 = __importDefault(require("lodash.set"));
+const lodash_has_1 = __importDefault(require("lodash.has"));
 const hooks_1 = require("./hooks");
 const utils_1 = require("./utils");
 const validate_1 = require("./validate");
@@ -30,6 +31,7 @@ function initApi(options) {
     const fields = react_1.useRef(new Set());
     const touched = react_1.useRef(new Set());
     const dirty = react_1.useRef(new Set());
+    const vanities = react_1.useRef(new Set());
     const errors = react_1.useRef({});
     const validator = react_1.useRef();
     const schemaAst = react_1.useRef();
@@ -37,7 +39,7 @@ function initApi(options) {
     const submitCount = react_1.useRef(0);
     const submitting = react_1.useRef(false);
     const submitted = react_1.useRef(false);
-    const [currentStatus, renderStatus] = react_1.useState('init');
+    const [, renderStatus] = react_1.useState('init');
     let state = {};
     let api = {};
     // HELPERS //
@@ -97,8 +99,14 @@ function initApi(options) {
     const syncDefaults = react_1.useCallback((defs) => {
         defaults.current = utils_1.merge({ ...defaults.current }, { ...defs });
         model.current = utils_1.merge({ ...defs }, { ...model.current });
+        const keys = Object.keys(defs);
         // Iterate bound elements and update default values.
         [...fields.current.values()].forEach(element => {
+            if (keys.includes(element.name) && element.virtual)
+                // tslint:disable-next-line: no-console
+                console.error(`Attempted to set bound property "${element.name}" as vanity, try useField('${element.name}') NOT useField('${element.name}', true).`);
+            if (!keys.includes(element.name) && !vanities.current.has(element.name))
+                vanities.current.add(element.name);
             element.reinit();
         });
     }, []);
@@ -123,6 +131,9 @@ function initApi(options) {
             model.current = current;
         }
     }, [defaults, model]);
+    const hasModel = (path) => {
+        return lodash_has_1.default(model.current, path);
+    };
     const getModel = (path) => {
         if (!path)
             return model.current;
@@ -157,23 +168,46 @@ function initApi(options) {
     const clearDirty = () => {
         dirty.current.clear();
     };
-    const isDirtyCompared = (name, value, defaultValue) => {
+    const prepareCompare = (value) => {
+        if (utils_1.isArray(value))
+            value.sort();
+        if (utils_1.isPlainObject(value)) {
+            value = Object.keys(value).sort().reduce((a, c) => {
+                a[c] = value[c];
+                return a;
+            }, {});
+        }
+        return String(value);
+    };
+    // If not compare value the model value is used.
+    const isDirtyCompared = (name, value, compareValue) => {
         const element = getElement(name);
-        value = utils_1.toDefault(value, element.value);
-        defaultValue = utils_1.toDefault(defaultValue, getModel(element.path));
-        // Probably need to look further into this
-        // ensure common and edge cases are covered.
-        // NOTE: we check array here as value could
-        // be multiple option group in some cases.
-        return utils_1.isArray(defaultValue)
-            ? !utils_1.isEqual(defaultValue, value)
-            : !utils_1.isEqual(defaultValue + '', value + '');
+        const modelValue = getModel(element.path);
+        compareValue = utils_1.toDefault(compareValue, modelValue);
+        value = prepareCompare(value);
+        compareValue = prepareCompare(compareValue);
+        return !utils_1.isEqual(value, compareValue);
     };
     const isDirty = react_1.useCallback((name) => {
         if (name)
             return dirty.current.has(name);
         return !!dirty.current.size;
     }, []);
+    // VIRTUALS //
+    const getVanity = react_1.useCallback(() => {
+        return [...vanities.current.values()];
+    }, []);
+    const setVanity = (name) => {
+        if (!vanities.current.has(name))
+            vanities.current.add(name);
+    };
+    const removeVanity = (name) => {
+        const removed = vanities.current.delete(name);
+        return removed;
+    };
+    const clearVanity = () => {
+        vanities.current.clear();
+    };
     // ERRORS //
     const setError = react_1.useCallback((nameOrErrors, value) => {
         const currentErrors = { ...errors.current };
@@ -241,17 +275,12 @@ function initApi(options) {
         let element = nameOrElement;
         if (utils_1.isString(nameOrElement))
             element = getElement(nameOrElement);
-        // if a virtual check the name it's mapped to.
-        if (element.virtual)
-            element = getElement(element.virtual);
         return utils_1.isUndefined(element.validateChange) ? options.validateChange : element.validateChange;
     };
     const isValidateBlur = (nameOrElement) => {
         let element = nameOrElement;
         if (utils_1.isString(nameOrElement))
             element = getElement(nameOrElement);
-        if (element.virtual)
-            element = getElement(element.virtual);
         return utils_1.isUndefined(element.validateBlur) ? options.validateBlur : element.validateBlur;
     };
     const unregister = react_1.useCallback((element) => {
@@ -292,6 +321,9 @@ function initApi(options) {
         get dirty() {
             return [...dirty.current.keys()];
         },
+        get vanities() {
+            return [...vanities.current.keys()];
+        },
         get valid() {
             return !Object.entries(errors.current).length;
         },
@@ -319,6 +351,7 @@ function initApi(options) {
         options,
         defaults,
         fields,
+        virtuals: vanities,
         unregister,
         schemaAst,
         render,
@@ -333,6 +366,7 @@ function initApi(options) {
         getDefault,
         setDefault,
         syncDefaults,
+        hasModel,
         getModel,
         setModel,
         validator: validator.current,
@@ -352,6 +386,11 @@ function initApi(options) {
         clearDirty,
         isDirty,
         isDirtyCompared,
+        // Vanity
+        getVanity,
+        setVanity,
+        removeVanity,
+        clearVanity,
         // Errors,
         errors,
         setError,
@@ -369,15 +408,15 @@ function initApi(options) {
  */
 function initForm(options) {
     const base = initApi(options);
-    const { options: formOptions, defaults, render, clearDirty, clearTouched, clearError, setModel, fields, submitCount, submitting, submitted, validateModel, getModel, syncDefaults, state, isValidatable, errors, setError, unregister, mounted, initSchema, model, getRegistered } = base;
+    const { options: formOptions, defaults, render, clearDirty, clearTouched, clearError, setModel, fields, submitCount, submitting, submitted, validateModel, syncDefaults, state, hasModel, isValidatable, errors, setError, unregister, mounted, initSchema, model, getRegistered, getVanity } = base;
     react_1.useEffect(() => {
         const init = async () => {
             if (mounted.current)
                 return;
-            debug_init('fields', getRegistered());
-            debug_init('schema', options.validationSchema);
+            debug_init('mount:fields', getRegistered());
+            debug_init('mount:schema', options.validationSchema);
             const { err, data } = await utils_1.me(options.defaults);
-            debug_init('defaults', data);
+            debug_init('mount:defaults', data);
             if (err && utils_1.isPlainObject(err))
                 debug_init('err', err);
             // Err and data both 
@@ -455,7 +494,7 @@ function initForm(options) {
             console.warn(`Cannot handleSubmit using submit handler of undefined.\n      Pass handler as "onSubmit={handleSubmit(your_submit_handler)}".\n      Or pass in options as "options.onSubmit".`);
             return;
         }
-        const handleCallback = (m, e, ev) => {
+        const handleCallback = (_model, _errors, _event) => {
             const errorKeys = Object.keys(errors.current);
             if (errorKeys.length && formOptions.validateSubmitExit) {
                 // tslint:disable-next-line: no-console
@@ -465,9 +504,9 @@ function initForm(options) {
             submitting.current = false;
             submitted.current = true;
             submitCount.current = submitCount.current + 1;
-            errors.current = e || errors.current;
+            errors.current = _errors || errors.current;
             render('form:submit');
-            handler(m, e || {}, ev);
+            handler(_model, _errors || {}, _event);
         };
         return async (event) => {
             submitting.current = true;
@@ -503,6 +542,7 @@ function initForm(options) {
         // Model
         getDefault: base.getDefault,
         getElement: base.getElement,
+        hasModel,
         getModel: base.getModel,
         setModel: base.setModel,
         validateModel: base.validateModel,

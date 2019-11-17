@@ -2,7 +2,7 @@ import React, { FC, InputHTMLAttributes } from 'react';
 import useForm from '..';
 import JsonErrors from './jsonerrors';
 import { string, object, InferType } from 'yup';
-import { KeyOf, UseField } from 'src/types';
+import { KeyOf, IUseFieldHook } from 'src/types';
 
 // tslint:disable no-console 
 
@@ -25,7 +25,7 @@ type Schema = Partial<InferType<typeof schema>>;
 
 // Advanced custom input that binds to Komo.
 type InputProps = {
-  name: KeyOf<Schema>; path?: string, hook: UseField<Schema>;
+  name: KeyOf<Schema>; path?: string, hook: IUseFieldHook<Schema>;
 } & InputHTMLAttributes<HTMLInputElement>;
 
 /**

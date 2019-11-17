@@ -44,8 +44,7 @@ export function yupToErrors<T extends IModel>(
 
   if (!error.inner || !error.inner.length) {
     const element = getElement(error.path);
-    const key = element['name'];
-    const mapTo = element['virtual'] || '';
+    const key = element.name;
     errors[key] = errors[key] || [];
     errors[key].push({
       type: error.type,
@@ -60,8 +59,7 @@ export function yupToErrors<T extends IModel>(
 
     for (const err of error.inner) {
       const element = getElement(err.path);
-      const key = element['name'];
-      const mapTo = element['virtual'] || '';
+      const key = element.name;
       errors[key] = errors[key] || [];
       errors[key].push({
         type: err.type,
@@ -281,7 +279,6 @@ export function normalizeValidator<T extends IModel>(
         .catch(err => {
           return Promise.reject(yupToErrors(err, findField));
         });
-
     };
 
   }
@@ -373,21 +370,40 @@ export function parseYupDefaults<T extends IModel>(schema: ValidationSchema<T>, 
       defaults: {}
     };
 
+  // If init default clone and set as default.
   if (_schema.__INIT_DEFAULTS__)
     _schema = _schema.clone().default(_schema.__INIT_DEFAULTS__);
 
+  // Clone the default values.
   const defaults = { ..._schema.default() };
 
-  if (purge) {
+  // Iterate all fields and delete defaults
+  // this is required when setting defaults
+  // with Yup otherwise your form will never
+  // throw an error for your field as well
+  // yup says....NOPE!!!
+  const purgeFields = (s) => {
 
-    const fields = _schema.fields;
+    const fields = s.fields;
 
     for (const k in fields) {
       if (isUndefined(fields[k])) continue;
-      delete fields[k]._default;
-      delete fields[k]._defaultDefault;
+      if (fields[k].fields) {
+        purgeFields(fields[k]);
+      }
+      else {
+        delete fields[k]._default;
+        delete fields[k]._defaultDefault;
+      }
     }
 
+  };
+
+  if (purge) {
+
+    purgeFields(_schema);
+
+    // Store the init defaults.
     _schema.__INIT_DEFAULTS__ = { ...defaults };
 
   }
@@ -436,7 +452,7 @@ export function castValue(value: any) {
  * 
  * @param handler the cast handler or whether the handler is enabled.
  */
-export function normalizeCasting<T extends IModel>(handler: boolean | CastHandler<T>) {
+export function normalizeCasting<T extends IModel>(handler: boolean | CastHandler) {
 
   handler = isUndefined(handler) ? true : handler;
 
@@ -449,7 +465,7 @@ export function normalizeCasting<T extends IModel>(handler: boolean | CastHandle
 
   return (value: any, path: string, name: KeyOf<T>) => {
     value = castValue(value);
-    (handler as CastHandler<T>)(value, path, name);
+    (handler as CastHandler)(value, path, name);
   };
 
 }

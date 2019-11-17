@@ -62,7 +62,7 @@
 					<a href="_types_.ioptions.html">IOptions</a>
 				</li>
 			</ul>
-			<h1>Interface IOptions&lt;T&gt;</h1>
+			<h1>Interface IOptions&lt;T, D&gt;</h1>
 		</div>
 	</div>
 </header>
@@ -74,6 +74,9 @@
 				<ul class="tsd-type-parameters">
 					<li>
 						<h4>T<span class="tsd-signature-symbol">: </span><a href="_types_.imodel.html" class="tsd-signature-type">IModel</a></h4>
+					</li>
+					<li>
+						<h4>D<span class="tsd-signature-symbol">: </span><a href="_types_.imodel.html" class="tsd-signature-type">IModel</a></h4>
 					</li>
 				</ul>
 			</section>
@@ -112,10 +115,10 @@
 				<section class="tsd-panel tsd-member tsd-kind-property tsd-parent-kind-interface">
 					<a name="casthandler" class="tsd-anchor"></a>
 					<h3><span class="tsd-flag ts-flagOptional">Optional</span> cast<wbr>Handler</h3>
-					<div class="tsd-signature tsd-kind-icon">cast<wbr>Handler<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">boolean</span><span class="tsd-signature-symbol"> | </span><a href="../modules/_types_.html#casthandler" class="tsd-signature-type">CastHandler</a><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">T</span><span class="tsd-signature-symbol">&gt;</span></div>
+					<div class="tsd-signature tsd-kind-icon">cast<wbr>Handler<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">boolean</span><span class="tsd-signature-symbol"> | </span><a href="../modules/_types_.html#casthandler" class="tsd-signature-type">CastHandler</a></div>
 					<aside class="tsd-sources">
 						<ul>
-							<li>Defined in <a href="https://github.com/blujedis/komo/blob/5a1c201/src/types.ts#L214">types.ts:214</a></li>
+							<li>Defined in <a href="https://github.com/blujedis/komo/blob/08f7850/src/types.ts#L215">types.ts:215</a></li>
 						</ul>
 					</aside>
 					<div class="tsd-comment tsd-typography">
@@ -128,10 +131,10 @@
 				<section class="tsd-panel tsd-member tsd-kind-property tsd-parent-kind-interface">
 					<a name="defaults" class="tsd-anchor"></a>
 					<h3><span class="tsd-flag ts-flagOptional">Optional</span> defaults</h3>
-					<div class="tsd-signature tsd-kind-icon">defaults<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">Partial</span><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">T</span><span class="tsd-signature-symbol">&gt;</span><span class="tsd-signature-symbol"> | </span><span class="tsd-signature-type">Promise</span><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">Partial</span><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">T</span><span class="tsd-signature-symbol">&gt;</span><span class="tsd-signature-symbol">&gt;</span></div>
+					<div class="tsd-signature tsd-kind-icon">defaults<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">Partial</span><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">D</span><span class="tsd-signature-symbol">&gt;</span><span class="tsd-signature-symbol"> | </span><span class="tsd-signature-type">Promise</span><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">Partial</span><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">D</span><span class="tsd-signature-symbol">&gt;</span><span class="tsd-signature-symbol">&gt;</span></div>
 					<aside class="tsd-sources">
 						<ul>
-							<li>Defined in <a href="https://github.com/blujedis/komo/blob/5a1c201/src/types.ts#L167">types.ts:167</a></li>
+							<li>Defined in <a href="https://github.com/blujedis/komo/blob/08f7850/src/types.ts#L168">types.ts:168</a></li>
 						</ul>
 					</aside>
 					<div class="tsd-comment tsd-typography">
@@ -146,7 +149,7 @@
 					<div class="tsd-signature tsd-kind-icon">validate<wbr>Blur<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">boolean</span></div>
 					<aside class="tsd-sources">
 						<ul>
-							<li>Defined in <a href="https://github.com/blujedis/komo/blob/5a1c201/src/types.ts#L187">types.ts:187</a></li>
+							<li>Defined in <a href="https://github.com/blujedis/komo/blob/08f7850/src/types.ts#L188">types.ts:188</a></li>
 						</ul>
 					</aside>
 					<div class="tsd-comment tsd-typography">
@@ -161,7 +164,7 @@
 					<div class="tsd-signature tsd-kind-icon">validate<wbr>Change<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">boolean</span></div>
 					<aside class="tsd-sources">
 						<ul>
-							<li>Defined in <a href="https://github.com/blujedis/komo/blob/5a1c201/src/types.ts#L182">types.ts:182</a></li>
+							<li>Defined in <a href="https://github.com/blujedis/komo/blob/08f7850/src/types.ts#L183">types.ts:183</a></li>
 						</ul>
 					</aside>
 					<div class="tsd-comment tsd-typography">
@@ -176,7 +179,7 @@
 					<div class="tsd-signature tsd-kind-icon">validate<wbr>Init<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">boolean</span></div>
 					<aside class="tsd-sources">
 						<ul>
-							<li>Defined in <a href="https://github.com/blujedis/komo/blob/5a1c201/src/types.ts#L203">types.ts:203</a></li>
+							<li>Defined in <a href="https://github.com/blujedis/komo/blob/08f7850/src/types.ts#L204">types.ts:204</a></li>
 						</ul>
 					</aside>
 					<div class="tsd-comment tsd-typography">
@@ -191,7 +194,7 @@
 					<div class="tsd-signature tsd-kind-icon">validate<wbr>Native<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">boolean</span></div>
 					<aside class="tsd-sources">
 						<ul>
-							<li>Defined in <a href="https://github.com/blujedis/komo/blob/5a1c201/src/types.ts#L208">types.ts:208</a></li>
+							<li>Defined in <a href="https://github.com/blujedis/komo/blob/08f7850/src/types.ts#L209">types.ts:209</a></li>
 						</ul>
 					</aside>
 					<div class="tsd-comment tsd-typography">
@@ -206,7 +209,7 @@
 					<div class="tsd-signature tsd-kind-icon">validate<wbr>Submit<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">boolean</span></div>
 					<aside class="tsd-sources">
 						<ul>
-							<li>Defined in <a href="https://github.com/blujedis/komo/blob/5a1c201/src/types.ts#L192">types.ts:192</a></li>
+							<li>Defined in <a href="https://github.com/blujedis/komo/blob/08f7850/src/types.ts#L193">types.ts:193</a></li>
 						</ul>
 					</aside>
 					<div class="tsd-comment tsd-typography">
@@ -221,7 +224,7 @@
 					<div class="tsd-signature tsd-kind-icon">validate<wbr>Submit<wbr>Exit<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">boolean</span></div>
 					<aside class="tsd-sources">
 						<ul>
-							<li>Defined in <a href="https://github.com/blujedis/komo/blob/5a1c201/src/types.ts#L198">types.ts:198</a></li>
+							<li>Defined in <a href="https://github.com/blujedis/komo/blob/08f7850/src/types.ts#L199">types.ts:199</a></li>
 						</ul>
 					</aside>
 					<div class="tsd-comment tsd-typography">
@@ -234,10 +237,10 @@
 				<section class="tsd-panel tsd-member tsd-kind-property tsd-parent-kind-interface">
 					<a name="validationschema" class="tsd-anchor"></a>
 					<h3><span class="tsd-flag ts-flagOptional">Optional</span> validation<wbr>Schema</h3>
-					<div class="tsd-signature tsd-kind-icon">validation<wbr>Schema<span class="tsd-signature-symbol">:</span> <a href="../modules/_types_.html#validationschema" class="tsd-signature-type">ValidationSchema</a><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">T</span><span class="tsd-signature-symbol">&gt;</span></div>
+					<div class="tsd-signature tsd-kind-icon">validation<wbr>Schema<span class="tsd-signature-symbol">:</span> <a href="../modules/_types_.html#validationschema" class="tsd-signature-type">ValidationSchema</a><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">T</span><span class="tsd-signature-symbol"> &amp; </span><span class="tsd-signature-type">Partial</span><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">D</span><span class="tsd-signature-symbol">&gt;</span><span class="tsd-signature-symbol">&gt;</span></div>
 					<aside class="tsd-sources">
 						<ul>
-							<li>Defined in <a href="https://github.com/blujedis/komo/blob/5a1c201/src/types.ts#L172">types.ts:172</a></li>
+							<li>Defined in <a href="https://github.com/blujedis/komo/blob/08f7850/src/types.ts#L173">types.ts:173</a></li>
 						</ul>
 					</aside>
 					<div class="tsd-comment tsd-typography">
@@ -252,7 +255,7 @@
 					<div class="tsd-signature tsd-kind-icon">validation<wbr>Schema<wbr>Purge<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">boolean</span></div>
 					<aside class="tsd-sources">
 						<ul>
-							<li>Defined in <a href="https://github.com/blujedis/komo/blob/5a1c201/src/types.ts#L177">types.ts:177</a></li>
+							<li>Defined in <a href="https://github.com/blujedis/komo/blob/08f7850/src/types.ts#L178">types.ts:178</a></li>
 						</ul>
 					</aside>
 					<div class="tsd-comment tsd-typography">
@@ -269,32 +272,8 @@
 					<li class="globals  ">
 						<a href="../globals.html"><em>Globals</em></a>
 					</li>
-					<li class=" tsd-kind-external-module">
-						<a href="../modules/_example_advanced_.html">"example/advanced"</a>
-					</li>
-					<li class=" tsd-kind-external-module">
-						<a href="../modules/_example_app_.html">"example/app"</a>
-					</li>
-					<li class=" tsd-kind-external-module">
-						<a href="../modules/_example_default_.html">"example/default"</a>
-					</li>
-					<li class=" tsd-kind-external-module">
-						<a href="../modules/_example_hook_.html">"example/hook"</a>
-					</li>
-					<li class=" tsd-kind-external-module">
-						<a href="../modules/_example_index_.html">"example/index"</a>
-					</li>
-					<li class=" tsd-kind-external-module">
-						<a href="../modules/_example_jsonerrors_.html">"example/jsonerrors"</a>
-					</li>
-					<li class=" tsd-kind-external-module">
-						<a href="../modules/_example_material_.html">"example/material"</a>
-					</li>
-					<li class=" tsd-kind-external-module">
-						<a href="../modules/_example_menu_.html">"example/menu"</a>
-					</li>
-					<li class=" tsd-kind-external-module">
-						<a href="../modules/_example_user_.html">"example/user"</a>
+					<li class="label tsd-is-external">
+						<span>Internals</span>
 					</li>
 					<li class=" tsd-kind-external-module">
 						<a href="../modules/_hooks_.html">"hooks"</a>
@@ -332,15 +311,24 @@
 					<li class=" tsd-kind-external-module">
 						<a href="../modules/_validate_.html">"validate"</a>
 					</li>
+					<li class="label tsd-is-external">
+						<span>Externals</span>
+					</li>
+					<li class=" tsd-kind-external-module tsd-is-external">
+						<a href="../modules/_example_jsonerrors_.html">"example/jsonerrors"</a>
+					</li>
+					<li class=" tsd-kind-external-module tsd-is-external">
+						<a href="../modules/_example_virtual_.html">"example/virtual"</a>
+					</li>
 				</ul>
 			</nav>
 			<nav class="tsd-navigation secondary menu-sticky">
 				<ul class="before-current">
 					<li class=" tsd-kind-interface tsd-parent-kind-external-module tsd-has-type-parameter">
-						<a href="_types_.ifindfield.html" class="tsd-kind-icon">IFind<wbr>Field</a>
+						<a href="_types_.iformstate.html" class="tsd-kind-icon">IForm<wbr>State</a>
 					</li>
 					<li class=" tsd-kind-interface tsd-parent-kind-external-module tsd-has-type-parameter">
-						<a href="_types_.iformstate.html" class="tsd-kind-icon">IForm<wbr>State</a>
+						<a href="_types_.igetelement.html" class="tsd-kind-icon">IGet<wbr>Element</a>
 					</li>
 					<li class=" tsd-kind-interface tsd-parent-kind-external-module tsd-has-type-parameter">
 						<a href="_types_.ikomo.html" class="tsd-kind-icon">IKomo</a>
@@ -414,6 +402,12 @@
 					<li class=" tsd-kind-interface tsd-parent-kind-external-module tsd-has-type-parameter">
 						<a href="_types_.iusefield.html" class="tsd-kind-icon">IUse<wbr>Field</a>
 					</li>
+					<li class=" tsd-kind-interface tsd-parent-kind-external-module tsd-has-type-parameter">
+						<a href="_types_.iusefieldhook.html" class="tsd-kind-icon">IUse<wbr>Field<wbr>Hook</a>
+					</li>
+					<li class=" tsd-kind-interface tsd-parent-kind-external-module tsd-has-type-parameter">
+						<a href="_types_.iusefieldshook.html" class="tsd-kind-icon">IUse<wbr>Fields<wbr>Hook</a>
+					</li>
 					<li class=" tsd-kind-interface tsd-parent-kind-external-module">
 						<a href="_types_.ivalidationerror.html" class="tsd-kind-icon">IValidation<wbr>Error</a>
 					</li>
@@ -426,7 +420,7 @@
 					<li class=" tsd-kind-type-alias tsd-parent-kind-external-module tsd-is-not-exported">
 						<a href="../modules/_types_.html#basepicked" class="tsd-kind-icon">Base<wbr>Picked</a>
 					</li>
-					<li class=" tsd-kind-type-alias tsd-parent-kind-external-module tsd-has-type-parameter">
+					<li class=" tsd-kind-type-alias tsd-parent-kind-external-module">
 						<a href="../modules/_types_.html#casthandler" class="tsd-kind-icon">Cast<wbr>Handler</a>
 					</li>
 					<li class=" tsd-kind-type-alias tsd-parent-kind-external-module tsd-has-type-parameter">
@@ -450,17 +444,14 @@
 					<li class=" tsd-kind-type-alias tsd-parent-kind-external-module tsd-has-type-parameter">
 						<a href="../modules/_types_.html#promiseerrormodel" class="tsd-kind-icon">Promise<wbr>Error<wbr>Model</a>
 					</li>
-					<li class=" tsd-kind-type-alias tsd-parent-kind-external-module">
+					<li class=" tsd-kind-type-alias tsd-parent-kind-external-module tsd-has-type-parameter">
 						<a href="../modules/_types_.html#registerelement" class="tsd-kind-icon">Register<wbr>Element</a>
 					</li>
 					<li class=" tsd-kind-type-alias tsd-parent-kind-external-module tsd-has-type-parameter">
+						<a href="../modules/_types_.html#registervirtual" class="tsd-kind-icon">Register<wbr>Virtual</a>
+					</li>
+					<li class=" tsd-kind-type-alias tsd-parent-kind-external-module tsd-has-type-parameter">
 						<a href="../modules/_types_.html#submithandler" class="tsd-kind-icon">Submit<wbr>Handler</a>
-					</li>
-					<li class=" tsd-kind-type-alias tsd-parent-kind-external-module tsd-has-type-parameter">
-						<a href="../modules/_types_.html#usefield" class="tsd-kind-icon">Use<wbr>Field</a>
-					</li>
-					<li class=" tsd-kind-type-alias tsd-parent-kind-external-module tsd-has-type-parameter">
-						<a href="../modules/_types_.html#usefields" class="tsd-kind-icon">Use<wbr>Fields</a>
 					</li>
 					<li class=" tsd-kind-type-alias tsd-parent-kind-external-module tsd-has-type-parameter">
 						<a href="../modules/_types_.html#validatemodelhandler" class="tsd-kind-icon">Validate<wbr>Model<wbr>Handler</a>
@@ -470,6 +461,9 @@
 					</li>
 					<li class=" tsd-kind-type-alias tsd-parent-kind-external-module tsd-has-type-parameter">
 						<a href="../modules/_types_.html#valueof" class="tsd-kind-icon">Value<wbr>Of</a>
+					</li>
+					<li class=" tsd-kind-type-alias tsd-parent-kind-external-module tsd-is-not-exported">
+						<a href="../modules/_types_.html#virtualpicked" class="tsd-kind-icon">Virtual<wbr>Picked</a>
 					</li>
 				</ul>
 			</nav>

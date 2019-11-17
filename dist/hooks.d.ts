@@ -1,46 +1,11 @@
-import { IModel, IKomo, IUseFields } from './types';
-import { BaseSyntheticEvent } from 'react';
+import { IModel, IKomo, IUseFields, IUseField } from './types';
 export declare function initHooks<T extends IModel>(komo: IKomo<T>): {
-    useField: (name: Extract<keyof T, string>) => {
-        register: import("./types").IRegister<T>;
-        readonly mounted: boolean;
-        readonly element: any;
-        readonly errors: import("./types").ErrorModel<T>[Extract<keyof T, string>];
-        readonly valid: boolean;
-        readonly invalid: boolean;
-        readonly touched: boolean;
-        readonly dirty: boolean;
-        readonly name: Extract<keyof T, string>;
-        readonly path: any;
-        value: any;
-        data: any;
-        readonly default: any;
-        readonly message: string;
-        readonly messages: string[];
-        focus(e?: BaseSyntheticEvent<object, any, any>): void;
-        blur(e?: BaseSyntheticEvent<object, any, any>): void;
-        update(value: T[Extract<keyof T, string>], modelValue?: any, validate?: boolean): void;
-        validate(): import("./types").PromiseStrict<Partial<T>, Partial<import("./types").ErrorModel<T>>>;
+    useField: {
+        <K extends string>(name: K, virtual: boolean): IUseField<Record<K, T>, import("./types").IRegister<Record<K, T>>>;
+        (name: Extract<keyof T, string>): IUseField<T, import("./types").IRegister<T>>;
     };
-    useFields: (...names: any[]) => IUseFields<any, {
-        register: import("./types").IRegister<T>;
-        readonly mounted: boolean;
-        readonly element: any;
-        readonly errors: import("./types").ErrorModel<T>[Extract<keyof T, string>];
-        readonly valid: boolean;
-        readonly invalid: boolean;
-        readonly touched: boolean;
-        readonly dirty: boolean;
-        readonly name: Extract<keyof T, string>;
-        readonly path: any;
-        value: any;
-        data: any;
-        readonly default: any;
-        readonly message: string;
-        readonly messages: string[];
-        focus(e?: BaseSyntheticEvent<object, any, any>): void;
-        blur(e?: BaseSyntheticEvent<object, any, any>): void;
-        update(value: T[Extract<keyof T, string>], modelValue?: any, validate?: boolean): void;
-        validate(): import("./types").PromiseStrict<Partial<T>, Partial<import("./types").ErrorModel<T>>>;
-    }>;
+    useFields: {
+        <A extends string>(vanity: boolean, ...keys: A[]): IUseFields<A, IUseField<Record<A, T>, import("./types").IRegister<Record<A, T>>>>;
+        <K_1 extends Extract<keyof T, string>>(...names: K_1[]): IUseFields<K_1, IUseField<T, import("./types").IRegister<T>>>;
+    };
 };

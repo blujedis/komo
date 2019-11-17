@@ -2,15 +2,27 @@
 import {
   isRadio, isCheckbox, addListener, isTextLike, removeListener,
   initObserver, isBooleanLike, isString, isUndefined, isNullOrUndefined, me, isFunction,
-  isObject, debuggers, isSelectMultiple, isEqual, isArray
+  debuggers, isSelectMultiple, isEqual, isArray, isElementOrVirtual, isObject, isPreventEnter, noop
 } from './utils';
 import { parseNativeValidators } from './validate';
 import {
   IRegisterElement, IRegisterOptions, IRegisteredElement,
   IModel, IKomoBase, RegisterElement, CastHandler, PromiseStrict, ErrorModel, KeyOf
 } from './types';
+import { create } from 'domain';
+
 
 const { debug_register, debug_event, debug_set } = debuggers;
+
+/**
+ * Default options used upon registering an 
+ * element or virtual element.
+ */
+const REGISTER_DEFAULTS = {
+  validateBlur: true,
+  enableBlurEvents: true,
+  enableChangeEvents: false
+};
 
 /**
  * Creates initialized methods for binding and registering an element.
@@ -24,7 +36,7 @@ export function initElement<T extends IModel>(api?: IKomoBase<T>) {
     getModel, isTouched, isDirty, setDefault, mounted,
     setDirty, setTouched, removeDirty, isValidateBlur, isValidateChange,
     validateModelAt, isValidatable, removeError, setError, render, getElement,
-    isDirtyCompared
+    isDirtyCompared, model, hasModel
   } = api;
 
   /**
@@ -197,7 +209,7 @@ export function initElement<T extends IModel>(api?: IKomoBase<T>) {
    */
   function setElementValue(element: IRegisteredElement<T>, value: any) {
 
-    value = isUndefined(value) ? '' : value;
+    value = isNullOrUndefined(value) ? '' : value;
 
     if (isRadio(element.type)) {
       setRadioChecked(element.name, value);
@@ -247,6 +259,12 @@ export function initElement<T extends IModel>(api?: IKomoBase<T>) {
     else {
       value = element.defaultValuePersist;
       element.value = value;
+      // Must have string here.
+      if (isObject(value)) {
+        // tslint:disable-next-line: no-console
+        console.error(`Element "${element.name}" contains invalid typeof "${typeof value}", ${element.type} can only accept strings. Is this a virtual?`);
+        return;
+      }
     }
 
     // Don't set undefined unchecked
@@ -254,6 +272,7 @@ export function initElement<T extends IModel>(api?: IKomoBase<T>) {
     if (isUndefined(value))
       return value;
 
+    // Setting parsed default to model.
     setModel(element.path, value);
 
     return value;
@@ -266,13 +285,13 @@ export function initElement<T extends IModel>(api?: IKomoBase<T>) {
    * @param element the element to set state for.
    * @param value the value used to compare state.
    */
-  function setElementState(element: IRegisteredElement<T>, value: any) {
+  function setElementState(element: IRegisteredElement<T>, modelValue: any) {
 
     const name = element.name;
 
     const prevTouched = isTouched(name);
     const prevDirty = isDirty(name);
-    const dirtyCompared = isDirtyCompared(name, value);
+    const dirtyCompared = isDirtyCompared(name, modelValue);
 
     let dirty = false;
     let touched = false;
@@ -290,16 +309,9 @@ export function initElement<T extends IModel>(api?: IKomoBase<T>) {
     if (!dirtyCompared && prevDirty)
       removeDirty(name);
 
-    // Updating the model here so if 
-    // empty string set to undefined.
-    if (value === '')
-      value = undefined;
-
     return {
       dirty,
-      touched,
-      value,
-      modelValue: undefined
+      touched
     };
 
   }
@@ -312,35 +324,38 @@ export function initElement<T extends IModel>(api?: IKomoBase<T>) {
    */
   function setElementModel(element: IRegisteredElement<T>, modelValue: any) {
 
-    const castHandler = komoOptions.castHandler as CastHandler<T>;
+    const castHandler = komoOptions.castHandler as CastHandler;
 
-    modelValue = castHandler(modelValue, element.path, element.name);
+    if (modelValue === '') modelValue = undefined;
 
-    // Set the model value.
-    setModel(element.path, modelValue);
+    return new Promise((resolve, reject) => {
+      modelValue = castHandler(modelValue, element.path, element.name);
 
-    return modelValue;
+      // Set the model value.
+      setModel(element.path, modelValue);
+
+      resolve(modelValue);
+
+    }) as Promise<T>;
 
   }
 
-  function updateStateAndModel(element: IRegisteredElement<T>, value?: any, modelValue?: any) {
+  async function updateStateAndModel(element: IRegisteredElement<T>, value?: any, modelValue?: any) {
 
     // if no value is provided then
     // get the normalized value.
     value = isUndefined(value) ? getElementValue(element) : value;
 
-    // Update the state.
-    const elementState = setElementState(element, value);
-
-    debug_set('update', element.name, element.path, element.virtual, elementState);
-
     // Ensure the model value.
     modelValue = isUndefined(modelValue) ? value : modelValue;
 
-    // Update the model value.
-    elementState.modelValue = setElementModel(element, modelValue);
+    // Update the state.
+    const elementState = setElementState(element, modelValue);
 
-    return elementState;
+    debug_set('update', element.name, element.path, element.virtual, elementState);
+
+    // Update the model value.
+    await setElementModel(element, modelValue);
 
   }
 
@@ -353,12 +368,26 @@ export function initElement<T extends IModel>(api?: IKomoBase<T>) {
 
     let events = [];
 
-    // Cannot attach events to virtuals.
-    if (element.virtual)
-      return events;
+    // Attach event to prevent enter key 
+    // submissions for input like types
+    // such as textarea, text, select etc.
+    if (isPreventEnter(element.type)) {
+
+      const handleEnter = (e: Event) => {
+        // @ts-ignore
+        if (e.key === 'Enter')
+          return e.preventDefault();
+      };
+
+      addListener(element, 'keypress', handleEnter);
+      events = [...events, ['keypress', handleEnter]];
+
+    }
+
+    if (!element.enableBlurEvents && !element.enableChangeEvents) return events;
 
     const handleBlur = async (e: Event) => {
-      updateStateAndModel(element);
+      await updateStateAndModel(element);
       debug_event(element.name, element.value);
       if (isValidateBlur(element)) {
         await me(element.validate());
@@ -366,24 +395,24 @@ export function initElement<T extends IModel>(api?: IKomoBase<T>) {
     };
 
     const handleChange = async (e: Event) => {
-      updateStateAndModel(element);
+      await updateStateAndModel(element);
       debug_event(element.name, element.value);
       if (isValidateChange(element)) {
         await me(element.validate());
       }
     };
 
-    if (element.enableModelUpdate !== false) {
-
-      // Attach blur
+    // Attach blur
+    if (element.enableBlurEvents) {
       addListener(element, 'blur', handleBlur);
-      events = [['blur', handleBlur]];
+      events = [...events, ['blur', handleBlur]];
+    }
 
-      // Attach change.
+    // Attach change.
+    if (element.enableChangeEvents) {
       const changeEvent = isTextLike(element.type) ? 'input' : 'change';
       addListener(element, changeEvent, handleChange);
       events = [...events, [changeEvent, handleChange]];
-
     }
 
     return events;
@@ -395,8 +424,9 @@ export function initElement<T extends IModel>(api?: IKomoBase<T>) {
    * 
    * @param element the element to be validated.
    * @param value the value to be validated.
+   * @param shouldRender used to suppress unnecessary renders when validating multiple.
    */
-  async function validateElementModel(element: IRegisteredElement<T>, value: any) {
+  async function validateElementModel(element: IRegisteredElement<T>, value: any, shouldRender: boolean = true) {
 
     if (!isValidatable())
       return Promise.resolve(value) as Promise<Partial<T>>;
@@ -405,7 +435,8 @@ export function initElement<T extends IModel>(api?: IKomoBase<T>) {
 
     if (err) {
       setError(element.name, err[element.name]);
-      render('validate:invalid');
+      if (shouldRender)
+        render('validate:invalid');
       return Promise.reject(err) as Promise<Partial<ErrorModel<T>>>;
     }
 
@@ -413,9 +444,37 @@ export function initElement<T extends IModel>(api?: IKomoBase<T>) {
     removeError(element.name);
 
     // Render and update view.
-    render('validate:valid');
+    if (shouldRender)
+      render('validate:valid');
 
     return Promise.resolve(data) as Promise<Partial<T>>;
+
+  }
+
+  /**
+   * Triggers validation for element model and also any additional elements.
+   * 
+   * @param element the primary element triggering validate.
+   * @param value the value to return if valid.
+   * @param additional additional elements to trigger validation on.
+   */
+  async function validateElementModels(
+    element: IRegisteredElement<T>, value: any, additional: Array<IRegisteredElement<T>>) {
+
+    if (!isValidatable())
+      return Promise.resolve(value) as Promise<Partial<T>>;
+
+    if (!additional || !(additional as any).length)
+      return validateElementModel(element, value);
+
+    const createPromise = (el: IRegisteredElement<T>) => {
+      return validateElementModel(el, el.value, false);
+    };
+
+    additional.unshift(element);
+    const promises = additional.map(el => createPromise);
+
+    return Promise.all(promises).finally(() => render('validate:multiple'));
 
   }
 
@@ -434,7 +493,7 @@ export function initElement<T extends IModel>(api?: IKomoBase<T>) {
       events = attachEvents(element);
 
     // Update the model, value and state.
-    element.update = async (value: any, modelValue: any, validate: boolean = true) => {
+    element.update = async (value: any, modelValue: any, validate: boolean | string[] = true) => {
 
       // Select multiples use model array 
       // to set it's slected values.
@@ -442,13 +501,18 @@ export function initElement<T extends IModel>(api?: IKomoBase<T>) {
 
       setElementValue(element, setVal);
 
-      updateStateAndModel(element, value, modelValue);
+      await updateStateAndModel(element, value, modelValue);
 
       if (!validate) {
         render('update:novalidate');
         return;
       }
-      await me(validateElementModel(element, value));
+
+      const additional = isArray(validate) ? (validate as string[]).map(v => getElement(v)) : undefined;
+
+      // await me(validateElementModels(element, value, additional));
+      await me(validateElementModels(element, value, additional));
+
     };
 
     element.validate = async () => {
@@ -461,7 +525,7 @@ export function initElement<T extends IModel>(api?: IKomoBase<T>) {
       setElementDefault(element);
     };
 
-    element.reinit = (options?: { defaultValue?: any, defaultChecked?: boolean }) => {
+    element.reinit = () => {
       bindElement(element, true);
     };
 
@@ -503,21 +567,34 @@ export function initElement<T extends IModel>(api?: IKomoBase<T>) {
     const modelVal = getModel(element.path);
 
     if (isRadio(element.type)) {
+
+      const initVal = element.initValue(model.current);
+      const initChecked = element.initChecked(model.current);
+
       element.defaultValue = element.defaultValuePersist =
-        element.initValue || element.value || modelVal || '';
+        initVal || element.value || modelVal || '';
+
       element.defaultChecked = element.defaultCheckedPersist =
-        element.initChecked || element.checked || modelVal === element.value;
+        initChecked || element.checked || modelVal === element.value;
+
     }
 
     else if (isCheckbox(element.type)) {
+
+      const initVal = element.initValue(model.current);
+      const initChecked = element.initChecked(model.current);
+
       element.defaultValue = element.defaultValuePersist =
-        element.initValue || element.value || element.checked || modelVal || false;
+        initVal || element.value || element.checked || modelVal || false;
+
       element.defaultChecked = element.defaultCheckedPersist = element.defaultValue || false;
     }
 
     else if (element.multiple) {
 
-      let arr = element.defaultValue = element.initValue || element.value || modelVal || [];
+      const initVal = element.initValue(model.current);
+
+      let arr = element.defaultValue = initVal || element.value || modelVal || [];
 
       if (!Array.isArray(arr))
         arr = [element.defaultValue];
@@ -538,9 +615,90 @@ export function initElement<T extends IModel>(api?: IKomoBase<T>) {
 
     else {
 
-      element.defaultValue = element.defaultValuePersist = element.initValue || element.value || modelVal || '';
+      const initVal = element.initValue(model.current);
+
+      element.defaultValue = element.defaultValuePersist =
+        initVal || element.value || modelVal || '';
 
     }
+
+  }
+
+  /**
+   * Normalizes the element merging user options with element options/config.
+   * 
+   * @param element the element to be normalized.
+   * @param options user provided options to initialize with.
+   */
+  function normalizeElement(element: IRegisteredElement<T>, options?: IRegisterOptions<T>) {
+
+    options = { ...REGISTER_DEFAULTS, ...options };
+
+    if (element.virtual && (element.path || options.path)) {
+      // tslint:disable-next-line: no-console
+      console.error(`Virtual element "${element.name}" cannot contain a model path, please specify  defaultValue or defaultChecked.`);
+      return null;
+    }
+
+    element.path = options.path || element.name;
+
+    if (options) {
+
+      // Check these manually rather than use a merge lib
+      // otherwise we end up clobbering the element.
+
+      if (!isUndefined(options.defaultValue) && !isFunction(options.defaultValue))
+        options.defaultValue = noop(options.defaultValue);
+
+      if (!isUndefined(options.defaultChecked) && !isFunction(options.defaultChecked))
+        options.defaultChecked = noop(options.defaultChecked);
+
+      element.initValue = options.defaultValue;
+      element.initChecked = options.defaultChecked as any;
+
+      element.validateChange = options.validateChange;
+      element.validateBlur = options.validateBlur;
+      element.enableNativeValidation = options.enableNativeValidation;
+      element.enableChangeEvents = options.enableChangeEvents;
+      element.enableBlurEvents = options.enableBlurEvents;
+
+      // NOTE: Above options can only be set by custom options object
+      //       hence ther is no need to check the element's value.
+
+      if (options.required)
+        element.required = options.required || element.required;
+
+      if (options.min)
+        element.min = options.min || element.min;
+
+      if (options.max)
+        element.max = options.max || element.max;
+
+      if (options.pattern)
+        element.pattern = options.pattern || element.pattern;
+
+      if (options.minLength)
+        element.minLength = options.minLength || element.minLength;
+
+      if (options.maxLength)
+        element.maxLength = options.maxLength || element.maxLength;
+
+    }
+
+    // Treat virtuals as simple text fields only.
+    // cannot be radios, checkboxes etc.
+    // they also cannot auto update the model.
+    if (element.virtual) {
+      element.type = 'text';
+      element.multiple = false;
+      element.enableBlurEvents = false;
+      element.enableChangeEvents = false;
+    }
+
+    element.initValue = element.initValue || noop();
+    element.initChecked = element.initChecked || noop();
+
+    return element;
 
   }
 
@@ -556,13 +714,7 @@ export function initElement<T extends IModel>(api?: IKomoBase<T>) {
     if (!element.name) {
       // tslint:disable-next-line: no-console
       console.warn(`Element of tag "${element.tagName || 'null'}" could NOT be registered using name of undefined.`);
-      return;
-    }
-
-    // If virtual element can only have type of "text".
-    if (element.virtual) {
-      element.type = 'text';
-      element.multiple = false; // shouldn't be set but just in case.
+      return null;
     }
 
     // Normalizes the element and defaults for use with Komo.
@@ -583,58 +735,17 @@ export function initElement<T extends IModel>(api?: IKomoBase<T>) {
     // Set the Initial Value.
     const value = setElementDefault(element);
 
+    // Set the default model value.
     setDefault(element.path, value);
 
     // Attach/extend element with events.
     extendEvents(element, rebind);
 
-    // Add to current field to the collection.
-    if (!rebind)
-      fields.current.add(element as IRegisteredElement<any>);
+    if (!rebind) {
 
-    return element;
+      // Add to current field to the collection.
+      fields.current.add(element as IRegisteredElement<T>);
 
-  }
-
-  /**
-   * Normalizes the element merging user options with element options/config.
-   * 
-   * @param element the element to be normalized.
-   * @param options user provided options to initialize with.
-   */
-  function normalizeElement(element: IRegisteredElement<T>, options: IRegisterOptions<T> = {}) {
-
-    element.name = (options.name || element.name) as KeyOf<T>;
-    element.path = options.path || element.name;
-
-    element.initValue = options.defaultValue;
-    element.initChecked = options.defaultChecked;
-    element.validateChange = options.validateChange;
-    element.validateBlur = options.validateBlur;
-    element.enableNativeValidation = options.enableNativeValidation;
-    element.enableModelUpdate = options.enableModelUpdate;
-
-    if (options.required)
-      element.required = options.required || element.required;
-
-    if (options.min)
-      element.min = options.min;
-
-    if (options.max)
-      element.max = options.max;
-
-    if (options.pattern)
-      element.pattern = options.pattern;
-
-    if (options.minLength)
-      element.minLength = options.minLength;
-
-    if (options.maxLength)
-      element.maxLength = options.maxLength;
-
-    if (element.virtual) {
-      element.type = 'text';
-      element.multiple = false;
     }
 
     return element;
@@ -659,12 +770,8 @@ export function initElement<T extends IModel>(api?: IKomoBase<T>) {
     if (isNullOrUndefined(elementOrOptions))
       return;
 
-    const hasElement = arguments.length === 1 && isObject(elementOrOptions) &&
-      (elementOrOptions as any).nodeName ||
-      (elementOrOptions as any).virtual ? elementOrOptions as IRegisterElement : null;
-
     // No element just config return callback to get element.
-    if (!hasElement) {
+    if (!isElementOrVirtual(elementOrOptions)) {
 
       if (!isString(elementOrOptions)) {
         options = elementOrOptions as IRegisterOptions<T>;
@@ -682,12 +789,15 @@ export function initElement<T extends IModel>(api?: IKomoBase<T>) {
         if (!_element || isRegistered(_element))
           return;
 
-        normalizeElement(_element, options);
+        const normalized = normalizeElement(_element, options);
+
+        if (!normalized)
+          return;
 
         if (_element.virtual)
           debug_register('virtual', _element.name, _element.path, _element.virtual);
         else
-          debug_register('custom', _element.name, _element.path, _element.virtual);
+          debug_register('custom', _element.name, _element.path);
 
         return bindElement(_element);
 
@@ -698,7 +808,10 @@ export function initElement<T extends IModel>(api?: IKomoBase<T>) {
     if (!elementOrOptions || isRegistered(elementOrOptions as IRegisteredElement<T>))
       return;
 
-    debug_register((elementOrOptions as any).name);
+    debug_register((elementOrOptions as IRegisteredElement<T>).name);
+
+    if (!normalizeElement(elementOrOptions as IRegisteredElement<T>, elementOrOptions as IRegisterOptions<T>))
+      return null;
 
     // ONLY element was passed.
     return bindElement(elementOrOptions as IRegisteredElement<T>);

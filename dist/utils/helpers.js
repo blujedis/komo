@@ -11,13 +11,22 @@ exports.isEqual = lodash_isequal_1.default;
  * @param tag the tag type or object containing type.
  * @param match the value to match.
  */
-function isTagType(tag, match) {
+function isElementType(tag, match) {
     const compare = ((typeof tag === 'object' ? tag.type : tag) || '').toLowerCase();
     if (!compare)
         return false;
     return compare.startsWith(match);
 }
 // PUBLIC //
+/**
+ * Non operation function.
+ *
+ * @param def a default value to return for noop.
+ */
+function noop(def) {
+    return (...args) => def || undefined;
+}
+exports.noop = noop;
 /**
  * Promise wrapper that returns an object when used
  * with `await` preventing the need for try/catch.
@@ -38,7 +47,7 @@ exports.me = (promise) => {
  * @param value the string or object containing type to inspect.
  */
 function isRadio(value) {
-    return isTagType(value, 'radio');
+    return isElementType(value, 'radio');
 }
 exports.isRadio = isRadio;
 /**
@@ -47,7 +56,7 @@ exports.isRadio = isRadio;
  * @param value the string or object containing type to inspect.
  */
 function isCheckbox(value) {
-    return isTagType(value, 'checkbox');
+    return isElementType(value, 'checkbox');
 }
 exports.isCheckbox = isCheckbox;
 /**
@@ -56,7 +65,7 @@ exports.isCheckbox = isCheckbox;
  * @param value the string or object containing type to inspect.
  */
 function isSelect(value) {
-    return isTagType(value, 'select');
+    return isElementType(value, 'select');
 }
 exports.isSelect = isSelect;
 /**
@@ -65,7 +74,7 @@ exports.isSelect = isSelect;
  * @param value the string or object containing type to inspect.
  */
 function isSelectOne(value) {
-    return isTagType(value, 'select-one');
+    return isElementType(value, 'select-one');
 }
 exports.isSelectOne = isSelectOne;
 /**
@@ -74,25 +83,25 @@ exports.isSelectOne = isSelectOne;
  * @param value the string or object containing type to inspect.
  */
 function isSelectMultiple(value) {
-    return isTagType(value, 'select-multiple');
+    return isElementType(value, 'select-multiple');
 }
 exports.isSelectMultiple = isSelectMultiple;
 /**
- * Checks if value or value.type is "input".
+ * Checks if value or value.type is "text".
  *
  * @param value the string or object containing type to inspect.
  */
-function isInput(value) {
-    return isTagType(value, 'input');
+function isText(value) {
+    return isElementType(value, 'text');
 }
-exports.isInput = isInput;
+exports.isText = isText;
 /**
  * Checks if value or value.type is "textarea".
  *
  * @param value the string or object containing type to inspect.
  */
 function isTextarea(value) {
-    return isTagType(value, 'textarea');
+    return isElementType(value, 'textarea');
 }
 exports.isTextarea = isTextarea;
 /**
@@ -101,7 +110,7 @@ exports.isTextarea = isTextarea;
  * @param value the string or object containing type to inspect.
  */
 function isHidden(value) {
-    return isTagType(value, 'hidden');
+    return isElementType(value, 'hidden');
 }
 exports.isHidden = isHidden;
 /**
@@ -110,7 +119,7 @@ exports.isHidden = isHidden;
  * @param value the string or object containing type to inspect.
  */
 function isFile(value) {
-    return isTagType(value, 'file');
+    return isElementType(value, 'file');
 }
 exports.isFile = isFile;
 /**
@@ -124,6 +133,17 @@ function isTextLike(value) {
         'checkbox', 'file', 'submit', 'reset'].includes(type);
 }
 exports.isTextLike = isTextLike;
+/**
+ * Checks if element is of type that should prevent enter key submits.
+ *
+ * @param value the value to check element type.
+ */
+function isPreventEnter(value) {
+    const type = value.type || value;
+    return ['select-one', 'select-multiple', 'text',
+        'textarea', 'file'].includes(type);
+}
+exports.isPreventEnter = isPreventEnter;
 /**
  * Checks loosely if value is a promise.
  *
@@ -148,7 +168,7 @@ exports.isBooleanLike = isBooleanLike;
  * @param value the value to inspect.
  */
 function isTruthy(value) {
-    return (typeof value !== undefined &&
+    return (typeof value !== 'undefined' &&
         value !== undefined &&
         value !== null &&
         value !== false &&
@@ -162,7 +182,7 @@ exports.isTruthy = isTruthy;
  * @param value the value to inspect.
  */
 function isUndefined(value) {
-    return value === undefined;
+    return typeof value === 'undefined';
 }
 exports.isUndefined = isUndefined;
 /**
@@ -280,4 +300,37 @@ function extend(target, source) {
     return target;
 }
 exports.extend = extend;
+/**
+ * Checks if an object is an element.
+ *
+ * @param value the value to inspect as element.
+ */
+function isElement(value) {
+    // @ts-ignore
+    if (!isObject(value) || !value.nodeName)
+        return false;
+    return value instanceof Element || value instanceof HTMLDocument;
+}
+exports.isElement = isElement;
+/**
+ * Checks if an object is an element or is a virtual.
+ *
+ * @param value the value to inspect as element or virtual.
+ */
+function isVirtual(value) {
+    if (!isObject(value))
+        return false;
+    // @ts-ignore
+    return (value || {}).virtual;
+}
+exports.isVirtual = isVirtual;
+/**
+ * Checks if an object is an element or a virtual element.
+ *
+ * @param value the value to inspect as element or virtual.
+ */
+function isElementOrVirtual(value) {
+    return isElement(value) || isVirtual(value);
+}
+exports.isElementOrVirtual = isElementOrVirtual;
 //# sourceMappingURL=helpers.js.map

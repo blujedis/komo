@@ -156,7 +156,7 @@ export interface IGetElement<T extends IModel> {
 
 }
 
-export type CastHandler<T extends IModel> = (value: any, path?: string, name?: KeyOf<T>) => any;
+export type CastHandler = <T extends IModel>(value: any, path?: string, name?: KeyOf<T>) => any;
 
 // OPTIONS //
 
@@ -212,7 +212,7 @@ export interface IOptions<T extends IModel, D extends IModel = {}> {
    * True to enable casting using Yup internally, false or null to disable or custom function
    * for user defined model value casting.
    */
-  castHandler?: boolean | CastHandler<T & Partial<D>>;
+  castHandler?: boolean | CastHandler;
 
 }
 
@@ -224,19 +224,14 @@ export interface IOptions<T extends IModel, D extends IModel = {}> {
 export interface IRegisterOptions<T extends IModel> {
 
   /**
-   * The name of the element.
-   */
-  name?: string | KeyOf<T>;
-
-  /**
    * The default value to use on resets.
    */
-  defaultValue?: any;
+  defaultValue?: any | (<M extends T>(model: M) => any);
 
   /**
    * The default value to use when is element type using "checked".
    */
-  defaultChecked?: boolean;
+  defaultChecked?: boolean | (<M extends T>(model: M) => any);
 
   /**
    * Whether the element should be initialized as required.
@@ -278,7 +273,7 @@ export interface IRegisterOptions<T extends IModel> {
   /**
    * Maps to an existing model prop virtually.
    */
-  virtual?: boolean; // string | KeyOf<T>;
+  // virtual?: boolean;
 
   /**
    * Whether element should validate on change overrides main options.
@@ -296,12 +291,18 @@ export interface IRegisterOptions<T extends IModel> {
   enableNativeValidation?: boolean;
 
   /**
-   * When true element auto updates the model on blur or change. This is not to be confused
-   * with validateChange or validateBlur. Set to false to update your model manually.
+   * Enables the blur event value/model update handler (default: true);
    */
-  enableModelUpdate?: boolean;
+  enableBlurEvents?: boolean;
+
+  /**
+   * Enables the change event value/model update handler (default: false);
+   */
+  enableChangeEvents?: boolean;
 
 }
+
+type VirtualPicked = 'defaultValue' | 'defaultChecked' | 'required' | 'min' | 'max' | 'minLength' | 'maxLength' | 'pattern';
 
 /**
  * Interface for registering an element, extends HTMLElement.
@@ -393,24 +394,30 @@ export interface IRegisteredElement<T extends IModel> extends IRegisterElement {
   // CUSTOM PROPS //
 
   /**
-   * An alias name for virtual elements.
-   */
-  virtual?: boolean; // KeyOf<T>;
-
-  /**
    * The alternate model path for getting/setting field value.
    */
   path?: string;
 
   /**
+   * Indicates is not bound to element.
+   */
+  virtual?: boolean;
+
+  /**
+   * Inidicates this is a vanity property that is either virtual, nested or complex
+   * that does NOT directly bind to the top level props of the model.
+   */
+  vanity?: boolean;
+
+  /**
    * The initialized value if any.
    */
-  initValue?: any;
+  initValue?: (<M extends T>(model: M) => any);
 
   /**
    * The initialized checked value if any.
    */
-  initChecked?: boolean;
+  initChecked?: (<M extends T>(model: M) => any);
 
   /**
    * Same as defaultValue but some libs
@@ -440,10 +447,14 @@ export interface IRegisteredElement<T extends IModel> extends IRegisterElement {
   enableNativeValidation?: boolean;
 
   /**
-   * When true element auto updates the model on blur or change. This is not to be confused
-   * with validateChange or validateBlur. Set to false to update your model manually.
+   * Enables the blur event value/model update handler (default: true);
    */
-  enableModelUpdate?: boolean;
+  enableBlurEvents?: boolean;
+
+  /**
+   * Enables the change event value/model update handler (default: false);
+   */
+  enableChangeEvents?: boolean;
 
   /**
    * Updates the form element's state and data model value triggering 
@@ -469,7 +480,7 @@ export interface IRegisteredElement<T extends IModel> extends IRegisterElement {
   /**
    * Re initializes the element defaults.
    */
-  reinit?: (options?: { defaultValue?: any, defaultChecked?: boolean }) => void;
+  reinit?: () => void;
 
   /**
    * Unbinds and unregisters element from Komo.
@@ -495,7 +506,14 @@ export type RegisterElement<T extends IModel> =
 export interface IRegister<T extends IModel> {
 
   /**
-   * Registers an element with Komo using custom options.
+   * Registers a virtual element with Komo using options.
+   * 
+   * @param options the element registration options.
+   */
+  (options: Pick<IRegisterOptions<T>, VirtualPicked>, virtual: boolean): RegisterElement<T>;
+
+  /**
+   * Registers an element with Komo using options.
    * 
    * @param options the element registration options.
    */
@@ -507,6 +525,12 @@ export interface IRegister<T extends IModel> {
   (element: IRegisterElement): void;
 
 }
+
+/**
+ * Interface for registering an element.
+ */
+export type RegisterVirtual<T extends IModel> =
+  (options: Pick<IRegisterOptions<T>, VirtualPicked>) => RegisterElement<T>;
 
 // ERRORS //
 
@@ -570,74 +594,79 @@ export interface IFormState<T extends IModel> {
   /**
    * The data model.
    */
-  model: T;
+  readonly model: T;
 
   /**
    * Object containing current error model.
    */
-  errors: ErrorModel<T>;
+  readonly errors: ErrorModel<T>;
 
   /**
    * Array of current touched fields.
    */
-  touched: Array<KeyOf<T>>;
+  readonly touched: Array<KeyOf<T>>;
 
   /**
    * Array of current dirty fields.
    */
-  dirty: Array<KeyOf<T>>;
+  readonly dirty: Array<KeyOf<T>>;
+
+  /**
+   * Array of vanity properties.
+   */
+  readonly vanities: string[];
 
   /**
    * Boolean indicating if is mounted.
    */
-  mounted: boolean;
+  readonly mounted: boolean;
 
   /**
    * Boolean indicating if form is submitting.
    */
-  isSubmitting: boolean;
+  readonly isSubmitting: boolean;
 
   /**
    * Boolean indicating if form is submitted.
    */
-  isSubmitted: boolean;
+  readonly isSubmitted: boolean;
 
   /**
    * The number count of submissions.
    */
-  submitCount: number;
+  readonly submitCount: number;
 
   /**
    * Boolean indicating if the form is valid.
    */
-  valid: boolean;
+  readonly valid: boolean;
 
   /**
    * Boolean indicating if the form is invalid.
    */
-  invalid: boolean;
+  readonly invalid: boolean;
 
   /**
    * Boolean indicating if the form is dirty.
    */
-  isDirty: boolean;
+  readonly isDirty: boolean;
 
   /**
    * Boolean indicating if the form has been touched.
    */
-  isTouched: boolean;
+  readonly isTouched: boolean;
 
 }
 
 /**
  * Resulting object upon initializing useField.
  */
-export interface IUseField<T extends IModel> {
+export interface IUseField<T extends IModel, R = IRegister<T>> {
 
   /**
    * Registers the element.
    */
-  register: IRegister<T>;
+  register: R;
 
   // Getters //
 
@@ -710,16 +739,6 @@ export interface IUseField<T extends IModel> {
   // Events //
 
   /**
-   * Updates the value and model value for an element.
-   * When no modelValue is provided the value is used.
-   * 
-   * @param value the value to update to.
-   * @param modelValue optional model value.
-   * @param validate when NOT false validate the element.
-   */
-  update(value: any, modelValue?: any, validate?: boolean): void;
-
-  /**
    * Sets focus for element.
    * 
    * @param event the react synthetice event.
@@ -734,9 +753,76 @@ export interface IUseField<T extends IModel> {
   blur(event?: BaseSyntheticEvent): void;
 
   /**
+   * Updates the value and model value for an element.
+   * When no modelValue is provided the value is used. Set validate
+   * to false if you wish to validate manually.
+   * 
+   * @param value the value to update to.
+   * @param modelValue optional model value.
+   * @param validate when NOT false validate the element.
+   */
+  update(value: any, modelValue?: any, validate?: boolean): void;
+
+  // /**
+  //  * Updates the value and model value for the specified element.
+  //  * When no modelValue is provided the value is used. Set validate
+  //  * to false if you wish to validate manually.
+  //  * 
+  //  * @param name the name of the element to update at.
+  //  * @param value the value to update to.
+  //  * @param modelValue optional model value.
+  //  * @param validate when NOT false validate the element.
+  //  */
+  // updateAt(name: KeyOf<T>, value: any, modelValue?: any, validate?: boolean);
+
+  // /**
+  //  * Sets a value at a known element.
+  //  * 
+  //  * @param name the element name to be set.
+  //  * @param value the value to be set.
+  //  */
+  // setValueAt(name: KeyOf<T>, value: any): void;
+
+  // /**
+  //  * Set the data model value for the provided element name.
+  //  * 
+  //  * @param name a valid element name to set.
+  //  * @param modelValue sets the data model value.
+  //  */
+  // setDataAt(name: KeyOf<T>, modelValue: any): void;
+
+  // /**
+  //  * Set the data model value for the provided element  path.
+  //  * 
+  //  * @param path an element path to set data for.
+  //  * @param modelValue sets the data model value.
+  //  */
+  // setDataAt(path: string, modelValue: any): void;
+
+  /**
    * Validates the field.
    */
   validate(): PromiseStrict<Partial<T>, Partial<ErrorModel<T>>>;
+
+  /**
+   * Validate the model at specific keys.
+   * 
+   * @param names the key names to be validated.
+   */
+  validateAt(...names: Array<KeyOf<T>>): Array<PromiseStrict<Partial<T>, Partial<ErrorModel<T>>>>;
+
+  /**
+   * Validate the model at a specific key.
+   * 
+   * @param name the key name to be validated.
+   */
+  validateAt(name: KeyOf<T>): PromiseStrict<Partial<T>, Partial<ErrorModel<T>>>;
+
+  /**
+   * Triggers a form render, useful when manually updating, valdiating elements.
+   * You should not use this method unless you're sure you need to. It will be obvious.
+   */
+  render(): void;
 
 }
 
@@ -748,15 +834,54 @@ export type IUseFields<Fields extends string, T> = { [P in Fields]?: T };
 /**
  * Create useField type returning IUseField.
  */
-export type UseField<T extends IModel> = (name: KeyOf<T>) => IUseField<T>;
+export interface IUseFieldHook<T extends IModel> {
+
+  /**
+   * Creates hook to form field element.
+   * 
+   * @example
+   * const firstName= useField('key', true);
+   * 
+   * @example
+   * <input name="firstName" type="text" error={firstName.invalid} required />
+   * <span>{firstName.required}</span>
+   * 
+   * @param name the name of the field to create hook for.
+   * @param virtual when true is a virtual property.
+   */
+  <K extends string>(name: K, virtual: boolean): IUseField<T & Record<K, T>, RegisterVirtual<T>>;
+
+  /**
+   * Creates hook to form field element.
+   * 
+   * @example
+   * const firstName= useField('firstName');
+   * 
+   * @example
+   * <input name="firstName" type="text" error={firstName.invalid} required />
+   * <span>{firstName.required}</span>
+   * 
+   * @param name the name of the field to create hook for.
+   */
+  <K extends string>(name: K | KeyOf<T>): IUseField<Record<K, T>>;
+
+}
 
 /**
  * Create useFields type returning IUseFields.
  */
-export type UseFields<T extends IModel> =
-  <K extends KeyOf<T>>(...names: K[]) => IUseFields<K, IUseField<T>>;
+export interface IUseFieldsHook<T extends IModel> {
+  <K extends string>(vanity: boolean, ...names: K[]): IUseFields<K, IUseField<Partial<T> & Record<K, Partial<T>>>>;
+  <K extends KeyOf<T>>(...names: K[]): IUseFields<K, IUseField<Partial<T>>>;
+}
 
-type BasePicked = 'render' | 'state' | 'getModel' | 'setModel' | 'validateModel' | 'validateModelAt' | 'setTouched' | 'removeTouched' | 'clearTouched' | 'setDirty' | 'removeDirty' | 'clearDirty' | 'setError' | 'removeError' | 'clearError' | 'getElement' | 'getDefault' | 'isTouched' | 'isDirty';
+/**
+ * Create useFields type returning IUseFields.
+ */
+// export type IUseFieldsHook<T extends IModel> =
+//   <K extends KeyOf<T>>(...names: K[]) => IUseFields<K, IUseField<T>>;
+
+type BasePicked = 'render' | 'state' | 'getModel' | 'hasModel' | 'setModel' | 'validateModel' | 'validateModelAt' | 'setTouched' | 'removeTouched' | 'clearTouched' | 'setDirty' | 'removeDirty' | 'clearDirty' | 'setError' | 'removeError' | 'clearError' | 'getElement' | 'getDefault' | 'isTouched' | 'isDirty';
 
 /**
  * The base API interface used by form field elements and form submit, reset handlers.
@@ -782,6 +907,11 @@ export interface IKomoBase<T extends IModel> {
    * React MutableRefObject of active model values.
    */
   model: MutableRefObject<T>;
+
+  /**
+   * React MutableRefObject of virtuals.
+   */
+  virtuals: MutableRefObject<Set<string>>;
 
   /**
    * React MutableRefObject of errors.
@@ -863,6 +993,13 @@ export interface IKomoBase<T extends IModel> {
   syncDefaults(defaults: T): void;
 
   /**
+   * Checks if model contains prop at path.
+   * 
+   * @param path the path to check if exists.
+   */
+  hasModel(path: string): any;
+
+  /**
    * Gets the model value at the specified path.
    * 
    * @param path the path to get model at.
@@ -889,6 +1026,7 @@ export interface IKomoBase<T extends IModel> {
    * @param extend when true extends/merges with existing model.
    */
   setModel(model: T, extend?: boolean): void;
+
 
   // Validation
 
@@ -1015,6 +1153,31 @@ export interface IKomoBase<T extends IModel> {
    */
   isDirtyCompared(name: KeyOf<T>, value?: any, defautlValue?: any): boolean;
 
+  // Vanity
+
+  /**
+   * Gets all vanity keys which includes virtual keys
+   * as well as dyanmic fields.
+   */
+  getVanity(): string[];
+
+  /**
+   * Sets form vanity name.
+   * 
+   * @param name the name of the vanity to be set.
+   */
+  setVanity(name: string): void;
+
+  /**
+   * Removes form vanity.
+   */
+  removeVanity(name: string): void;
+
+  /**
+   * Clears all form vanity.
+   */
+  clearVanity(): void;
+
   // Error
 
   /**
@@ -1137,14 +1300,14 @@ export interface IKomoForm<T extends IModel> extends Pick<IKomoBase<T>, BasePick
    * 
    * @param name the name of the field/element to bind to.
    */
-  useField?: (name: KeyOf<T>) => IUseField<T>;
+  useField?: IUseFieldHook<T>;
 
   /**
    * Built in hook for exposing helpers to a given set of fields.
    * 
    * @param names the names of fields/elements you wish to create hooks for.
    */
-  useFields?<K extends KeyOf<T>>(...names: K[]): IUseFields<K, IUseField<Partial<T>>>;
+  useFields?: IUseFieldsHook<T>;
 
   /**
    * Convenience method for generating hooks which receives the Komo api. Essentially this

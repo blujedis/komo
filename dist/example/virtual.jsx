@@ -11,26 +11,42 @@ const yup_1 = require("yup");
  * Schema - our data model or schema using Yup.
  */
 const schema = yup_1.object({
-    name: yup_1.string().default('Bill Lumbergh').required(),
-    phone: yup_1.object({
-        cc: yup_1.string().default('1'),
-        number: yup_1.string().default('8135279989')
+    name: yup_1.object({
+        first: yup_1.string().default('Bill').required(),
+        last: yup_1.string().default('Lumbergh').required(),
     })
 });
-const VirtualUnbound = ({ name, path, hook }) => {
-    const field = hook(name);
-    field.register({
-        name,
-        path: 'name',
-        virtual: 'name'
+const VirtualField = ({ name, hook }) => {
+    const fullName = hook(name, true);
+    const first = hook('first');
+    const last = hook('last');
+    fullName.register({
+        defaultValue: (model) => {
+            if (model.name && model.name.first && model.name.last)
+                return model.name.first + ' ' + model.name.last;
+            return '';
+        },
+        required: true
     });
     const onBlur = (e) => {
-        const value = e.target.value;
-        field.update(value);
+        // We trim here so we don't end up with ' ' as space.
+        fullName.update((first.value + ' ' + last.value).trim());
     };
     return (<>
-      <label htmlFor="fullName">Full Name: </label>
-      <input type="text" onBlur={onBlur} defaultValue={field.value}/><br /><br />
+      <p>
+        <span>Virtual Value: </span><span style={{ fontWeight: 'bolder' }}>{fullName.value}</span>
+      </p>
+
+      <label htmlFor="first">First Name: </label>
+      <input name="first" type="text" onBlur={onBlur} ref={first.register({ path: 'name.first', validateBlur: false })}/>
+
+      <br /><br />
+
+      <label htmlFor="last">Last Name: </label>
+      <input name="last" type="text" onBlur={onBlur} ref={last.register({ path: 'name.last', validateBlur: false })}/>
+
+      <br /><br />
+
     </>);
 };
 /**
@@ -39,14 +55,11 @@ const VirtualUnbound = ({ name, path, hook }) => {
 const Virtual = () => {
     const { handleSubmit, handleReset, state, useField } = __1.default({
         validationSchema: schema,
-        validateNative: true,
-        defaults: {
-            fullName: ''
-        }
+        validateNative: true
     });
     const onSubmit = (model) => {
-        console.log(model);
-        console.log(state.errors);
+        console.log('model:', model);
+        console.log('errors:', state.errors);
         console.log('count', state.submitCount);
         console.log('submitting', state.isSubmitting);
         console.log('submitted', state.isSubmitted);
@@ -58,7 +71,12 @@ const Virtual = () => {
 
       <form noValidate onSubmit={handleSubmit(onSubmit)} onReset={handleReset}>
 
-        <VirtualUnbound name="fullName" hook={useField}/>
+        <p>
+          At first blush this may seem redundant but there are use cases where you
+          need to interact with the model but have complex nested components.
+        </p>
+
+        <VirtualField name="fullName" hook={useField}/>
 
         <jsonerrors_1.default errors={state.errors}/>
 

@@ -2,6 +2,7 @@ import { useRef, useEffect, FormEvent, useState, useCallback, BaseSyntheticEvent
 import { initElement } from './register';
 import get from 'lodash.get';
 import set from 'lodash.set';
+import has from 'lodash.has';
 import {
   IOptions, IModel, KeyOf, IRegisteredElement, ErrorModel,
   SubmitHandler,
@@ -47,6 +48,7 @@ function initApi<T extends IModel>(options: IOptions<T>) {
   const fields = useRef(new Set<IRegisteredElement<T>>());
   const touched = useRef(new Set<KeyOf<T>>());
   const dirty = useRef(new Set<KeyOf<T>>());
+  const vanities = useRef(new Set<string>());
   const errors = useRef<ErrorModel<T>>({} as any);
   const validator = useRef<IValidator<T>>();
   const schemaAst = useRef<ISchemaAst>();
@@ -54,7 +56,7 @@ function initApi<T extends IModel>(options: IOptions<T>) {
   const submitCount = useRef(0);
   const submitting = useRef(false);
   const submitted = useRef(false);
-  const [currentStatus, renderStatus] = useState('init');
+  const [, renderStatus] = useState('init');
 
   let state: IFormState<T> = {} as any;
   let api: IKomoBase<T> = {} as any;
@@ -147,9 +149,20 @@ function initApi<T extends IModel>(options: IOptions<T>) {
     defaults.current = merge({ ...defaults.current }, { ...defs });
     model.current = merge({ ...defs }, { ...model.current });
 
+    const keys = Object.keys(defs);
+
     // Iterate bound elements and update default values.
     [...fields.current.values()].forEach(element => {
+
+      if (keys.includes(element.name) && element.virtual)
+        // tslint:disable-next-line: no-console
+        console.error(`Attempted to set bound property "${element.name}" as vanity, try useField('${element.name}') NOT useField('${element.name}', true).`);
+
+      if (!keys.includes(element.name) && !vanities.current.has(element.name))
+        vanities.current.add(element.name);
+
       element.reinit();
+
     });
 
   }, []);
@@ -186,6 +199,10 @@ function initApi<T extends IModel>(options: IOptions<T>) {
     }
 
   }, [defaults, model]);
+
+  const hasModel = (path?: string) => {
+    return has(model.current, path);
+  };
 
   const getModel = (path?: string) => {
     if (!path)
@@ -231,20 +248,30 @@ function initApi<T extends IModel>(options: IOptions<T>) {
     dirty.current.clear();
   };
 
-  const isDirtyCompared = (name: KeyOf<T>, value?: any, defaultValue?: any) => {
+  const prepareCompare = (value) => {
 
+    if (isArray(value))
+      value.sort();
+
+    if (isPlainObject(value)) {
+      value = Object.keys(value).sort().reduce((a, c) => {
+        a[c] = value[c];
+        return a;
+      }, {});
+    }
+
+    return String(value);
+
+  };
+
+  // If not compare value the model value is used.
+  const isDirtyCompared = (name: KeyOf<T>, value: any, compareValue?: any) => {
     const element = getElement(name);
-    value = toDefault(value, element.value);
-    defaultValue = toDefault(defaultValue, getModel(element.path));
-
-    // Probably need to look further into this
-    // ensure common and edge cases are covered.
-    // NOTE: we check array here as value could
-    // be multiple option group in some cases.
-    return isArray(defaultValue)
-      ? !isEqual(defaultValue, value)
-      : !isEqual(defaultValue + '', value + '');
-
+    const modelValue = getModel(element.path);
+    compareValue = toDefault(compareValue, modelValue);
+    value = prepareCompare(value);
+    compareValue = prepareCompare(compareValue);
+    return !isEqual(value, compareValue);
   };
 
   const isDirty = useCallback((name?: KeyOf<T>) => {
@@ -252,6 +279,26 @@ function initApi<T extends IModel>(options: IOptions<T>) {
       return dirty.current.has(name);
     return !!dirty.current.size;
   }, []);
+
+  // VIRTUALS //
+
+  const getVanity = useCallback(() => {
+    return [...vanities.current.values()];
+  }, []);
+
+  const setVanity = (name: string) => {
+    if (!vanities.current.has(name))
+      vanities.current.add(name);
+  };
+
+  const removeVanity = (name: string) => {
+    const removed = vanities.current.delete(name);
+    return removed;
+  };
+
+  const clearVanity = () => {
+    vanities.current.clear();
+  };
 
   // ERRORS //
 
@@ -342,9 +389,6 @@ function initApi<T extends IModel>(options: IOptions<T>) {
     let element = nameOrElement as IRegisteredElement<T>;
     if (isString(nameOrElement))
       element = getElement(nameOrElement as KeyOf<T>);
-    // if a virtual check the name it's mapped to.
-    if (element.virtual)
-      element = getElement(element.virtual);
     return isUndefined(element.validateChange) ? options.validateChange : element.validateChange;
   };
 
@@ -352,8 +396,6 @@ function initApi<T extends IModel>(options: IOptions<T>) {
     let element = nameOrElement as IRegisteredElement<T>;
     if (isString(nameOrElement))
       element = getElement(nameOrElement as KeyOf<T>);
-    if (element.virtual)
-      element = getElement(element.virtual);
     return isUndefined(element.validateBlur) ? options.validateBlur : element.validateBlur;
   };
 
@@ -409,6 +451,10 @@ function initApi<T extends IModel>(options: IOptions<T>) {
       return [...dirty.current.keys()];
     },
 
+    get vanities() {
+      return [...vanities.current.keys()];
+    },
+
     get valid() {
       return !Object.entries(errors.current).length;
     },
@@ -445,6 +491,7 @@ function initApi<T extends IModel>(options: IOptions<T>) {
     options,
     defaults,
     fields,
+    virtuals: vanities,
     unregister,
     schemaAst,
     render,
@@ -461,6 +508,7 @@ function initApi<T extends IModel>(options: IOptions<T>) {
     getDefault,
     setDefault,
     syncDefaults,
+    hasModel,
     getModel,
     setModel,
     validator: validator.current,
@@ -482,6 +530,12 @@ function initApi<T extends IModel>(options: IOptions<T>) {
     clearDirty,
     isDirty,
     isDirtyCompared,
+
+    // Vanity
+    getVanity,
+    setVanity,
+    removeVanity,
+    clearVanity,
 
     // Errors,
     errors,
@@ -509,8 +563,9 @@ function initForm<T extends IModel>(options?: IOptions<T>) {
 
   const {
     options: formOptions, defaults, render, clearDirty, clearTouched, clearError, setModel,
-    fields, submitCount, submitting, submitted, validateModel, getModel, syncDefaults, state,
-    isValidatable, errors, setError, unregister, mounted, initSchema, model, getRegistered
+    fields, submitCount, submitting, submitted, validateModel, syncDefaults, state, hasModel,
+    isValidatable, errors, setError, unregister, mounted, initSchema, model, getRegistered,
+    getVanity
   } = base;
 
   useEffect(() => {
@@ -638,7 +693,7 @@ function initForm<T extends IModel>(options?: IOptions<T>) {
       return;
     }
 
-    const handleCallback = (m, e, ev) => {
+    const handleCallback = (_model, _errors, _event) => {
 
       const errorKeys = Object.keys(errors.current);
 
@@ -651,10 +706,10 @@ function initForm<T extends IModel>(options?: IOptions<T>) {
       submitting.current = false;
       submitted.current = true;
       submitCount.current = submitCount.current + 1;
-      errors.current = e || errors.current;
+      errors.current = _errors || errors.current;
       render('form:submit');
 
-      handler(m, e || {}, ev);
+      handler(_model, _errors || {}, _event);
 
     };
 
@@ -706,6 +761,7 @@ function initForm<T extends IModel>(options?: IOptions<T>) {
     // Model
     getDefault: base.getDefault,
     getElement: base.getElement,
+    hasModel,
     getModel: base.getModel,
     setModel: base.setModel,
     validateModel: base.validateModel,

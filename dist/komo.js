@@ -582,4 +582,4 @@ function initKomo(options) {
     return komo;
 }
 exports.initKomo = initKomo;
-//# sourceMappingURL=komo.jsx.map
+//# sourceMappingURL=komo.js.map

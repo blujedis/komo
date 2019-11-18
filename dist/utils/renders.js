@@ -17,4 +17,4 @@ function useRenderCount(alertAt = 10) {
         console.log(`%c RENDERS:`, 'color:#cccc00', count.current);
 }
 exports.useRenderCount = useRenderCount;
-//# sourceMappingURL=renders.jsx.map
+//# sourceMappingURL=renders.js.map

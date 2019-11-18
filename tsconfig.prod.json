@@ -6,6 +6,7 @@
     "isolatedModules": false,
     "declaration": true,
     "allowJs": false,
-    "noEmit": false
+    "noEmit": false,
+    "jsx": "react"
   }
 }

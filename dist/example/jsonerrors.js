@@ -11,10 +11,9 @@ const react_1 = __importStar(require("react"));
 const JsonErrors = ({ errors }) => {
     if (!Object.keys(errors).length)
         return null;
-    return (<react_1.Fragment>
-      <h3>Current Errors</h3>
-      <pre style={{ color: 'red' }}>{JSON.stringify(errors, null, 2)}</pre>
-    </react_1.Fragment>);
+    return (react_1.default.createElement(react_1.Fragment, null,
+        react_1.default.createElement("h3", null, "Current Errors"),
+        react_1.default.createElement("pre", { style: { color: 'red' } }, JSON.stringify(errors, null, 2))));
 };
 exports.default = JsonErrors;
-//# sourceMappingURL=jsonerrors.jsx.map
+//# sourceMappingURL=jsonerrors.js.map

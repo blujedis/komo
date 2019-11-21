@@ -45,7 +45,7 @@ export function initElement<T extends IModel>(api?: IKomoBase<T>) {
    */
   function isRegistered(element: IRegisteredElement<T>) {
 
-    if (mounted.current)
+    if (mounted.current && !element.virtual)
       return true;
 
     const exists = fields.current.has(element);
@@ -260,7 +260,7 @@ export function initElement<T extends IModel>(api?: IKomoBase<T>) {
       value = element.defaultValuePersist;
       element.value = value;
       // Must have string here.
-      if (isObject(value)) {
+      if (isObject(value) && !element.virtual) {
         // tslint:disable-next-line: no-console
         console.error(`Element "${element.name}" contains invalid typeof "${typeof value}", ${element.type} can only accept strings. Is this a virtual?`);
         return;

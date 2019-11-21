@@ -24,7 +24,7 @@ function initElement(api) {
      * Radio groups never return true.
      */
     function isRegistered(element) {
-        if (mounted.current)
+        if (mounted.current && !element.virtual)
             return true;
         const exists = fields.current.has(element);
         const elements = getElement(element.name, true);
@@ -184,7 +184,7 @@ function initElement(api) {
             value = element.defaultValuePersist;
             element.value = value;
             // Must have string here.
-            if (utils_1.isObject(value)) {
+            if (utils_1.isObject(value) && !element.virtual) {
                 // tslint:disable-next-line: no-console
                 console.error(`Element "${element.name}" contains invalid typeof "${typeof value}", ${element.type} can only accept strings. Is this a virtual?`);
                 return;

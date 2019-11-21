@@ -41,7 +41,7 @@ const VirtualField: FC<Props> = ({ name, hook }) => {
 
   const onBlur = (e) => {
     // We trim here so we don't end up with ' ' as space.
-    fullName.update((first.value + ' ' + last.value).trim());
+    fullName.update((first.value + ' ' + last.value).trim(), null, false);
   };
 
   return (
@@ -87,6 +87,7 @@ const Virtual: FC = () => {
   const onSubmit = (model) => {
     console.log('model:', model);
     console.log('errors:', state.errors);
+    console.log('vanity', state.vanities);
     console.log('count', state.submitCount);
     console.log('submitting', state.isSubmitting);
     console.log('submitted', state.isSubmitted);

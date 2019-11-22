@@ -772,14 +772,7 @@ function initForm<T extends IModel>(options?: IOptions<T>) {
     validateModel: base.validateModel,
     validateModelAt: base.validateModelAt,
 
-    // setTouched: base.setTouched,
-    // removeTouched: base.removeTouched,
-    // clearTouched: base.clearTouched,
     isTouched: base.isTouched,
-
-    // setDirty: base.setDirty,
-    // removeDirty: base.removeDirty,
-    // clearDirty: base.clearDirty,
     isDirty: base.isDirty,
 
     setError: base.setError,
@@ -809,6 +802,11 @@ export function initKomo<T extends IModel, D extends IModel = {}>(options?: IOpt
   options.castHandler = normalizeCasting(options.castHandler);
 
   const api = initForm<Model>(options);
+
+  // Override setModel so exposed method
+  // causes render.ß
+  api.setModel = (pathOrModel, value?) => { api.setModel(pathOrModel, value); api.render(`model:set`); };
+
   const hooks = initHooks<Model>(api);
   const komo = extend(api, hooks);
 

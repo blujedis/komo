@@ -23,7 +23,7 @@ const DEFAULTS = {
     validateInit: false,
     validationSchemaPurge: true,
     validateNative: false,
-    cleanVanities: true
+    cleanVanities: false
 };
 const { debug_api, debug_init } = utils_1.debuggers;
 function initApi(options) {
@@ -517,6 +517,8 @@ function initForm(options) {
                 event.preventDefault();
                 event.persist();
             }
+            // Clean properties not defined in
+            // original model.
             const _model = formOptions.cleanVanities ? getModel(true) : model.current;
             // Can't validate or is disabled.
             if (!isValidatable() || !formOptions.validateSubmit) {
@@ -551,13 +553,7 @@ function initForm(options) {
         setModel: base.setModel,
         validateModel: base.validateModel,
         validateModelAt: base.validateModelAt,
-        // setTouched: base.setTouched,
-        // removeTouched: base.removeTouched,
-        // clearTouched: base.clearTouched,
         isTouched: base.isTouched,
-        // setDirty: base.setDirty,
-        // removeDirty: base.removeDirty,
-        // clearDirty: base.clearDirty,
         isDirty: base.isDirty,
         setError: base.setError,
         removeError: base.removeError,
@@ -577,6 +573,9 @@ function initKomo(options) {
     options.defaults = validate_1.promisifyDefaults(options.defaults, normalizeYup.defaults);
     options.castHandler = validate_1.normalizeCasting(options.castHandler);
     const api = initForm(options);
+    // Override setModel so exposed method
+    // causes render.ß
+    api.setModel = (pathOrModel, value) => { api.setModel(pathOrModel, value); api.render(`model:set`); };
     const hooks = hooks_1.initHooks(api);
     const komo = utils_1.extend(api, hooks);
     return komo;

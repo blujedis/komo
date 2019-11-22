@@ -563,10 +563,14 @@ export interface IUseField<T extends IModel, R = IRegister<T>> {
     readonly path: string;
     /**
      * Gets the element's current value.
+     * NOTE: Does not perform render.
+     * see .render();
      */
     value: string;
     /**
      * The current form's data model value.
+     * NOTE: Does NOT perform render.
+     * see .render();
      */
     data: any;
     /**
@@ -594,7 +598,7 @@ export interface IUseField<T extends IModel, R = IRegister<T>> {
      */
     blur(event?: BaseSyntheticEvent): void;
     /**
-     * Updates the value and model value for an element.
+     * Updates the value and model value for an element and performs render.
      * When no modelValue is provided the value is used. Set validate
      * to false if you wish to validate manually.
      *

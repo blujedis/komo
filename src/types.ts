@@ -1,4 +1,4 @@
-import { BaseSyntheticEvent, MutableRefObject, LegacyRef, FormEvent } from 'react';
+import { BaseSyntheticEvent, MutableRefObject, LegacyRef, FormEvent, FunctionComponent, Component } from 'react';
 import { ObjectSchema, ValidateOptions, InferType, Shape, ObjectSchemaDefinition } from 'yup';
 import { createLogger, LogLevel } from './utils';
 
@@ -16,8 +16,12 @@ export type ValueOf<T, K extends KeyOf<T>> = T[K];
 
 /**
  * Infers the return type of a passed function.
+ * 
+ * @example
+ * type SomeType = <R, H extends (hook: IKomo<T>) => R>(hook: H): InferReturn<H>;
  */
 export type InferReturn<F extends Function> = F extends (...args: any[]) => infer R ? R : never;
+
 
 // MODEL & VALIDATION //
 
@@ -213,6 +217,13 @@ export interface IOptions<T extends IModel, D extends IModel = {}> {
    * for user defined model value casting.
    */
   castHandler?: boolean | CastHandler;
+
+  /**
+   * When true vanity properties such as virtuals and 
+   * non top level model properties are cleaned to return
+   * model to pure state.
+   */
+  cleanVanities?: boolean;
 
 }
 
@@ -881,7 +892,7 @@ export interface IUseFieldsHook<T extends IModel> {
 // export type IUseFieldsHook<T extends IModel> =
 //   <K extends KeyOf<T>>(...names: K[]) => IUseFields<K, IUseField<T>>;
 
-type BasePicked = 'render' | 'state' | 'getModel' | 'hasModel' | 'setModel' | 'validateModel' | 'validateModelAt' | 'setTouched' | 'removeTouched' | 'clearTouched' | 'setDirty' | 'removeDirty' | 'clearDirty' | 'setError' | 'removeError' | 'clearError' | 'getElement' | 'getDefault' | 'isTouched' | 'isDirty';
+type BasePicked = 'render' | 'state' | 'getModel' | 'hasModel' | 'setModel' | 'validateModel' | 'validateModelAt' | 'setError' | 'removeError' | 'clearError' | 'getElement' | 'getDefault' | 'isTouched' | 'isDirty';
 
 /**
  * The base API interface used by form field elements and form submit, reset handlers.
@@ -907,11 +918,6 @@ export interface IKomoBase<T extends IModel> {
    * React MutableRefObject of active model values.
    */
   model: MutableRefObject<T>;
-
-  /**
-   * React MutableRefObject of virtuals.
-   */
-  virtuals: MutableRefObject<Set<string>>;
 
   /**
    * React MutableRefObject of errors.
@@ -1009,7 +1015,7 @@ export interface IKomoBase<T extends IModel> {
   /**
    * Gets the entire model.
    */
-  getModel(): T;
+  getModel(clean?: boolean): T;
 
   /**
    * Sets model value at the specified path.
@@ -1159,24 +1165,24 @@ export interface IKomoBase<T extends IModel> {
    * Gets all vanity keys which includes virtual keys
    * as well as dyanmic fields.
    */
-  getVanity(): string[];
+  // getVanity(): string[];
 
   /**
    * Sets form vanity name.
    * 
    * @param name the name of the vanity to be set.
    */
-  setVanity(name: string): void;
+  // setVanity(name: string): void;
 
   /**
    * Removes form vanity.
    */
-  removeVanity(name: string): void;
+  // removeVanity(name: string): void;
 
   /**
    * Clears all form vanity.
    */
-  clearVanity(): void;
+  // clearVanity(): void;
 
   // Error
 
@@ -1309,13 +1315,6 @@ export interface IKomoForm<T extends IModel> extends Pick<IKomoBase<T>, BasePick
    */
   useFields?: IUseFieldsHook<T>;
 
-  /**
-   * Convenience method for generating hooks which receives the Komo api. Essentially this
-   * just makes your types play nicely.
-   * 
-   * @param hook the hook which accepts the Komo api.
-   */
-  withKomo?<R, H extends (hook: IKomo<T>) => R>(hook: H): InferReturn<H>;
 
 }
 

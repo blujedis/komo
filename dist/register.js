@@ -18,14 +18,12 @@ const REGISTER_DEFAULTS = {
  * @param api the base form api.
  */
 function initElement(api) {
-    const { options: komoOptions, schemaAst, fields, unregister, setModel, getModel, isTouched, isDirty, setDefault, mounted, setDirty, setTouched, removeDirty, isValidateBlur, isValidateChange, validateModelAt, isValidatable, removeError, setError, render, getElement, isDirtyCompared, model, hasModel } = api;
+    const { options: komoOptions, schemaAst, fields, unregister, setModel, getModel, isTouched, isDirty, setDefault, setDirty, setTouched, removeDirty, isValidateBlur, isValidateChange, validateModelAt, isValidatable, removeError, setError, render, getElement, isDirtyCompared, model } = api;
     /**
      * Checks if the element is a duplicate and should be ignored.
      * Radio groups never return true.
      */
     function isRegistered(element) {
-        if (mounted.current && !element.virtual)
-            return true;
         const exists = fields.current.has(element);
         const elements = getElement(element.name, true);
         // if only a single element, not a radio group.
@@ -550,6 +548,10 @@ function initElement(api) {
             return (element) => {
                 // Extend element with options.
                 const _element = element;
+                // TODO: rethink how this works
+                if (_element)
+                    // @ts-ignore
+                    _element.__hooked = options.__hooked__;
                 if (!_element || isRegistered(_element))
                     return;
                 const normalized = normalizeElement(_element, options);

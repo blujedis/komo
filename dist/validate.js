@@ -25,7 +25,7 @@ function yupToErrors(error, getElement) {
     const errors = {};
     if (!error.inner || !error.inner.length) {
         const element = getElement(error.path);
-        const key = element.name;
+        const key = ((element && element.name) || error.path);
         errors[key] = errors[key] || [];
         errors[key].push({
             type: error.type,
@@ -38,7 +38,7 @@ function yupToErrors(error, getElement) {
     else {
         for (const err of error.inner) {
             const element = getElement(err.path);
-            const key = element.name;
+            const key = ((element && element.name) || err.path);
             errors[key] = errors[key] || [];
             errors[key].push({
                 type: err.type,

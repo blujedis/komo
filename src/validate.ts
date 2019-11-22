@@ -44,7 +44,7 @@ export function yupToErrors<T extends IModel>(
 
   if (!error.inner || !error.inner.length) {
     const element = getElement(error.path);
-    const key = element.name;
+    const key = ((element && element.name) || error.path) as any;
     errors[key] = errors[key] || [];
     errors[key].push({
       type: error.type,
@@ -59,7 +59,7 @@ export function yupToErrors<T extends IModel>(
 
     for (const err of error.inner) {
       const element = getElement(err.path);
-      const key = element.name;
+      const key = ((element && element.name) || err.path) as any;
       errors[key] = errors[key] || [];
       errors[key].push({
         type: err.type,

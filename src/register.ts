@@ -9,7 +9,6 @@ import {
   IRegisterElement, IRegisterOptions, IRegisteredElement,
   IModel, IKomoBase, RegisterElement, CastHandler, PromiseStrict, ErrorModel, KeyOf
 } from './types';
-import { create } from 'domain';
 
 
 const { debug_register, debug_event, debug_set } = debuggers;
@@ -33,10 +32,10 @@ export function initElement<T extends IModel>(api?: IKomoBase<T>) {
 
   const {
     options: komoOptions, schemaAst, fields, unregister, setModel,
-    getModel, isTouched, isDirty, setDefault, mounted,
+    getModel, isTouched, isDirty, setDefault,
     setDirty, setTouched, removeDirty, isValidateBlur, isValidateChange,
     validateModelAt, isValidatable, removeError, setError, render, getElement,
-    isDirtyCompared, model, hasModel
+    isDirtyCompared, model
   } = api;
 
   /**
@@ -44,9 +43,6 @@ export function initElement<T extends IModel>(api?: IKomoBase<T>) {
    * Radio groups never return true.
    */
   function isRegistered(element: IRegisteredElement<T>) {
-
-    if (mounted.current && !element.virtual)
-      return true;
 
     const exists = fields.current.has(element);
     const elements = getElement(element.name, true);
@@ -785,6 +781,11 @@ export function initElement<T extends IModel>(api?: IKomoBase<T>) {
         // Extend element with options.
 
         const _element = element as IRegisteredElement<T>;
+
+        // TODO: rethink how this works
+        if (_element)
+          // @ts-ignore
+          _element.__hooked = options.__hooked__;
 
         if (!_element || isRegistered(_element))
           return;

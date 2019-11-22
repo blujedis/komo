@@ -805,8 +805,8 @@ export function initKomo<T extends IModel, D extends IModel = {}>(options?: IOpt
 
   // Override setModel so exposed method
   // causes render.
-
-  api.setModel = (pathOrModel, value?) => { api.setModel(pathOrModel, value); api.render(`model:set`); };
+  const { render, setModel } = api;
+  api.setModel = (pathOrModel, value?) => { setModel(pathOrModel, value); render(`model:set`); };
 
   const hooks = initHooks<Model>(api);
   const komo = extend(api, hooks);

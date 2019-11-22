@@ -575,7 +575,8 @@ function initKomo(options) {
     const api = initForm(options);
     // Override setModel so exposed method
     // causes render.
-    api.setModel = (pathOrModel, value) => { api.setModel(pathOrModel, value); api.render(`model:set`); };
+    const { render, setModel } = api;
+    api.setModel = (pathOrModel, value) => { setModel(pathOrModel, value); render(`model:set`); };
     const hooks = hooks_1.initHooks(api);
     const komo = utils_1.extend(api, hooks);
     return komo;

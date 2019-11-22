@@ -57,7 +57,7 @@ function initApi<T extends IModel>(options: IOptions<T>) {
   const submitCount = useRef(0);
   const submitting = useRef(false);
   const submitted = useRef(false);
-  const [, renderStatus] = useState('init');
+  const [currentStatus, renderStatus] = useState({ status: 'init' });
 
   let state: IFormState<T> = {} as any;
   let api: IKomoBase<T> = {} as any;
@@ -65,7 +65,7 @@ function initApi<T extends IModel>(options: IOptions<T>) {
   // HELPERS //
 
   const render = (status: string) => {
-    renderStatus(status);
+    renderStatus({ ...currentStatus, status });
     debug_api('rendered', status);
   };
 
@@ -804,7 +804,8 @@ export function initKomo<T extends IModel, D extends IModel = {}>(options?: IOpt
   const api = initForm<Model>(options);
 
   // Override setModel so exposed method
-  // causes render.ß
+  // causes render.
+
   api.setModel = (pathOrModel, value?) => { api.setModel(pathOrModel, value); api.render(`model:set`); };
 
   const hooks = initHooks<Model>(api);

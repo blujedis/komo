@@ -40,12 +40,12 @@ function initApi(options) {
     const submitCount = react_1.useRef(0);
     const submitting = react_1.useRef(false);
     const submitted = react_1.useRef(false);
-    const [, renderStatus] = react_1.useState('init');
+    const [currentStatus, renderStatus] = react_1.useState({ status: 'init' });
     let state = {};
     let api = {};
     // HELPERS //
     const render = (status) => {
-        renderStatus(status);
+        renderStatus({ ...currentStatus, status });
         debug_api('rendered', status);
     };
     function _getElement(namePathOrElement, asGroup = false) {
@@ -574,7 +574,7 @@ function initKomo(options) {
     options.castHandler = validate_1.normalizeCasting(options.castHandler);
     const api = initForm(options);
     // Override setModel so exposed method
-    // causes render.ß
+    // causes render.
     api.setModel = (pathOrModel, value) => { api.setModel(pathOrModel, value); api.render(`model:set`); };
     const hooks = hooks_1.initHooks(api);
     const komo = utils_1.extend(api, hooks);

@@ -6,3 +6,4 @@
 - Fix issue where missing model value throws error but does bubble due to missing element.
 - Enable option to clean vanity properties not part of original model.
 - update setModel for exposed api to cause render.
+- ensure new state for renderer.

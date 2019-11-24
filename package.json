@@ -1,6 +1,6 @@
 {
   "name": "komo",
-  "version": "0.1.16",
+  "version": "0.1.17",
   "description": "React form helper",
   "main": "dist/index.js",
   "repository": "https://github.com/blujedis/komo.git",
@@ -15,6 +15,17 @@
     "docs": "typedoc ./src --options ./typedoc.json --out ./docs && touch ./docs/.nojekyll",
     "prep": "npm run build && npm run docs"
   },
+  "keywords": [
+    "komo",
+    "react",
+    "form",
+    "validation",
+    "forms",
+    "formik",
+    "react-hook-form",
+    "redux-form",
+    "rc-form"
+  ],
   "files": [
     "dist",
     "docs",

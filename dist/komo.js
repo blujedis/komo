@@ -287,7 +287,7 @@ function initApi(options) {
             element = getElement(nameOrElement);
         return utils_1.isUndefined(element.validateBlur) ? options.validateBlur : element.validateBlur;
     };
-    const unregister = react_1.useCallback((element) => {
+    const unregister = (element) => {
         // Nothing to unregister.
         if (!fields.current.size)
             return;
@@ -308,7 +308,7 @@ function initApi(options) {
         _element.unbind();
         // Delete the element from fields collection.
         fields.current.delete(_element);
-    }, []);
+    };
     state = {
         get model() {
             return model.current;
@@ -389,11 +389,6 @@ function initApi(options) {
         clearDirty,
         isDirty,
         isDirtyCompared,
-        // Vanity
-        // getVanity,
-        // setVanity,
-        // removeVanity,
-        // clearVanity,
         // Errors,
         errors,
         setError,
@@ -411,7 +406,7 @@ function initApi(options) {
  */
 function initForm(options) {
     const base = initApi(options);
-    const { options: formOptions, defaults, render, clearDirty, clearTouched, clearError, setModel, fields, submitCount, submitting, submitted, validateModel, syncDefaults, state, hasModel, isValidatable, errors, setError, unregister, mounted, initSchema, model, getRegistered, getModel } = base;
+    const { options: formOptions, defaults, render, clearDirty, clearTouched, clearError, setModel, fields, submitCount, submitting, submitted, validateModel, validateModelAt, syncDefaults, state, hasModel, isValidatable, errors, setError, unregister, mounted, initSchema, model, getRegistered, getModel, removeError, isDirty, isTouched, getDefault, getElement } = base;
     react_1.useEffect(() => {
         const init = async () => {
             if (mounted.current)
@@ -538,7 +533,7 @@ function initForm(options) {
     const api = {
         // Elements
         register: register_1.initElement(base),
-        //unregister: base.unregister,
+        unregister,
         // Form
         render,
         reset,
@@ -546,18 +541,18 @@ function initForm(options) {
         handleSubmit,
         state,
         // Model
-        getDefault: base.getDefault,
-        getElement: base.getElement,
+        getDefault,
+        getElement,
         hasModel,
-        getModel: base.getModel,
-        setModel: base.setModel,
-        validateModel: base.validateModel,
-        validateModelAt: base.validateModelAt,
-        isTouched: base.isTouched,
-        isDirty: base.isDirty,
-        setError: base.setError,
-        removeError: base.removeError,
-        clearError: base.clearError
+        getModel,
+        setModel,
+        validateModel,
+        validateModelAt,
+        isTouched,
+        isDirty,
+        setError,
+        removeError,
+        clearError
     };
     return api;
 }

@@ -896,7 +896,9 @@ export interface IUseFieldsHook<T extends IModel> {
 // export type IUseFieldsHook<T extends IModel> =
 //   <K extends KeyOf<T>>(...names: K[]) => IUseFields<K, IUseField<T>>;
 
-type BasePicked = 'render' | 'state' | 'getModel' | 'hasModel' | 'setModel' | 'validateModel' | 'validateModelAt' | 'setError' | 'removeError' | 'clearError' | 'getElement' | 'getDefault' | 'isTouched' | 'isDirty';
+type BasePicked = 'render' | 'state' | 'getModel' | 'hasModel' | 'setModel' | 'validateModel' |
+  'validateModelAt' | 'setError' | 'removeError' | 'clearError' | 'getElement' | 'getDefault' |
+  'isTouched' | 'isDirty' | 'unregister';
 
 /**
  * The base API interface used by form field elements and form submit, reset handlers.
@@ -1163,31 +1165,6 @@ export interface IKomoBase<T extends IModel> {
    */
   isDirtyCompared(name: KeyOf<T>, value?: any, defautlValue?: any): boolean;
 
-  // Vanity
-
-  /**
-   * Gets all vanity keys which includes virtual keys
-   * as well as dyanmic fields.
-   */
-  // getVanity(): string[];
-
-  /**
-   * Sets form vanity name.
-   * 
-   * @param name the name of the vanity to be set.
-   */
-  // setVanity(name: string): void;
-
-  /**
-   * Removes form vanity.
-   */
-  // removeVanity(name: string): void;
-
-  /**
-   * Clears all form vanity.
-   */
-  // clearVanity(): void;
-
   // Error
 
   /**
@@ -1270,7 +1247,7 @@ export interface IKomoBase<T extends IModel> {
 
 }
 
-export interface IKomoForm<T extends IModel> extends Pick<IKomoBase<T>, BasePicked> {
+export interface IKomo<T extends IModel> extends Pick<IKomoBase<T>, BasePicked> {
 
   /**
    * Registers an element/field with Komo.
@@ -1319,7 +1296,4 @@ export interface IKomoForm<T extends IModel> extends Pick<IKomoBase<T>, BasePick
    */
   useFields?: IUseFieldsHook<T>;
 
-
 }
-
-export interface IKomo<T extends IModel> extends Omit<IKomoForm<T>, 'withKomo'> { }

@@ -11,7 +11,6 @@ import {
   IKomoBase,
   PromiseStrict,
   IKomo,
-  IKomoForm,
   IFormState
 } from './types';
 import { initHooks } from './hooks';
@@ -400,7 +399,7 @@ function initApi<T extends IModel>(options: IOptions<T>) {
     return isUndefined(element.validateBlur) ? options.validateBlur : element.validateBlur;
   };
 
-  const unregister = useCallback((element: KeyOf<T> | IRegisteredElement<T>) => {
+  const unregister = (element: KeyOf<T> | IRegisteredElement<T>) => {
 
     // Nothing to unregister.
     if (!fields.current.size)
@@ -429,7 +428,7 @@ function initApi<T extends IModel>(options: IOptions<T>) {
     // Delete the element from fields collection.
     fields.current.delete(_element);
 
-  }, []);
+  };
 
   state = {
 
@@ -532,12 +531,6 @@ function initApi<T extends IModel>(options: IOptions<T>) {
     isDirty,
     isDirtyCompared,
 
-    // Vanity
-    // getVanity,
-    // setVanity,
-    // removeVanity,
-    // clearVanity,
-
     // Errors,
     errors,
     setError,
@@ -564,9 +557,9 @@ function initForm<T extends IModel>(options?: IOptions<T>) {
 
   const {
     options: formOptions, defaults, render, clearDirty, clearTouched, clearError, setModel,
-    fields, submitCount, submitting, submitted, validateModel, syncDefaults, state, hasModel,
+    fields, submitCount, submitting, submitted, validateModel, validateModelAt, syncDefaults, state, hasModel,
     isValidatable, errors, setError, unregister, mounted, initSchema, model, getRegistered,
-    getModel
+    getModel, removeError, isDirty, isTouched, getDefault, getElement
   } = base;
 
   useEffect(() => {
@@ -750,11 +743,11 @@ function initForm<T extends IModel>(options?: IOptions<T>) {
   const handleReset = _handleReset;
   const handleSubmit = _handleSubmit;
 
-  const api: IKomoForm<T> = {
+  const api: IKomo<T> = {
 
     // Elements
     register: initElement<T>(base as any),
-    //unregister: base.unregister,
+    unregister,
 
     // Form
     render,
@@ -764,20 +757,20 @@ function initForm<T extends IModel>(options?: IOptions<T>) {
     state,
 
     // Model
-    getDefault: base.getDefault,
-    getElement: base.getElement,
+    getDefault,
+    getElement,
     hasModel,
-    getModel: base.getModel,
-    setModel: base.setModel,
-    validateModel: base.validateModel,
-    validateModelAt: base.validateModelAt,
+    getModel,
+    setModel,
+    validateModel,
+    validateModelAt,
 
-    isTouched: base.isTouched,
-    isDirty: base.isDirty,
+    isTouched,
+    isDirty,
 
-    setError: base.setError,
-    removeError: base.removeError,
-    clearError: base.clearError
+    setError,
+    removeError,
+    clearError
 
   };
 

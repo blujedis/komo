@@ -677,7 +677,7 @@ export interface IUseFieldsHook<T extends IModel> {
 /**
  * Create useFields type returning IUseFields.
  */
-declare type BasePicked = 'render' | 'state' | 'getModel' | 'hasModel' | 'setModel' | 'validateModel' | 'validateModelAt' | 'setError' | 'removeError' | 'clearError' | 'getElement' | 'getDefault' | 'isTouched' | 'isDirty';
+declare type BasePicked = 'render' | 'state' | 'getModel' | 'hasModel' | 'setModel' | 'validateModel' | 'validateModelAt' | 'setError' | 'removeError' | 'clearError' | 'getElement' | 'getDefault' | 'isTouched' | 'isDirty' | 'unregister';
 /**
  * The base API interface used by form field elements and form submit, reset handlers.
  */
@@ -893,21 +893,6 @@ export interface IKomoBase<T extends IModel> {
      */
     isDirtyCompared(name: KeyOf<T>, value?: any, defautlValue?: any): boolean;
     /**
-     * Gets all vanity keys which includes virtual keys
-     * as well as dyanmic fields.
-     */
-    /**
-     * Sets form vanity name.
-     *
-     * @param name the name of the vanity to be set.
-     */
-    /**
-     * Removes form vanity.
-     */
-    /**
-     * Clears all form vanity.
-     */
-    /**
      * Sets field/element error.
      *
      * @param name the field/element name to set error for.
@@ -973,7 +958,7 @@ export interface IKomoBase<T extends IModel> {
      */
     unregister(name: KeyOf<T>): void;
 }
-export interface IKomoForm<T extends IModel> extends Pick<IKomoBase<T>, BasePicked> {
+export interface IKomo<T extends IModel> extends Pick<IKomoBase<T>, BasePicked> {
     /**
      * Registers an element/field with Komo.
      */
@@ -1014,7 +999,5 @@ export interface IKomoForm<T extends IModel> extends Pick<IKomoBase<T>, BasePick
      * @param names the names of fields/elements you wish to create hooks for.
      */
     useFields?: IUseFieldsHook<T>;
-}
-export interface IKomo<T extends IModel> extends Omit<IKomoForm<T>, 'withKomo'> {
 }
 export {};

@@ -999,6 +999,11 @@ export interface IKomo<T extends IModel> extends Pick<IKomoBase<T>, BasePicked> 
      * @param names the names of fields/elements you wish to create hooks for.
      */
     useFields?: IUseFieldsHook<T>;
-    reinit?(defaults: T): void;
+    /**
+     * Reinitializes Komo synchronizing default values and schema.
+     *
+     * @param defaults default values to reinitialize with.
+     */
+    reinit?(defaults?: T): void;
 }
 export {};

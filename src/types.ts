@@ -1296,6 +1296,11 @@ export interface IKomo<T extends IModel> extends Pick<IKomoBase<T>, BasePicked> 
    */
   useFields?: IUseFieldsHook<T>;
 
-  reinit?(defaults: T): void;
+  /**
+   * Reinitializes Komo synchronizing default values and schema.
+   * 
+   * @param defaults default values to reinitialize with.
+   */
+  reinit?(defaults?: T): void;
 
 }

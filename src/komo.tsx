@@ -576,9 +576,9 @@ function initForm<T extends IModel>(options?: IOptions<T>) {
 
   }, []);
 
-  async function init(defaults?) {
+  async function init(defaults?, force: boolean = false) {
 
-    if (mounted.current)
+    if (mounted.current && !force)
       return;
 
     debug_init('mount:fields', getRegistered());
@@ -757,7 +757,7 @@ function initForm<T extends IModel>(options?: IOptions<T>) {
 
     // Form
     render,
-    reinit: init,
+    reinit: (defaults?) => init(defaults, true),
     reset,
     handleReset,
     handleSubmit,

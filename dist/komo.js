@@ -416,8 +416,8 @@ function initForm(options) {
             });
         };
     }, []);
-    async function init(defaults) {
-        if (mounted.current)
+    async function init(defaults, force = false) {
+        if (mounted.current && !force)
             return;
         debug_init('mount:fields', getRegistered());
         debug_init('mount:schema', options.validationSchema);
@@ -539,7 +539,7 @@ function initForm(options) {
         unregister,
         // Form
         render,
-        reinit: init,
+        reinit: (defaults) => init(defaults, true),
         reset,
         handleReset,
         handleSubmit,

@@ -260,6 +260,22 @@ export default MyForm;</code></pre>
 				<p>Komo allows models with nested data. Any form field can have a mapped path enabling getting and setting from a nested prop.</p>
 				<p>The below will map errors in our error model <code>{ firstName: [ error objects here ] }</code> but it&#39;s model data will get/set from the nested path of <code>user.name.first</code>.</p>
 				<pre><code class="language-jsx">&lt;input name=<span class="hljs-string">"firstName"</span> type=<span class="hljs-string">"text"</span> ref={register({ <span class="hljs-attr">path</span>: <span class="hljs-string">'user.name.first'</span> })} /&gt;</code></pre>
+				<a href="#reinit-after-effect" id="reinit-after-effect" style="color: inherit; text-decoration: none;">
+					<h4>Reinit After Effect</h4>
+				</a>
+				<p>There are cases where you may need to initialize your data after you mount using <strong>useEffect</strong>. Komo exposes a method for this called <code>reinit</code>. This method is used by Komo internally itself.</p>
+				<pre><code class="language-tsx">const { reinit } = useForm({
+  // options here.
+});
+
+useEffect(() =&gt; {
+
+  // some promise or state change data is now available.
+
+  reinit(defaults_from_state);
+
+}, [defaults_from_state]);
+</code></pre>
 				<a href="#hooks" id="hooks" style="color: inherit; text-decoration: none;">
 					<h2>Hooks</h2>
 				</a>

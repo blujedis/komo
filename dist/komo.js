@@ -408,35 +408,6 @@ function initForm(options) {
     const base = initApi(options);
     const { options: formOptions, defaults, render, clearDirty, clearTouched, clearError, setModel, fields, submitCount, submitting, submitted, validateModel, validateModelAt, syncDefaults, state, hasModel, isValidatable, errors, setError, unregister, mounted, initSchema, model, getRegistered, getModel, removeError, isDirty, isTouched, getDefault, getElement } = base;
     react_1.useEffect(() => {
-        const init = async () => {
-            if (mounted.current)
-                return;
-            debug_init('mount:fields', getRegistered());
-            debug_init('mount:schema', options.validationSchema);
-            const { err, data } = await utils_1.me(options.defaults);
-            debug_init('mount:defaults', data);
-            if (err && utils_1.isPlainObject(err))
-                debug_init('err', err);
-            // Err and data both 
-            syncDefaults({ ...err, ...data });
-            // Init normalize the validation schema.
-            initSchema();
-            // validate form before touched.
-            if (options.validateInit) {
-                validateModel()
-                    .catch(valErr => {
-                    if (valErr)
-                        setError(valErr);
-                }).finally(() => {
-                    mounted.current = true;
-                    render('form:effect:validate'); // this may not be needed.
-                });
-            }
-            else {
-                mounted.current = true;
-                render('form:effect');
-            }
-        };
         init();
         return () => {
             mounted.current = false;
@@ -445,6 +416,38 @@ function initForm(options) {
             });
         };
     }, []);
+    async function init(defaults) {
+        if (mounted.current)
+            return;
+        debug_init('mount:fields', getRegistered());
+        debug_init('mount:schema', options.validationSchema);
+        let _defaults = options.defaults;
+        if (defaults)
+            _defaults = validate_1.promisifyDefaults(defaults, options.yupDefaults);
+        const { err, data } = await utils_1.me(_defaults);
+        debug_init('mount:defaults', data);
+        if (err && utils_1.isPlainObject(err))
+            debug_init('err', err);
+        // Err and data both 
+        syncDefaults({ ...err, ...data });
+        // Init normalize the validation schema.
+        initSchema();
+        // validate form before touched.
+        if (options.validateInit) {
+            validateModel()
+                .catch(valErr => {
+                if (valErr)
+                    setError(valErr);
+            }).finally(() => {
+                mounted.current = true;
+                render('form:effect:validate'); // this may not be needed.
+            });
+        }
+        else {
+            mounted.current = true;
+            render('form:effect');
+        }
+    }
     /**
      * Manually resets model, dirty touched and clears errors.
      *
@@ -536,6 +539,7 @@ function initForm(options) {
         unregister,
         // Form
         render,
+        reinit: init,
         reset,
         handleReset,
         handleSubmit,
@@ -565,6 +569,7 @@ function initKomo(options) {
     options = { ...DEFAULTS, ...options };
     const normalizeYup = validate_1.parseYupDefaults(options.validationSchema, options.validationSchemaPurge);
     options.validationSchema = normalizeYup.schema;
+    options.yupDefaults = normalizeYup.defaults;
     options.defaults = validate_1.promisifyDefaults(options.defaults, normalizeYup.defaults);
     options.castHandler = validate_1.normalizeCasting(options.castHandler);
     const api = initForm(options);

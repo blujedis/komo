@@ -11,6 +11,7 @@ const material_1 = __importDefault(require("./material"));
 const menu_1 = __importDefault(require("./menu"));
 const advanced_1 = __importDefault(require("./advanced"));
 const virtual_1 = __importDefault(require("./virtual"));
+const reinit_1 = __importDefault(require("./reinit"));
 const NotFound = (props) => {
     return (react_1.default.createElement("div", null, "404 - Not Found"));
 };
@@ -25,6 +26,7 @@ const App = () => {
                 react_1.default.createElement(wouter_1.Route, { path: "/material", component: material_1.default }),
                 react_1.default.createElement(wouter_1.Route, { path: "/advanced", component: advanced_1.default }),
                 react_1.default.createElement(wouter_1.Route, { path: "/virtual", component: virtual_1.default }),
+                react_1.default.createElement(wouter_1.Route, { path: "/reinit", component: reinit_1.default }),
                 react_1.default.createElement(wouter_1.Route, { path: "/:404*", component: NotFound })))));
 };
 exports.default = App;

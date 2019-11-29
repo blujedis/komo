@@ -6,6 +6,7 @@ import Material from './material';
 import Menu from './menu';
 import Advanced from './advanced';
 import Virtual from './virtual';
+import Reinit from './reinit';
 
 const NotFound: FC = (props) => {
   return (
@@ -29,6 +30,7 @@ const App: FC = () => {
           <Route path="/material" component={Material} />
           <Route path="/advanced" component={Advanced} />
           <Route path="/virtual" component={Virtual} />
+          <Route path="/reinit" component={Reinit} />
           <Route path="/:404*" component={NotFound} />
         </Switch>
       </div>

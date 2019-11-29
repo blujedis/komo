@@ -966,7 +966,7 @@ export interface IKomo<T extends IModel> extends Pick<IKomoBase<T>, BasePicked> 
     /**
      * Resets form clearing errors and restoring defaults. This is called by "handleReset".
      *
-     * @param values optiona values to reset the form with.
+     * @param values optional values to reset the form with.
      */
     reset(values?: T): void;
     /**
@@ -999,5 +999,6 @@ export interface IKomo<T extends IModel> extends Pick<IKomoBase<T>, BasePicked> 
      * @param names the names of fields/elements you wish to create hooks for.
      */
     useFields?: IUseFieldsHook<T>;
+    reinit?(defaults: T): void;
 }
 export {};

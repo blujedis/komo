@@ -1,5 +1,9 @@
 # Changes
 
+## 11/29/2019
+
+- Expose "reinit" so that defaults can be set from useEffect and allow all data to resync before render.
+
 ## 11/22/2019
 
 - Fix issue where registrations in custom components may not bind.

@@ -564,44 +564,6 @@ function initForm<T extends IModel>(options?: IOptions<T>) {
 
   useEffect(() => {
 
-    const init = async () => {
-
-      if (mounted.current)
-        return;
-
-      debug_init('mount:fields', getRegistered());
-      debug_init('mount:schema', options.validationSchema);
-
-      const { err, data } = await me(options.defaults as Promise<Partial<T>>);
-
-      debug_init('mount:defaults', data);
-      if (err && isPlainObject(err))
-        debug_init('err', err);
-
-      // Err and data both 
-      syncDefaults({ ...err, ...data });
-
-      // Init normalize the validation schema.
-      initSchema();
-
-      // validate form before touched.
-      if (options.validateInit) {
-        validateModel()
-          .catch(valErr => {
-            if (valErr)
-              setError(valErr);
-          }).finally(() => {
-            mounted.current = true;
-            render('form:effect:validate'); // this may not be needed.
-          });
-      }
-      else {
-        mounted.current = true;
-        render('form:effect');
-      }
-
-    };
-
     init();
 
     return () => {
@@ -613,6 +575,50 @@ function initForm<T extends IModel>(options?: IOptions<T>) {
     };
 
   }, []);
+
+  async function init(defaults?) {
+
+    if (mounted.current)
+      return;
+
+    debug_init('mount:fields', getRegistered());
+    debug_init('mount:schema', options.validationSchema);
+
+    let _defaults = options.defaults as Promise<Partial<T>>;
+
+    if (defaults)
+      _defaults = promisifyDefaults(defaults, (options as any).yupDefaults) as Promise<T>;
+
+    const { err, data } = await me(_defaults);
+
+    debug_init('mount:defaults', data);
+
+    if (err && isPlainObject(err))
+      debug_init('err', err);
+
+    // Err and data both 
+    syncDefaults({ ...err, ...data });
+
+    // Init normalize the validation schema.
+    initSchema();
+
+    // validate form before touched.
+    if (options.validateInit) {
+      validateModel()
+        .catch(valErr => {
+          if (valErr)
+            setError(valErr);
+        }).finally(() => {
+          mounted.current = true;
+          render('form:effect:validate'); // this may not be needed.
+        });
+    }
+    else {
+      mounted.current = true;
+      render('form:effect');
+    }
+
+  }
 
   /**
    * Manually resets model, dirty touched and clears errors.
@@ -751,6 +757,7 @@ function initForm<T extends IModel>(options?: IOptions<T>) {
 
     // Form
     render,
+    reinit: init,
     reset,
     handleReset,
     handleSubmit,
@@ -791,6 +798,7 @@ export function initKomo<T extends IModel, D extends IModel = {}>(options?: IOpt
 
   const normalizeYup = parseYupDefaults(options.validationSchema, options.validationSchemaPurge);
   options.validationSchema = normalizeYup.schema;
+  (options as any).yupDefaults = normalizeYup.defaults;
   options.defaults = promisifyDefaults(options.defaults, normalizeYup.defaults) as Promise<Model>;
   options.castHandler = normalizeCasting(options.castHandler);
 

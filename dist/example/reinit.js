@@ -25,15 +25,15 @@ const schema = yup_1.object({
  * Our Default form component.
  */
 const Reinit = () => {
-    const { register, handleSubmit, handleReset, state, reinit } = __1.default({
+    const { register, handleSubmit, handleReset, state, update } = __1.default({
         validationSchema: schema,
         validateNative: true
     });
     react_1.useEffect(() => {
-        reinit({
+        update({
             firstName: 'Milton',
-            lastName: 'Waddams'
-        });
+            lastName: undefined
+        }, true);
     }, []);
     const onSubmit = (model) => {
         console.log(model);
@@ -45,7 +45,7 @@ const Reinit = () => {
     return (react_1.default.createElement("div", null,
         react_1.default.createElement("h2", null, "Reinit Example - Yup Validation"),
         react_1.default.createElement("hr", null),
-        react_1.default.createElement("br", null),
+        react_1.default.createElement("p", null, "Note we update here and with validate so we immediately get our console.error as \"lastName\" is required."),
         react_1.default.createElement("form", { noValidate: true, onSubmit: handleSubmit(onSubmit), onReset: handleReset },
             react_1.default.createElement("label", { htmlFor: "firstName" }, "First Name: "),
             react_1.default.createElement("input", { name: "firstName", type: "text", ref: register }),

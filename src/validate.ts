@@ -333,6 +333,8 @@ export function promisifyDefaults<T extends IModel>(defaults: T, yupDefaults: Pa
   if (!isPromise(defaults))
     return Promise.resolve({ ...yupDefaults, ...initDefaults }) as Promise<T>;
 
+  // On error we return yupDefaults.
+  // We merge these in Komo sync event.
   return (defaults as any)
     .then(res => {
       return { ...yupDefaults, ...res }; // merge schema defs with user defs.

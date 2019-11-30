@@ -1000,10 +1000,17 @@ export interface IKomo<T extends IModel> extends Pick<IKomoBase<T>, BasePicked> 
      */
     useFields?: IUseFieldsHook<T>;
     /**
-     * Reinitializes Komo synchronizing default values and schema.
+     * Reinitializes Komo synchronizing default values.
      *
      * @param defaults default values to reinitialize with.
      */
-    reinit?(defaults?: T): void;
+    reinit(defaults?: Partial<T>): void;
+    /**
+     * Updates model values, resynchronizes and optionally validates the model.
+     *
+     * @param model the model to update data with.
+     * @param validate validates the model after update.
+     */
+    update(model: Partial<T>, validate?: boolean): void;
 }
 export {};

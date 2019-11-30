@@ -422,8 +422,8 @@ function initForm(options) {
             });
         };
     }, []);
-    async function init(defaults, force = false) {
-        if (mounted.current && !force)
+    async function init(defaults, isReinit = false, validate = false) {
+        if (mounted.current && !isReinit)
             return;
         debug_init('mount:fields', getRegistered());
         debug_init('mount:schema', options.validationSchema);
@@ -437,9 +437,14 @@ function initForm(options) {
         // Err and data both 
         syncDefaults({ ...err, ...data });
         // Init normalize the validation schema.
-        initSchema();
+        if (!isReinit)
+            initSchema();
+        // if not reinit just use options
+        // otherwise check if user wants
+        // to validate. (default: false)
+        const shouldValidate = !isReinit ? options.validateInit : validate;
         // validate form before touched.
-        if (options.validateInit) {
+        if (shouldValidate) {
             validateModel()
                 .catch(valErr => {
                 if (valErr)
@@ -454,6 +459,10 @@ function initForm(options) {
             render('form:effect');
         }
     }
+    const update = (model, validate = false) => {
+        setModel(model);
+        init(model, true, validate);
+    };
     /**
      * Manually resets model, dirty touched and clears errors.
      *
@@ -558,6 +567,7 @@ function initForm(options) {
         setModel,
         validateModel,
         validateModelAt,
+        update,
         isTouched,
         isDirty,
         setError,

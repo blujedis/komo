@@ -3,6 +3,8 @@
 ## 11/30/2019
 
 - Favor new defaults over current model when reinitializing.
+- Reinit should allow partials.
+- Add ".update()" method to allow for model updates with synchronization and validation like hooks but from root hook.
 
 ## 11/29/2019
 

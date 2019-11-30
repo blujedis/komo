@@ -260,6 +260,8 @@ function promisifyDefaults(defaults, yupDefaults = {}) {
     const initDefaults = utils_1.isPlainObject(defaults) ? { ...defaults } : {};
     if (!utils_1.isPromise(defaults))
         return Promise.resolve({ ...yupDefaults, ...initDefaults });
+    // On error we return yupDefaults.
+    // We merge these in Komo sync event.
     return defaults
         .then(res => {
         return { ...yupDefaults, ...res }; // merge schema defs with user defs.

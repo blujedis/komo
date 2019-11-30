@@ -21,17 +21,17 @@ type Schema = Partial<InferType<typeof schema>>;
  */
 const Reinit: FC = () => {
 
-  const { register, handleSubmit, handleReset, state, reinit } = useForm<Schema>({
+  const { register, handleSubmit, handleReset, state, update } = useForm<Schema>({
     validationSchema: schema,
     validateNative: true
   });
 
   useEffect(() => {
 
-    reinit({
+    update({
       firstName: 'Milton',
-      lastName: 'Waddams'
-    });
+      lastName: undefined
+    }, true);
 
   }, []);
 
@@ -47,7 +47,13 @@ const Reinit: FC = () => {
     <div>
 
       <h2>Reinit Example - Yup Validation</h2>
-      <hr /><br />
+      <hr />
+
+      <p>
+        Note we update here and with validate so we immediately get our console.error
+        as "lastName" is required.
+
+      </p>
 
       <form noValidate onSubmit={handleSubmit(onSubmit)} onReset={handleReset}>
 

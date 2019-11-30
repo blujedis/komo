@@ -585,9 +585,9 @@ function initForm<T extends IModel>(options?: IOptions<T>) {
 
   }, []);
 
-  async function init(defaults?, force: boolean = false) {
+  async function init(defaults?, isReinit: boolean = false, validate: boolean = false) {
 
-    if (mounted.current && !force)
+    if (mounted.current && !isReinit)
       return;
 
     debug_init('mount:fields', getRegistered());
@@ -609,10 +609,16 @@ function initForm<T extends IModel>(options?: IOptions<T>) {
     syncDefaults({ ...err, ...data });
 
     // Init normalize the validation schema.
-    initSchema();
+    if (!isReinit)
+      initSchema();
+
+    // if not reinit just use options
+    // otherwise check if user wants
+    // to validate. (default: false)
+    const shouldValidate = !isReinit ? options.validateInit : validate;
 
     // validate form before touched.
-    if (options.validateInit) {
+    if (shouldValidate) {
       validateModel()
         .catch(valErr => {
           if (valErr)
@@ -628,6 +634,11 @@ function initForm<T extends IModel>(options?: IOptions<T>) {
     }
 
   }
+
+  const update = (model: Partial<T>, validate: boolean = false) => {
+    setModel(model as T);
+    init(model, true, validate);
+  };
 
   /**
    * Manually resets model, dirty touched and clears errors.
@@ -780,6 +791,7 @@ function initForm<T extends IModel>(options?: IOptions<T>) {
     setModel,
     validateModel,
     validateModelAt,
+    update,
 
     isTouched,
     isDirty,

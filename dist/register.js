@@ -419,7 +419,7 @@ function initElement(api) {
         }
         else if (utils_1.isCheckbox(element.type)) {
             const initVal = element.initValue(model.current);
-            const initChecked = element.initChecked(model.current);
+            // const initChecked = element.initChecked(model.current);
             element.defaultValue = element.defaultValuePersist =
                 initVal || element.value || element.checked || modelVal || false;
             element.defaultChecked = element.defaultCheckedPersist = element.defaultValue || false;
@@ -515,8 +515,6 @@ function initElement(api) {
         }
         // Normalizes the element and defaults for use with Komo.
         initDefaults(element);
-        // NOTE: This should probably be refactored to
-        // own file for greater flexibility/options.
         if (!rebind) {
             const allowNative = !utils_1.isUndefined(element.enableNativeValidation) ?
                 element.enableNativeValidation : komoOptions.validateNative;

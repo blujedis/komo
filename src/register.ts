@@ -1,4 +1,3 @@
-
 import {
   isRadio, isCheckbox, addListener, isTextLike, removeListener,
   initObserver, isBooleanLike, isString, isUndefined, isNullOrUndefined, me, isFunction,
@@ -255,6 +254,7 @@ export function initElement<T extends IModel>(api?: IKomoBase<T>) {
     else {
       value = element.defaultValuePersist;
       element.value = value;
+
       // Must have string here.
       if (isObject(value) && !element.virtual) {
         // tslint:disable-next-line: no-console
@@ -578,7 +578,7 @@ export function initElement<T extends IModel>(api?: IKomoBase<T>) {
     else if (isCheckbox(element.type)) {
 
       const initVal = element.initValue(model.current);
-      const initChecked = element.initChecked(model.current);
+      // const initChecked = element.initChecked(model.current);
 
       element.defaultValue = element.defaultValuePersist =
         initVal || element.value || element.checked || modelVal || false;
@@ -716,8 +716,6 @@ export function initElement<T extends IModel>(api?: IKomoBase<T>) {
     // Normalizes the element and defaults for use with Komo.
     initDefaults(element);
 
-    // NOTE: This should probably be refactored to
-    // own file for greater flexibility/options.
     if (!rebind) {
 
       const allowNative = !isUndefined(element.enableNativeValidation) ?

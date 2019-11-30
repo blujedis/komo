@@ -144,16 +144,25 @@ function initApi<T extends IModel>(options: IOptions<T>) {
 
   };
 
-  const syncDefaults = (defs: T) => {
+  const syncDefaults = (defs: T, isReinit = false) => {
 
     defaults.current = merge({ ...defaults.current }, { ...defs });
-    model.current = merge({ ...defs }, { ...model.current });
+
+    // When reinitializing defaults should
+    // be favored over the current model.
+    if (isReinit)
+      model.current = merge({ ...model.current }, { ...defs });
+
+    else
+      model.current = merge({ ...defs }, { ...model.current });
+
 
     const keys = Object.keys(defs);
     defaultKeys.current = keys;
 
     // Iterate bound elements and update default values.
     [...fields.current.values()].forEach(element => {
+      ``
 
       if (keys.includes(element.name) && element.virtual)
         // tslint:disable-next-line: no-console

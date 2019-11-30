@@ -1,5 +1,9 @@
 # Changes
 
+## 11/30/2019
+
+- Favor new defaults over current model when reinitializing.
+
 ## 11/29/2019
 
 - Expose "reinit" so that defaults can be set from useEffect and allow all data to resync before render.

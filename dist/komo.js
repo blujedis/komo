@@ -97,13 +97,19 @@ function initApi(options) {
             defaults.current = current;
         }
     };
-    const syncDefaults = (defs) => {
+    const syncDefaults = (defs, isReinit = false) => {
         defaults.current = utils_1.merge({ ...defaults.current }, { ...defs });
-        model.current = utils_1.merge({ ...defs }, { ...model.current });
+        // When reinitializing defaults should
+        // be favored over the current model.
+        if (isReinit)
+            model.current = utils_1.merge({ ...model.current }, { ...defs });
+        else
+            model.current = utils_1.merge({ ...defs }, { ...model.current });
         const keys = Object.keys(defs);
         defaultKeys.current = keys;
         // Iterate bound elements and update default values.
         [...fields.current.values()].forEach(element => {
+            ``;
             if (keys.includes(element.name) && element.virtual)
                 // tslint:disable-next-line: no-console
                 console.error(`Attempted to set bound property "${element.name}" as vanity, try useField('${element.name}') NOT useField('${element.name}', true).`);

@@ -2,7 +2,7 @@
 import {
   isRadio, isCheckbox, addListener, isTextLike, removeListener,
   initObserver, isBooleanLike, isString, isUndefined, isNullOrUndefined, me, isFunction,
-  debuggers, isSelectMultiple, isEqual, isArray, isElementOrVirtual, isObject, isPreventEnter, noop
+  debuggers, isSelectMultiple, isEqual, isArray, isElementOrVirtual, isObject, isPreventEnter, noop, parseBoolean
 } from './utils';
 import { parseNativeValidators } from './validate';
 import {
@@ -248,7 +248,7 @@ export function initElement<T extends IModel>(api?: IKomoBase<T>) {
     }
 
     else if (isCheckbox(element.type)) {
-      element.checked = element.defaultChecked = isBooleanLike(element.defaultCheckedPersist);
+      element.checked = element.defaultChecked = parseBoolean(element.defaultCheckedPersist);
       value = element.checked;
     }
 

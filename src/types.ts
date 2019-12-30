@@ -871,15 +871,22 @@ export interface IUseFieldHook<T extends IModel> {
  * Create useFields type returning IUseFields.
  */
 export interface IUseFieldsHook<T extends IModel> {
-  <K extends string>(vanity: boolean, ...names: K[]): IUseFields<K, IUseField<Partial<T> & Record<K, Partial<T>>>>;
+
+  /**
+   * Creates object of virtual field hooks.
+   * 
+   * @param virtual when true indicates field is virtual.
+   * @param names the names of the virtuals you want to create.
+   */
+  <K extends string>(virtual: boolean, ...names: K[]): IUseFields<K, IUseField<Partial<T> & Record<K, Partial<T>>>>;
+
+  /**
+   * Creates object of field hooks.
+   * 
+   * @param names the names of the virtuals you want to create.
+   */
   <K extends KeyOf<T>>(...names: K[]): IUseFields<K, IUseField<Partial<T>>>;
 }
-
-/**
- * Create useFields type returning IUseFields.
- */
-// export type IUseFieldsHook<T extends IModel> =
-//   <K extends KeyOf<T>>(...names: K[]) => IUseFields<K, IUseField<T>>;
 
 type BasePicked = 'render' | 'state' | 'getModel' | 'hasModel' | 'setModel' | 'validateModel' | 'validateModelAt' | 'setTouched' | 'removeTouched' | 'clearTouched' | 'setDirty' | 'removeDirty' | 'clearDirty' | 'setError' | 'removeError' | 'clearError' | 'getElement' | 'getDefault' | 'isTouched' | 'isDirty';
 

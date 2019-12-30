@@ -166,6 +166,19 @@ export function isBooleanLike(value: any) {
 }
 
 /**
+ * Parses boolean value.
+ * 
+ * @param value the value to inspect
+ */
+export function parseBoolean(value: unknown) {
+  if (!isBooleanLike(value))
+    return false;
+  if (/^(false|0)$/.test)
+    return false;
+  return true;
+}
+
+/**
  * Checks if a value is truthy.
  * 
  * @param value the value to inspect.

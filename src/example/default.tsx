@@ -62,7 +62,7 @@ const Default: FC = () => {
         <input name="urgent" type="checkbox" ref={register({ defaultValue: true })} /><br /><br />
 
         <label htmlFor="method">Contact Method: </label> &nbsp;
-        Phone <input name="method" type="radio" value="Phone" ref={register({ defaultChecked: true })} /> &nbsp;
+        Phone <input name="method" type="radio" value="Phone" ref={register({ defaultChecked: false })} /> &nbsp;
         Email <input name="method" type="radio" value="Email" ref={register} /><br /><br />
 
         <label htmlFor="reason">Reason: </label>

@@ -18,14 +18,12 @@ const REGISTER_DEFAULTS = {
  * @param api the base form api.
  */
 function initElement(api) {
-    const { options: komoOptions, schemaAst, fields, unregister, setModel, getModel, isTouched, isDirty, setDefault, mounted, setDirty, setTouched, removeDirty, isValidateBlur, isValidateChange, validateModelAt, isValidatable, removeError, setError, render, getElement, isDirtyCompared, model, hasModel } = api;
+    const { options: komoOptions, schemaAst, fields, unregister, setModel, getModel, isTouched, isDirty, setDefault, setDirty, setTouched, removeDirty, isValidateBlur, isValidateChange, validateModelAt, isValidatable, removeError, setError, render, getElement, isDirtyCompared, model } = api;
     /**
      * Checks if the element is a duplicate and should be ignored.
      * Radio groups never return true.
      */
     function isRegistered(element) {
-        if (mounted.current)
-            return true;
         const exists = fields.current.has(element);
         const elements = getElement(element.name, true);
         // if only a single element, not a radio group.
@@ -184,7 +182,7 @@ function initElement(api) {
             value = element.defaultValuePersist;
             element.value = value;
             // Must have string here.
-            if (utils_1.isObject(value)) {
+            if (utils_1.isObject(value) && !element.virtual) {
                 // tslint:disable-next-line: no-console
                 console.error(`Element "${element.name}" contains invalid typeof "${typeof value}", ${element.type} can only accept strings. Is this a virtual?`);
                 return;
@@ -421,7 +419,7 @@ function initElement(api) {
         }
         else if (utils_1.isCheckbox(element.type)) {
             const initVal = element.initValue(model.current);
-            const initChecked = element.initChecked(model.current);
+            // const initChecked = element.initChecked(model.current);
             element.defaultValue = element.defaultValuePersist =
                 initVal || element.value || element.checked || modelVal || false;
             element.defaultChecked = element.defaultCheckedPersist = element.defaultValue || false;
@@ -517,8 +515,6 @@ function initElement(api) {
         }
         // Normalizes the element and defaults for use with Komo.
         initDefaults(element);
-        // NOTE: This should probably be refactored to
-        // own file for greater flexibility/options.
         if (!rebind) {
             const allowNative = !utils_1.isUndefined(element.enableNativeValidation) ?
                 element.enableNativeValidation : komoOptions.validateNative;
@@ -550,6 +546,10 @@ function initElement(api) {
             return (element) => {
                 // Extend element with options.
                 const _element = element;
+                // TODO: rethink how this works
+                if (_element)
+                    // @ts-ignore
+                    _element.__hooked = options.__hooked__;
                 if (!_element || isRegistered(_element))
                     return;
                 const normalized = normalizeElement(_element, options);

@@ -1,4 +1,4 @@
-import { BaseSyntheticEvent, MutableRefObject, LegacyRef, FormEvent } from 'react';
+import { BaseSyntheticEvent, MutableRefObject, LegacyRef, FormEvent, FunctionComponent, Component } from 'react';
 import { ObjectSchema, ValidateOptions, InferType, Shape, ObjectSchemaDefinition } from 'yup';
 import { createLogger, LogLevel } from './utils';
 
@@ -16,8 +16,12 @@ export type ValueOf<T, K extends KeyOf<T>> = T[K];
 
 /**
  * Infers the return type of a passed function.
+ * 
+ * @example
+ * type SomeType = <R, H extends (hook: IKomo<T>) => R>(hook: H): InferReturn<H>;
  */
 export type InferReturn<F extends Function> = F extends (...args: any[]) => infer R ? R : never;
+
 
 // MODEL & VALIDATION //
 
@@ -213,6 +217,13 @@ export interface IOptions<T extends IModel, D extends IModel = {}> {
    * for user defined model value casting.
    */
   castHandler?: boolean | CastHandler;
+
+  /**
+   * When true vanity properties such as virtuals and 
+   * non top level model properties are cleaned to return
+   * model to pure state.
+   */
+  cleanVanities?: boolean;
 
 }
 
@@ -713,11 +724,15 @@ export interface IUseField<T extends IModel, R = IRegister<T>> {
 
   /**
    * Gets the element's current value.
+   * NOTE: Does not perform render.
+   * see .render();
    */
   value: string;
 
   /**
    * The current form's data model value.
+   * NOTE: Does NOT perform render.
+   * see .render();
    */
   data: any;
 
@@ -753,7 +768,7 @@ export interface IUseField<T extends IModel, R = IRegister<T>> {
   blur(event?: BaseSyntheticEvent): void;
 
   /**
-   * Updates the value and model value for an element.
+   * Updates the value and model value for an element and performs render.
    * When no modelValue is provided the value is used. Set validate
    * to false if you wish to validate manually.
    * 
@@ -888,7 +903,15 @@ export interface IUseFieldsHook<T extends IModel> {
   <K extends KeyOf<T>>(...names: K[]): IUseFields<K, IUseField<Partial<T>>>;
 }
 
-type BasePicked = 'render' | 'state' | 'getModel' | 'hasModel' | 'setModel' | 'validateModel' | 'validateModelAt' | 'setTouched' | 'removeTouched' | 'clearTouched' | 'setDirty' | 'removeDirty' | 'clearDirty' | 'setError' | 'removeError' | 'clearError' | 'getElement' | 'getDefault' | 'isTouched' | 'isDirty';
+/**
+ * Create useFields type returning IUseFields.
+ */
+// export type IUseFieldsHook<T extends IModel> =
+//   <K extends KeyOf<T>>(...names: K[]) => IUseFields<K, IUseField<T>>;
+
+type BasePicked = 'render' | 'state' | 'getModel' | 'hasModel' | 'setModel' | 'validateModel' |
+  'validateModelAt' | 'setError' | 'removeError' | 'clearError' | 'getElement' | 'getDefault' |
+  'isTouched' | 'isDirty' | 'unregister';
 
 /**
  * The base API interface used by form field elements and form submit, reset handlers.
@@ -914,11 +937,6 @@ export interface IKomoBase<T extends IModel> {
    * React MutableRefObject of active model values.
    */
   model: MutableRefObject<T>;
-
-  /**
-   * React MutableRefObject of virtuals.
-   */
-  virtuals: MutableRefObject<Set<string>>;
 
   /**
    * React MutableRefObject of errors.
@@ -1016,7 +1034,7 @@ export interface IKomoBase<T extends IModel> {
   /**
    * Gets the entire model.
    */
-  getModel(): T;
+  getModel(clean?: boolean): T;
 
   /**
    * Sets model value at the specified path.
@@ -1160,31 +1178,6 @@ export interface IKomoBase<T extends IModel> {
    */
   isDirtyCompared(name: KeyOf<T>, value?: any, defautlValue?: any): boolean;
 
-  // Vanity
-
-  /**
-   * Gets all vanity keys which includes virtual keys
-   * as well as dyanmic fields.
-   */
-  getVanity(): string[];
-
-  /**
-   * Sets form vanity name.
-   * 
-   * @param name the name of the vanity to be set.
-   */
-  setVanity(name: string): void;
-
-  /**
-   * Removes form vanity.
-   */
-  removeVanity(name: string): void;
-
-  /**
-   * Clears all form vanity.
-   */
-  clearVanity(): void;
-
   // Error
 
   /**
@@ -1267,7 +1260,7 @@ export interface IKomoBase<T extends IModel> {
 
 }
 
-export interface IKomoForm<T extends IModel> extends Pick<IKomoBase<T>, BasePicked> {
+export interface IKomo<T extends IModel> extends Pick<IKomoBase<T>, BasePicked> {
 
   /**
    * Registers an element/field with Komo.
@@ -1277,7 +1270,7 @@ export interface IKomoForm<T extends IModel> extends Pick<IKomoBase<T>, BasePick
   /**
    * Resets form clearing errors and restoring defaults. This is called by "handleReset".
    * 
-   * @param values optiona values to reset the form with.
+   * @param values optional values to reset the form with.
    */
   reset(values?: T): void;
 
@@ -1317,13 +1310,18 @@ export interface IKomoForm<T extends IModel> extends Pick<IKomoBase<T>, BasePick
   useFields?: IUseFieldsHook<T>;
 
   /**
-   * Convenience method for generating hooks which receives the Komo api. Essentially this
-   * just makes your types play nicely.
+   * Reinitializes Komo synchronizing default values.
    * 
-   * @param hook the hook which accepts the Komo api.
+   * @param defaults default values to reinitialize with.
    */
-  withKomo?<R, H extends (hook: IKomo<T>) => R>(hook: H): InferReturn<H>;
+  reinit(defaults?: Partial<T>): void;
+
+  /**
+   * Updates model values, resynchronizes and optionally validates the model.
+   * 
+   * @param model the model to update data with.
+   * @param validate validates the model after update.
+   */
+  update(model: Partial<T>, validate?: boolean): void;
 
 }
-
-export interface IKomo<T extends IModel> extends Omit<IKomoForm<T>, 'withKomo'> { }

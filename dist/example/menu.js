@@ -15,7 +15,9 @@ const Menu = () => {
         "\u00A0\u00A0|\u00A0\u00A0",
         react_1.default.createElement(wouter_1.Link, { href: "/advanced" }, "Advanced"),
         "\u00A0\u00A0|\u00A0\u00A0",
-        react_1.default.createElement(wouter_1.Link, { href: "/virtual" }, "Virtual")));
+        react_1.default.createElement(wouter_1.Link, { href: "/virtual" }, "Virtual"),
+        "\u00A0\u00A0|\u00A0\u00A0",
+        react_1.default.createElement(wouter_1.Link, { href: "/reinit" }, "Reinit")));
 };
 exports.default = Menu;
 //# sourceMappingURL=menu.js.map

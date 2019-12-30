@@ -234,6 +234,25 @@ The below will map errors in our error model <code>{ firstName: [ error objects 
 <input name="firstName" type="text" ref={register({ path: 'user.name.first' })} />
 ```
 
+#### Reinit After Effect 
+
+There are cases where you may need to initialize your data after you mount using **useEffect**. Komo exposes a method for this called <code>reinit</code>. This method is used by Komo internally itself.
+
+```tsx
+const { reinit } = useForm({
+  // options here.
+});
+
+useEffect(() => {
+
+  // some promise or state change data is now available.
+
+  reinit(defaults_from_state);
+
+}, [defaults_from_state]);
+
+```
+
 ## Hooks
 
 Komo has some built in hooks that make it trivial to wire up to fields or expose your own hooks using the built in <code>withKomo</code> helper.

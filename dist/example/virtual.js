@@ -30,7 +30,7 @@ const VirtualField = ({ name, hook }) => {
     });
     const onBlur = (e) => {
         // We trim here so we don't end up with ' ' as space.
-        fullName.update((first.value + ' ' + last.value).trim());
+        fullName.update((first.value + ' ' + last.value).trim(), null, false);
     };
     return (react_1.default.createElement(react_1.default.Fragment, null,
         react_1.default.createElement("p", null,
@@ -56,6 +56,7 @@ const Virtual = () => {
     const onSubmit = (model) => {
         console.log('model:', model);
         console.log('errors:', state.errors);
+        console.log('vanity', state.vanities);
         console.log('count', state.submitCount);
         console.log('submitting', state.isSubmitting);
         console.log('submitted', state.isSubmitted);

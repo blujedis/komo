@@ -1,6 +1,6 @@
 import { IModel, KeyOf, IKomo, IUseFields, IUseField } from './types';
-import { useCallback, BaseSyntheticEvent } from 'react';
-import { isUndefined, isString, isObject } from './utils';
+import { useCallback, BaseSyntheticEvent, useEffect, useRef } from 'react';
+import { isUndefined, isString, isObject, isElement } from './utils';
 
 export function initHooks<T extends IModel>(komo: IKomo<T>) {
 
@@ -55,6 +55,7 @@ export function initHooks<T extends IModel>(komo: IKomo<T>) {
     };
 
     const getElementOrProp = (prop?: string, message?: string, def: any = null) => {
+
       const element = getElement(name);
       message = message || unavailableMsg(prop);
       if (!element && !state.mounted) return;
@@ -135,10 +136,14 @@ export function initHooks<T extends IModel>(komo: IKomo<T>) {
       },
 
       get data() {
+        if (!field.path)
+          return null;
         return getModel(field.path);
       },
 
       get default() {
+        if (!field.path)
+          return null;
         return getDefault(field.path);
       },
 
@@ -163,6 +168,7 @@ export function initHooks<T extends IModel>(komo: IKomo<T>) {
       },
 
       set data(value: any) {
+        if (!field.path) return;
         setModel(field.path, value);
       },
 

@@ -22,16 +22,17 @@ const DEFAULTS = {
     validateChange: false,
     validateInit: false,
     validationSchemaPurge: true,
-    validateNative: false
+    validateNative: false,
+    cleanVanities: false
 };
 const { debug_api, debug_init } = utils_1.debuggers;
 function initApi(options) {
     const defaults = react_1.useRef({});
+    const defaultKeys = react_1.useRef([]);
     const model = react_1.useRef({});
     const fields = react_1.useRef(new Set());
     const touched = react_1.useRef(new Set());
     const dirty = react_1.useRef(new Set());
-    const vanities = react_1.useRef(new Set());
     const errors = react_1.useRef({});
     const validator = react_1.useRef();
     const schemaAst = react_1.useRef();
@@ -39,12 +40,12 @@ function initApi(options) {
     const submitCount = react_1.useRef(0);
     const submitting = react_1.useRef(false);
     const submitted = react_1.useRef(false);
-    const [, renderStatus] = react_1.useState('init');
+    const [currentStatus, renderStatus] = react_1.useState({ status: 'init' });
     let state = {};
     let api = {};
     // HELPERS //
     const render = (status) => {
-        renderStatus(status);
+        renderStatus({ ...currentStatus, status });
         debug_api('rendered', status);
     };
     function _getElement(namePathOrElement, asGroup = false) {
@@ -60,7 +61,7 @@ function initApi(options) {
     const getRegistered = react_1.useCallback((asPath = false) => {
         return [...fields.current.values()].map(f => asPath ? f.path : f.name);
     }, [fields]);
-    const initSchema = react_1.useCallback(() => {
+    const initSchema = () => {
         let schema;
         if (schemaAst.current)
             options.validationSchema = validate_1.astToSchema(schemaAst.current, options.validationSchema);
@@ -68,14 +69,14 @@ function initApi(options) {
         validator.current = validate_1.normalizeValidator(options.validationSchema, getElement);
         schema = options.validationSchema;
         return schema;
-    }, [defaults, options.validationSchema]);
+    };
     // MODEL //
     const getDefault = (path) => {
         if (!path)
             return defaults.current;
         return lodash_get_1.default(defaults.current, path);
     };
-    const setDefault = react_1.useCallback((pathOrModel, value) => {
+    const setDefault = (pathOrModel, value) => {
         if (!pathOrModel) {
             // tslint:disable-next-line: no-console
             console.error(`Cannot set default value using key or model of undefined.`);
@@ -95,21 +96,26 @@ function initApi(options) {
                 current = pathOrModel;
             defaults.current = current;
         }
-    }, []);
-    const syncDefaults = react_1.useCallback((defs) => {
+    };
+    const syncDefaults = (defs, isReinit = false) => {
         defaults.current = utils_1.merge({ ...defaults.current }, { ...defs });
-        model.current = utils_1.merge({ ...defs }, { ...model.current });
+        // When reinitializing defaults should
+        // be favored over the current model.
+        if (isReinit)
+            model.current = utils_1.merge({ ...model.current }, { ...defs });
+        else
+            model.current = utils_1.merge({ ...defs }, { ...model.current });
         const keys = Object.keys(defs);
+        defaultKeys.current = keys;
         // Iterate bound elements and update default values.
         [...fields.current.values()].forEach(element => {
+            ``;
             if (keys.includes(element.name) && element.virtual)
                 // tslint:disable-next-line: no-console
                 console.error(`Attempted to set bound property "${element.name}" as vanity, try useField('${element.name}') NOT useField('${element.name}', true).`);
-            if (!keys.includes(element.name) && !vanities.current.has(element.name))
-                vanities.current.add(element.name);
             element.reinit();
         });
-    }, []);
+    };
     const setModel = react_1.useCallback((pathOrModel, value) => {
         if (!pathOrModel) {
             // tslint:disable-next-line: no-console
@@ -134,9 +140,28 @@ function initApi(options) {
     const hasModel = (path) => {
         return lodash_has_1.default(model.current, path);
     };
-    const getModel = (path) => {
-        if (!path)
+    const vanities = () => {
+        return Object.keys(model.current).filter(k => !defaultKeys.current.includes(k));
+    };
+    const cleanModel = (model) => {
+        const _model = {};
+        for (const k in model) {
+            if (!model.hasOwnProperty(k) || !defaultKeys.current.includes(k))
+                continue;
+            _model[k] = model[k];
+        }
+        return _model;
+    };
+    const getModel = (path, clean = false) => {
+        if (typeof path === 'boolean') {
+            clean = true;
+            path = undefined;
+        }
+        if (!path) {
+            if (clean)
+                return cleanModel(model.current);
             return model.current;
+        }
         return lodash_get_1.default(model.current, path);
     };
     // TOUCHED // 
@@ -193,21 +218,6 @@ function initApi(options) {
             return dirty.current.has(name);
         return !!dirty.current.size;
     }, []);
-    // VIRTUALS //
-    const getVanity = react_1.useCallback(() => {
-        return [...vanities.current.values()];
-    }, []);
-    const setVanity = (name) => {
-        if (!vanities.current.has(name))
-            vanities.current.add(name);
-    };
-    const removeVanity = (name) => {
-        const removed = vanities.current.delete(name);
-        return removed;
-    };
-    const clearVanity = () => {
-        vanities.current.clear();
-    };
     // ERRORS //
     const setError = react_1.useCallback((nameOrErrors, value) => {
         const currentErrors = { ...errors.current };
@@ -283,7 +293,7 @@ function initApi(options) {
             element = getElement(nameOrElement);
         return utils_1.isUndefined(element.validateBlur) ? options.validateBlur : element.validateBlur;
     };
-    const unregister = react_1.useCallback((element) => {
+    const unregister = (element) => {
         // Nothing to unregister.
         if (!fields.current.size)
             return;
@@ -304,7 +314,7 @@ function initApi(options) {
         _element.unbind();
         // Delete the element from fields collection.
         fields.current.delete(_element);
-    }, []);
+    };
     state = {
         get model() {
             return model.current;
@@ -322,7 +332,7 @@ function initApi(options) {
             return [...dirty.current.keys()];
         },
         get vanities() {
-            return [...vanities.current.keys()];
+            return vanities();
         },
         get valid() {
             return !Object.entries(errors.current).length;
@@ -351,7 +361,6 @@ function initApi(options) {
         options,
         defaults,
         fields,
-        virtuals: vanities,
         unregister,
         schemaAst,
         render,
@@ -386,11 +395,6 @@ function initApi(options) {
         clearDirty,
         isDirty,
         isDirtyCompared,
-        // Vanity
-        getVanity,
-        setVanity,
-        removeVanity,
-        clearVanity,
         // Errors,
         errors,
         setError,
@@ -408,37 +412,8 @@ function initApi(options) {
  */
 function initForm(options) {
     const base = initApi(options);
-    const { options: formOptions, defaults, render, clearDirty, clearTouched, clearError, setModel, fields, submitCount, submitting, submitted, validateModel, syncDefaults, state, hasModel, isValidatable, errors, setError, unregister, mounted, initSchema, model, getRegistered, getVanity } = base;
+    const { options: formOptions, defaults, render, clearDirty, clearTouched, clearError, setModel, fields, submitCount, submitting, submitted, validateModel, validateModelAt, syncDefaults, state, hasModel, isValidatable, errors, setError, unregister, mounted, initSchema, model, getRegistered, getModel, removeError, isDirty, isTouched, getDefault, getElement } = base;
     react_1.useEffect(() => {
-        const init = async () => {
-            if (mounted.current)
-                return;
-            debug_init('mount:fields', getRegistered());
-            debug_init('mount:schema', options.validationSchema);
-            const { err, data } = await utils_1.me(options.defaults);
-            debug_init('mount:defaults', data);
-            if (err && utils_1.isPlainObject(err))
-                debug_init('err', err);
-            // Err and data both 
-            syncDefaults({ ...err, ...data });
-            // Init normalize the validation schema.
-            initSchema();
-            // validate form before touched.
-            if (options.validateInit) {
-                validateModel()
-                    .catch(valErr => {
-                    if (valErr)
-                        setError(valErr);
-                }).finally(() => {
-                    mounted.current = true;
-                    render('form:effect:validate'); // this may not be needed.
-                });
-            }
-            else {
-                mounted.current = true;
-                render('form:effect');
-            }
-        };
         init();
         return () => {
             mounted.current = false;
@@ -447,6 +422,47 @@ function initForm(options) {
             });
         };
     }, []);
+    async function init(defaults, isReinit = false, validate = false) {
+        if (mounted.current && !isReinit)
+            return;
+        debug_init('mount:fields', getRegistered());
+        debug_init('mount:schema', options.validationSchema);
+        let _defaults = options.defaults;
+        if (defaults)
+            _defaults = validate_1.promisifyDefaults(defaults, options.yupDefaults);
+        const { err, data } = await utils_1.me(_defaults);
+        debug_init('mount:defaults', data);
+        if (err && utils_1.isPlainObject(err))
+            debug_init('err', err);
+        // Err and data both 
+        syncDefaults({ ...err, ...data });
+        // Init normalize the validation schema.
+        if (!isReinit)
+            initSchema();
+        // if not reinit just use options
+        // otherwise check if user wants
+        // to validate. (default: false)
+        const shouldValidate = !isReinit ? options.validateInit : validate;
+        // validate form before touched.
+        if (shouldValidate) {
+            validateModel()
+                .catch(valErr => {
+                if (valErr)
+                    setError(valErr);
+            }).finally(() => {
+                mounted.current = true;
+                render('form:effect:validate'); // this may not be needed.
+            });
+        }
+        else {
+            mounted.current = true;
+            render('form:effect');
+        }
+    }
+    const update = (model, validate = false) => {
+        setModel(model);
+        init(model, true, validate);
+    };
     /**
      * Manually resets model, dirty touched and clears errors.
      *
@@ -514,50 +530,49 @@ function initForm(options) {
                 event.preventDefault();
                 event.persist();
             }
+            // Clean properties not defined in
+            // original model.
+            const _model = formOptions.cleanVanities ? getModel(true) : model.current;
             // Can't validate or is disabled.
             if (!isValidatable() || !formOptions.validateSubmit) {
-                await handleCallback(model.current, {}, event);
+                await handleCallback(_model, {}, event);
                 return;
             }
             clearError();
             const { err } = await utils_1.me(validateModel());
             if (err)
                 setError(err);
-            await handleCallback(model.current, err, event);
+            await handleCallback(_model, err, event);
         };
     }
-    const reset = react_1.useCallback(_resetForm, []);
-    const handleReset = react_1.useCallback(_handleReset, []);
-    const handleSubmit = react_1.useCallback(_handleSubmit, []);
+    const reset = _resetForm;
+    const handleReset = _handleReset;
+    const handleSubmit = _handleSubmit;
     const api = {
         // Elements
-        register: react_1.useCallback(register_1.initElement(base), []),
-        unregister: base.unregister,
+        register: register_1.initElement(base),
+        unregister,
         // Form
         render,
+        reinit: (defaults) => init(defaults, true),
         reset,
         handleReset,
         handleSubmit,
         state,
         // Model
-        getDefault: base.getDefault,
-        getElement: base.getElement,
+        getDefault,
+        getElement,
         hasModel,
-        getModel: base.getModel,
-        setModel: base.setModel,
-        validateModel: base.validateModel,
-        validateModelAt: base.validateModelAt,
-        setTouched: base.setTouched,
-        removeTouched: base.removeTouched,
-        clearTouched: base.clearTouched,
-        isTouched: base.isTouched,
-        setDirty: base.setDirty,
-        removeDirty: base.removeDirty,
-        clearDirty: base.clearDirty,
-        isDirty: base.isDirty,
-        setError: base.setError,
-        removeError: base.removeError,
-        clearError: base.clearError
+        getModel,
+        setModel,
+        validateModel,
+        validateModelAt,
+        update,
+        isTouched,
+        isDirty,
+        setError,
+        removeError,
+        clearError
     };
     return api;
 }
@@ -570,13 +585,14 @@ function initKomo(options) {
     options = { ...DEFAULTS, ...options };
     const normalizeYup = validate_1.parseYupDefaults(options.validationSchema, options.validationSchemaPurge);
     options.validationSchema = normalizeYup.schema;
+    options.yupDefaults = normalizeYup.defaults;
     options.defaults = validate_1.promisifyDefaults(options.defaults, normalizeYup.defaults);
     options.castHandler = validate_1.normalizeCasting(options.castHandler);
     const api = initForm(options);
-    function initWithKomo(handler) {
-        return handler(api);
-    }
-    api.withKomo = initWithKomo;
+    // Override setModel so exposed method
+    // causes render.
+    const { render, setModel } = api;
+    api.setModel = (pathOrModel, value) => { setModel(pathOrModel, value); render(`model:set`); };
     const hooks = hooks_1.initHooks(api);
     const komo = utils_1.extend(api, hooks);
     return komo;

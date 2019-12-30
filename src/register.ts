@@ -1,4 +1,3 @@
-
 import {
   isRadio, isCheckbox, addListener, isTextLike, removeListener,
   initObserver, isBooleanLike, isString, isUndefined, isNullOrUndefined, me, isFunction,
@@ -9,7 +8,6 @@ import {
   IRegisterElement, IRegisterOptions, IRegisteredElement,
   IModel, IKomoBase, RegisterElement, CastHandler, PromiseStrict, ErrorModel, KeyOf
 } from './types';
-import { create } from 'domain';
 
 
 const { debug_register, debug_event, debug_set } = debuggers;
@@ -33,10 +31,10 @@ export function initElement<T extends IModel>(api?: IKomoBase<T>) {
 
   const {
     options: komoOptions, schemaAst, fields, unregister, setModel,
-    getModel, isTouched, isDirty, setDefault, mounted,
+    getModel, isTouched, isDirty, setDefault,
     setDirty, setTouched, removeDirty, isValidateBlur, isValidateChange,
     validateModelAt, isValidatable, removeError, setError, render, getElement,
-    isDirtyCompared, model, hasModel
+    isDirtyCompared, model
   } = api;
 
   /**
@@ -44,9 +42,6 @@ export function initElement<T extends IModel>(api?: IKomoBase<T>) {
    * Radio groups never return true.
    */
   function isRegistered(element: IRegisteredElement<T>) {
-
-    if (mounted.current)
-      return true;
 
     const exists = fields.current.has(element);
     const elements = getElement(element.name, true);
@@ -259,8 +254,9 @@ export function initElement<T extends IModel>(api?: IKomoBase<T>) {
     else {
       value = element.defaultValuePersist;
       element.value = value;
+
       // Must have string here.
-      if (isObject(value)) {
+      if (isObject(value) && !element.virtual) {
         // tslint:disable-next-line: no-console
         console.error(`Element "${element.name}" contains invalid typeof "${typeof value}", ${element.type} can only accept strings. Is this a virtual?`);
         return;
@@ -582,7 +578,7 @@ export function initElement<T extends IModel>(api?: IKomoBase<T>) {
     else if (isCheckbox(element.type)) {
 
       const initVal = element.initValue(model.current);
-      const initChecked = element.initChecked(model.current);
+      // const initChecked = element.initChecked(model.current);
 
       element.defaultValue = element.defaultValuePersist =
         initVal || element.value || element.checked || modelVal || false;
@@ -720,8 +716,6 @@ export function initElement<T extends IModel>(api?: IKomoBase<T>) {
     // Normalizes the element and defaults for use with Komo.
     initDefaults(element);
 
-    // NOTE: This should probably be refactored to
-    // own file for greater flexibility/options.
     if (!rebind) {
 
       const allowNative = !isUndefined(element.enableNativeValidation) ?
@@ -785,6 +779,11 @@ export function initElement<T extends IModel>(api?: IKomoBase<T>) {
         // Extend element with options.
 
         const _element = element as IRegisteredElement<T>;
+
+        // TODO: rethink how this works
+        if (_element)
+          // @ts-ignore
+          _element.__hooked = options.__hooked__;
 
         if (!_element || isRegistered(_element))
           return;

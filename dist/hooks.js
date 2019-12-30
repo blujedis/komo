@@ -77,9 +77,13 @@ function initHooks(komo) {
                 return getElementOrProp('value', null, '');
             },
             get data() {
+                if (!field.path)
+                    return null;
                 return getModel(field.path);
             },
             get default() {
+                if (!field.path)
+                    return null;
                 return getDefault(field.path);
             },
             get message() {
@@ -100,6 +104,8 @@ function initHooks(komo) {
                 element.value = value + '';
             },
             set data(value) {
+                if (!field.path)
+                    return;
                 setModel(field.path, value);
             },
             // Events //

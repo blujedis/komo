@@ -44,7 +44,7 @@ export function yupToErrors<T extends IModel>(
 
   if (!error.inner || !error.inner.length) {
     const element = getElement(error.path);
-    const key = element.name;
+    const key = ((element && element.name) || error.path) as any;
     errors[key] = errors[key] || [];
     errors[key].push({
       type: error.type,
@@ -59,7 +59,7 @@ export function yupToErrors<T extends IModel>(
 
     for (const err of error.inner) {
       const element = getElement(err.path);
-      const key = element.name;
+      const key = ((element && element.name) || err.path) as any;
       errors[key] = errors[key] || [];
       errors[key].push({
         type: err.type,
@@ -333,6 +333,8 @@ export function promisifyDefaults<T extends IModel>(defaults: T, yupDefaults: Pa
   if (!isPromise(defaults))
     return Promise.resolve({ ...yupDefaults, ...initDefaults }) as Promise<T>;
 
+  // On error we return yupDefaults.
+  // We merge these in Komo sync event.
   return (defaults as any)
     .then(res => {
       return { ...yupDefaults, ...res }; // merge schema defs with user defs.

@@ -1,4 +1,4 @@
-import { useRef, useEffect, FormEvent, useState, useCallback, BaseSyntheticEvent } from 'react';
+import { useRef, useEffect, FormEvent, useState, useCallback, BaseSyntheticEvent, FC, Component, FunctionComponent } from 'react';
 import { initElement } from './register';
 import get from 'lodash.get';
 import set from 'lodash.set';
@@ -11,7 +11,6 @@ import {
   IKomoBase,
   PromiseStrict,
   IKomo,
-  IKomoForm,
   IFormState
 } from './types';
 import { initHooks } from './hooks';
@@ -36,7 +35,8 @@ const DEFAULTS: IOptions<any> = {
   validateChange: false,
   validateInit: false,
   validationSchemaPurge: true,
-  validateNative: false
+  validateNative: false,
+  cleanVanities: false
 };
 
 const { debug_api, debug_init } = debuggers;
@@ -44,11 +44,11 @@ const { debug_api, debug_init } = debuggers;
 function initApi<T extends IModel>(options: IOptions<T>) {
 
   const defaults = useRef<T>({} as T);
+  const defaultKeys = useRef<string[]>([]);
   const model = useRef<T>({} as T);
   const fields = useRef(new Set<IRegisteredElement<T>>());
   const touched = useRef(new Set<KeyOf<T>>());
   const dirty = useRef(new Set<KeyOf<T>>());
-  const vanities = useRef(new Set<string>());
   const errors = useRef<ErrorModel<T>>({} as any);
   const validator = useRef<IValidator<T>>();
   const schemaAst = useRef<ISchemaAst>();
@@ -56,7 +56,7 @@ function initApi<T extends IModel>(options: IOptions<T>) {
   const submitCount = useRef(0);
   const submitting = useRef(false);
   const submitted = useRef(false);
-  const [, renderStatus] = useState('init');
+  const [currentStatus, renderStatus] = useState({ status: 'init' });
 
   let state: IFormState<T> = {} as any;
   let api: IKomoBase<T> = {} as any;
@@ -64,7 +64,7 @@ function initApi<T extends IModel>(options: IOptions<T>) {
   // HELPERS //
 
   const render = (status: string) => {
-    renderStatus(status);
+    renderStatus({ ...currentStatus, status });
     debug_api('rendered', status);
   };
 
@@ -87,7 +87,7 @@ function initApi<T extends IModel>(options: IOptions<T>) {
     return [...fields.current.values()].map(f => asPath ? f.path : f.name) as any;
   }, [fields]);
 
-  const initSchema = useCallback(() => {
+  const initSchema = () => {
 
     let schema: T & InferType<typeof options.validationSchema>;
 
@@ -101,7 +101,7 @@ function initApi<T extends IModel>(options: IOptions<T>) {
 
     return schema;
 
-  }, [defaults, options.validationSchema]);
+  };
 
   // MODEL //
 
@@ -111,7 +111,7 @@ function initApi<T extends IModel>(options: IOptions<T>) {
     return get(defaults.current, path);
   };
 
-  const setDefault = useCallback((pathOrModel: string | T, value?: any) => {
+  const setDefault = (pathOrModel: string | T, value?: any) => {
 
     if (!pathOrModel) {
       // tslint:disable-next-line: no-console
@@ -142,30 +142,37 @@ function initApi<T extends IModel>(options: IOptions<T>) {
 
     }
 
-  }, []);
+  };
 
-  const syncDefaults = useCallback((defs: T) => {
+  const syncDefaults = (defs: T, isReinit = false) => {
 
     defaults.current = merge({ ...defaults.current }, { ...defs });
-    model.current = merge({ ...defs }, { ...model.current });
+
+    // When reinitializing defaults should
+    // be favored over the current model.
+    if (isReinit)
+      model.current = merge({ ...model.current }, { ...defs });
+
+    else
+      model.current = merge({ ...defs }, { ...model.current });
+
 
     const keys = Object.keys(defs);
+    defaultKeys.current = keys;
 
     // Iterate bound elements and update default values.
     [...fields.current.values()].forEach(element => {
+      ``
 
       if (keys.includes(element.name) && element.virtual)
         // tslint:disable-next-line: no-console
         console.error(`Attempted to set bound property "${element.name}" as vanity, try useField('${element.name}') NOT useField('${element.name}', true).`);
 
-      if (!keys.includes(element.name) && !vanities.current.has(element.name))
-        vanities.current.add(element.name);
-
       element.reinit();
 
     });
 
-  }, []);
+  };
 
   const setModel = useCallback((pathOrModel: string | T, value?: any) => {
 
@@ -204,9 +211,30 @@ function initApi<T extends IModel>(options: IOptions<T>) {
     return has(model.current, path);
   };
 
-  const getModel = (path?: string) => {
-    if (!path)
+  const vanities = () => {
+    return Object.keys(model.current).filter(k => !defaultKeys.current.includes(k))
+  };
+
+  const cleanModel = (model) => {
+    const _model = {} as any;
+    for (const k in model) {
+      if (!model.hasOwnProperty(k) || !defaultKeys.current.includes(k)) continue;
+      _model[k] = model[k];
+    }
+    return _model;
+  };
+
+  const getModel = (path?: string | boolean, clean: boolean = false) => {
+    if (typeof path === 'boolean') {
+      clean = true;
+      path = undefined;
+    }
+    if (!path) {
+      if (clean)
+        return cleanModel(model.current);
       return model.current;
+    }
+
     return get<T>(model.current, path as any) as any;
   };
 
@@ -280,25 +308,6 @@ function initApi<T extends IModel>(options: IOptions<T>) {
     return !!dirty.current.size;
   }, []);
 
-  // VIRTUALS //
-
-  const getVanity = useCallback(() => {
-    return [...vanities.current.values()];
-  }, []);
-
-  const setVanity = (name: string) => {
-    if (!vanities.current.has(name))
-      vanities.current.add(name);
-  };
-
-  const removeVanity = (name: string) => {
-    const removed = vanities.current.delete(name);
-    return removed;
-  };
-
-  const clearVanity = () => {
-    vanities.current.clear();
-  };
 
   // ERRORS //
 
@@ -399,7 +408,7 @@ function initApi<T extends IModel>(options: IOptions<T>) {
     return isUndefined(element.validateBlur) ? options.validateBlur : element.validateBlur;
   };
 
-  const unregister = useCallback((element: KeyOf<T> | IRegisteredElement<T>) => {
+  const unregister = (element: KeyOf<T> | IRegisteredElement<T>) => {
 
     // Nothing to unregister.
     if (!fields.current.size)
@@ -421,13 +430,14 @@ function initApi<T extends IModel>(options: IOptions<T>) {
     removeTouched(_element.name);
     removeError(_element.name);
 
+
     // Unbind any listener events.
     _element.unbind();
 
     // Delete the element from fields collection.
     fields.current.delete(_element);
 
-  }, []);
+  };
 
   state = {
 
@@ -452,7 +462,7 @@ function initApi<T extends IModel>(options: IOptions<T>) {
     },
 
     get vanities() {
-      return [...vanities.current.keys()];
+      return vanities();
     },
 
     get valid() {
@@ -491,7 +501,6 @@ function initApi<T extends IModel>(options: IOptions<T>) {
     options,
     defaults,
     fields,
-    virtuals: vanities,
     unregister,
     schemaAst,
     render,
@@ -531,12 +540,6 @@ function initApi<T extends IModel>(options: IOptions<T>) {
     isDirty,
     isDirtyCompared,
 
-    // Vanity
-    getVanity,
-    setVanity,
-    removeVanity,
-    clearVanity,
-
     // Errors,
     errors,
     setError,
@@ -563,50 +566,12 @@ function initForm<T extends IModel>(options?: IOptions<T>) {
 
   const {
     options: formOptions, defaults, render, clearDirty, clearTouched, clearError, setModel,
-    fields, submitCount, submitting, submitted, validateModel, syncDefaults, state, hasModel,
+    fields, submitCount, submitting, submitted, validateModel, validateModelAt, syncDefaults, state, hasModel,
     isValidatable, errors, setError, unregister, mounted, initSchema, model, getRegistered,
-    getVanity
+    getModel, removeError, isDirty, isTouched, getDefault, getElement
   } = base;
 
   useEffect(() => {
-
-    const init = async () => {
-
-      if (mounted.current)
-        return;
-
-      debug_init('mount:fields', getRegistered());
-      debug_init('mount:schema', options.validationSchema);
-
-      const { err, data } = await me(options.defaults as Promise<Partial<T>>);
-
-      debug_init('mount:defaults', data);
-      if (err && isPlainObject(err))
-        debug_init('err', err);
-
-      // Err and data both 
-      syncDefaults({ ...err, ...data });
-
-      // Init normalize the validation schema.
-      initSchema();
-
-      // validate form before touched.
-      if (options.validateInit) {
-        validateModel()
-          .catch(valErr => {
-            if (valErr)
-              setError(valErr);
-          }).finally(() => {
-            mounted.current = true;
-            render('form:effect:validate'); // this may not be needed.
-          });
-      }
-      else {
-        mounted.current = true;
-        render('form:effect');
-      }
-
-    };
 
     init();
 
@@ -619,6 +584,61 @@ function initForm<T extends IModel>(options?: IOptions<T>) {
     };
 
   }, []);
+
+  async function init(defaults?, isReinit: boolean = false, validate: boolean = false) {
+
+    if (mounted.current && !isReinit)
+      return;
+
+    debug_init('mount:fields', getRegistered());
+    debug_init('mount:schema', options.validationSchema);
+
+    let _defaults = options.defaults as Promise<Partial<T>>;
+
+    if (defaults)
+      _defaults = promisifyDefaults(defaults, (options as any).yupDefaults) as Promise<T>;
+
+    const { err, data } = await me(_defaults);
+
+    debug_init('mount:defaults', data);
+
+    if (err && isPlainObject(err))
+      debug_init('err', err);
+
+    // Err and data both 
+    syncDefaults({ ...err, ...data });
+
+    // Init normalize the validation schema.
+    if (!isReinit)
+      initSchema();
+
+    // if not reinit just use options
+    // otherwise check if user wants
+    // to validate. (default: false)
+    const shouldValidate = !isReinit ? options.validateInit : validate;
+
+    // validate form before touched.
+    if (shouldValidate) {
+      validateModel()
+        .catch(valErr => {
+          if (valErr)
+            setError(valErr);
+        }).finally(() => {
+          mounted.current = true;
+          render('form:effect:validate'); // this may not be needed.
+        });
+    }
+    else {
+      mounted.current = true;
+      render('form:effect');
+    }
+
+  }
+
+  const update = (model: Partial<T>, validate: boolean = false) => {
+    setModel(model as T);
+    init(model, true, validate);
+  };
 
   /**
    * Manually resets model, dirty touched and clears errors.
@@ -722,9 +742,13 @@ function initForm<T extends IModel>(options?: IOptions<T>) {
         event.persist();
       }
 
+      // Clean properties not defined in
+      // original model.
+      const _model = formOptions.cleanVanities ? getModel(true) : model.current;
+
       // Can't validate or is disabled.
       if (!isValidatable() || !formOptions.validateSubmit) {
-        await handleCallback(model.current, {} as any, event);
+        await handleCallback(_model, {} as any, event);
         return;
       }
 
@@ -735,55 +759,50 @@ function initForm<T extends IModel>(options?: IOptions<T>) {
       if (err)
         setError(err);
 
-      await handleCallback(model.current, err as any, event);
+      await handleCallback(_model, err as any, event);
 
     };
 
   }
 
-  const reset = useCallback(_resetForm, []);
-  const handleReset = useCallback(_handleReset, []);
-  const handleSubmit = useCallback(_handleSubmit, []);
+  const reset = _resetForm;
+  const handleReset = _handleReset;
+  const handleSubmit = _handleSubmit;
 
-  const api = {
+  const api: IKomo<T> = {
 
     // Elements
-    register: useCallback(initElement<T>(base as any), []),
-    unregister: base.unregister,
+    register: initElement<T>(base as any),
+    unregister,
 
     // Form
     render,
+    reinit: (defaults?) => init(defaults, true),
     reset,
     handleReset,
     handleSubmit,
     state,
 
     // Model
-    getDefault: base.getDefault,
-    getElement: base.getElement,
+    getDefault,
+    getElement,
     hasModel,
-    getModel: base.getModel,
-    setModel: base.setModel,
-    validateModel: base.validateModel,
-    validateModelAt: base.validateModelAt,
+    getModel,
+    setModel,
+    validateModel,
+    validateModelAt,
+    update,
 
-    setTouched: base.setTouched,
-    removeTouched: base.removeTouched,
-    clearTouched: base.clearTouched,
-    isTouched: base.isTouched,
+    isTouched,
+    isDirty,
 
-    setDirty: base.setDirty,
-    removeDirty: base.removeDirty,
-    clearDirty: base.clearDirty,
-    isDirty: base.isDirty,
-
-    setError: base.setError,
-    removeError: base.removeError,
-    clearError: base.clearError
+    setError,
+    removeError,
+    clearError
 
   };
 
-  return api as IKomoForm<T>;
+  return api;
 
 }
 
@@ -800,16 +819,17 @@ export function initKomo<T extends IModel, D extends IModel = {}>(options?: IOpt
 
   const normalizeYup = parseYupDefaults(options.validationSchema, options.validationSchemaPurge);
   options.validationSchema = normalizeYup.schema;
+  (options as any).yupDefaults = normalizeYup.defaults;
   options.defaults = promisifyDefaults(options.defaults, normalizeYup.defaults) as Promise<Model>;
   options.castHandler = normalizeCasting(options.castHandler);
 
   const api = initForm<Model>(options);
 
-  function initWithKomo<F extends (komo: IKomo<Model>) => any>(handler: F) {
-    return handler(api);
-  }
+  // Override setModel so exposed method
+  // causes render.
+  const { render, setModel } = api;
+  api.setModel = (pathOrModel, value?) => { setModel(pathOrModel, value); render(`model:set`); };
 
-  api.withKomo = initWithKomo;
   const hooks = initHooks<Model>(api);
   const komo = extend(api, hooks);
 

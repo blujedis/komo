@@ -144,7 +144,7 @@ export function isTextLike(value: ElementType) {
 export function isPreventEnter(value: ElementType) {
   const type = (value as any).type || value;
   return ['select-one', 'select-multiple', 'text',
-   'textarea', 'file'].includes(type);
+    'textarea', 'file'].includes(type);
 }
 
 /**
@@ -173,7 +173,7 @@ export function isBooleanLike(value: any) {
 export function parseBoolean(value: unknown) {
   if (!isBooleanLike(value))
     return false;
-  if (/^(false|0)$/.test)
+  if (/^(false|0)$/.test(value as any))
     return false;
   return true;
 }

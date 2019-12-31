@@ -102,6 +102,12 @@ export declare function isPromise(value: any): boolean;
  */
 export declare function isBooleanLike(value: any): boolean;
 /**
+ * Parses boolean value.
+ *
+ * @param value the value to inspect
+ */
+export declare function parseBoolean(value: unknown): boolean;
+/**
  * Checks if a value is truthy.
  *
  * @param value the value to inspect.

@@ -59,7 +59,7 @@ const Default = () => {
             react_1.default.createElement("br", null),
             react_1.default.createElement("label", { htmlFor: "method" }, "Contact Method: "),
             " \u00A0 Phone ",
-            react_1.default.createElement("input", { name: "method", type: "radio", value: "Phone", ref: register({ defaultChecked: true }) }),
+            react_1.default.createElement("input", { name: "method", type: "radio", value: "Phone", ref: register({ defaultChecked: false }) }),
             " \u00A0 Email ",
             react_1.default.createElement("input", { name: "method", type: "radio", value: "Email", ref: register }),
             react_1.default.createElement("br", null),

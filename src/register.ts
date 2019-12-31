@@ -237,7 +237,7 @@ export function initElement<T extends IModel>(api?: IKomoBase<T>) {
     let value;
 
     if (isRadio(element.type)) {
-      element.checked = element.defaultCheckedPersist;
+      element.checked = parseBoolean(element.defaultCheckedPersist);
       if (element.checked)
         value = element.value;
     }

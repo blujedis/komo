@@ -172,7 +172,7 @@ function initElement(api) {
                 value = element.value;
         }
         else if (utils_1.isCheckbox(element.type)) {
-            element.checked = element.defaultChecked = utils_1.isBooleanLike(element.defaultCheckedPersist);
+            element.checked = element.defaultChecked = utils_1.parseBoolean(element.defaultCheckedPersist);
             value = element.checked;
         }
         else if (element.multiple) {

@@ -778,7 +778,17 @@ export function initElement<T extends IModel>(api?: IKomoBase<T>) {
 
         // Extend element with options.
 
-        const _element = element as IRegisteredElement<T>;
+        let _element = element as IRegisteredElement<T>;
+
+        if (_element && options.bindTo) {
+          if (!_element[options.bindTo]) {
+            // tslint:disable-next-line
+            console.warn(`Cannot bindTo unknown property or element ${options.bindTo}.`);
+            return;
+          }
+          // Bind to custom inner element.
+          _element = _element[options.bindTo] as IRegisteredElement<T>;
+        }
 
         // TODO: rethink how this works
         if (_element)

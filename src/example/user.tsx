@@ -3,9 +3,11 @@ import useForm from '..';
 
 // Example using Custom Function //
 
-const schema = (model) => {
+const schema = (model, findField) => {
 
   const errors = {};
+
+  const message = findField('message'); // gets the bound element at 'message';
 
   const add = (key: string, msg: string | string[]) => {
     errors[key] = errors[key] || [];

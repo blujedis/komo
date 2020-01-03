@@ -173,7 +173,7 @@ function normalizeValidator(schema, findField) {
     if (utils_1.isFunction(schema)) {
         validator = {
             validate: (model) => {
-                const result = schema(model);
+                const result = schema(model, findField);
                 if (utils_1.isPromise(result))
                     return result
                         .catch(err => {

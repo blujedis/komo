@@ -1,5 +1,10 @@
 # Changes
 
+## 01/03/2020
+
+- Pass getter to get bound element for custom validation e.g. `const validate = (model, findElement) => errors`.
+- Allow binding to inner element in custom registrations e.g. `<input ref={register({ bindTo: 'input' })}/>`.
+
 ## 11/30/2019
 
 - Favor new defaults over current model when reinitializing.

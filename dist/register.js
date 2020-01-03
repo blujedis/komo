@@ -167,7 +167,7 @@ function initElement(api) {
     function setElementDefault(element) {
         let value;
         if (utils_1.isRadio(element.type)) {
-            element.checked = element.defaultCheckedPersist;
+            element.checked = utils_1.parseBoolean(element.defaultCheckedPersist);
             if (element.checked)
                 value = element.value;
         }
@@ -545,7 +545,16 @@ function initElement(api) {
             options = options || {};
             return (element) => {
                 // Extend element with options.
-                const _element = element;
+                let _element = element;
+                if (_element && options.bindTo) {
+                    if (!_element[options.bindTo]) {
+                        // tslint:disable-next-line
+                        console.warn(`Cannot bindTo unknown property or element ${options.bindTo}.`);
+                        return;
+                    }
+                    // Bind to custom inner element.
+                    _element = _element[options.bindTo];
+                }
                 // TODO: rethink how this works
                 if (_element)
                     // @ts-ignore

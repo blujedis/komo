@@ -225,7 +225,7 @@ export function normalizeValidator<T extends IModel>(
     validator = {
       validate: (model: T) => {
 
-        const result = (schema as ValidateModelHandler<T>)(model);
+        const result = (schema as ValidateModelHandler<T>)(model, findField);
 
         if (isPromise(result))
           return (result as Promise<T>)

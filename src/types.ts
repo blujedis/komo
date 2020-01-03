@@ -34,7 +34,7 @@ export interface IModel { [key: string]: any; }
  * Validation handler function for user defined validationSchema.
  */
 export type ValidateModelHandler<T extends IModel> =
-  (model: T) => null | undefined | ErrorMessageModel<T> | ErrorModel<T> |
+  (model: T, findField?: IGetElement<T>) => null | undefined | ErrorMessageModel<T> | ErrorModel<T> |
     PromiseStrict<T, ErrorModel<T> | ErrorMessageModel<T>>;
 
 /**
@@ -82,6 +82,7 @@ export type PromiseErrorModel<T extends IModel> = PromiseStrict<T, ErrorModel<T>
 
 export interface IValidator<T extends IModel> {
 
+  // IGetElement<T>
   /**
    * Method to validate model schema.
    * 
@@ -233,6 +234,13 @@ export interface IOptions<T extends IModel, D extends IModel = {}> {
  * Interface for custom registrations of an element.
  */
 export interface IRegisterOptions<T extends IModel> {
+
+  /**
+   * Optional inner prop name that is the actual element
+   * we should bind to. This can happen when third party
+   * libraries wrap the inner input, select, textarea etc.
+   */
+  bindTo?: string;
 
   /**
    * The default value to use on resets.
@@ -1051,7 +1059,6 @@ export interface IKomoBase<T extends IModel> {
    * @param extend when true extends/merges with existing model.
    */
   setModel(model: T, extend?: boolean): void;
-
 
   // Validation
 

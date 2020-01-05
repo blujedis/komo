@@ -1,4 +1,5 @@
-import { useRef, useEffect, FormEvent, useState, useCallback, BaseSyntheticEvent, FC, Component, FunctionComponent } from 'react';
+import { useRef, useEffect, FormEvent, useState, useCallback, 
+  BaseSyntheticEvent } from 'react';
 import { initElement } from './register';
 import get from 'lodash.get';
 import set from 'lodash.set';
@@ -95,7 +96,7 @@ function initApi<T extends IModel>(options: IOptions<T>) {
       options.validationSchema = astToSchema(schemaAst.current, options.validationSchema as ObjectSchema<T>);
 
     // Create the validator.
-    validator.current = normalizeValidator(options.validationSchema as ObjectSchema<T>, getElement);
+    validator.current = normalizeValidator(options.validationSchema as ObjectSchema<T>, getElement, fields);
 
     schema = options.validationSchema as any;
 
@@ -215,11 +216,11 @@ function initApi<T extends IModel>(options: IOptions<T>) {
     return Object.keys(model.current).filter(k => !defaultKeys.current.includes(k))
   };
 
-  const cleanModel = (model) => {
+  const cleanModel = (m) => {
     const _model = {} as any;
-    for (const k in model) {
-      if (!model.hasOwnProperty(k) || !defaultKeys.current.includes(k)) continue;
-      _model[k] = model[k];
+    for (const k in m) {
+      if (!m.hasOwnProperty(k) || !defaultKeys.current.includes(k)) continue;
+      _model[k] = m[k];
     }
     return _model;
   };
@@ -307,7 +308,6 @@ function initApi<T extends IModel>(options: IOptions<T>) {
       return dirty.current.has(name);
     return !!dirty.current.size;
   }, []);
-
 
   // ERRORS //
 
@@ -585,7 +585,7 @@ function initForm<T extends IModel>(options?: IOptions<T>) {
 
   }, []);
 
-  async function init(defaults?, isReinit: boolean = false, validate: boolean = false) {
+  async function init(defs?, isReinit: boolean = false, validate: boolean = false) {
 
     if (mounted.current && !isReinit)
       return;
@@ -595,8 +595,8 @@ function initForm<T extends IModel>(options?: IOptions<T>) {
 
     let _defaults = options.defaults as Promise<Partial<T>>;
 
-    if (defaults)
-      _defaults = promisifyDefaults(defaults, (options as any).yupDefaults) as Promise<T>;
+    if (defs)
+      _defaults = promisifyDefaults(defs, (options as any).yupDefaults) as Promise<T>;
 
     const { err, data } = await me(_defaults);
 
@@ -635,9 +635,9 @@ function initForm<T extends IModel>(options?: IOptions<T>) {
 
   }
 
-  const update = (model: Partial<T>, validate: boolean = false) => {
-    setModel(model as T);
-    init(model, true, validate);
+  const update = (m: Partial<T>, validate: boolean = false) => {
+    setModel(m as T);
+    init(m, true, validate);
   };
 
   /**
@@ -777,7 +777,7 @@ function initForm<T extends IModel>(options?: IOptions<T>) {
 
     // Form
     render,
-    reinit: (defaults?) => init(defaults, true),
+    reinit: (defs?) => init(defs, true),
     reset,
     handleReset,
     handleSubmit,

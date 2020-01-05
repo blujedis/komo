@@ -20,6 +20,7 @@ import {
   isNullOrUndefined, isEmpty, isPlainObject, isUndefined, isObject, isArray
 } from './utils';
 import Virtual from './example/virtual';
+import { MutableRefObject } from 'react';
 
 const { debug_validate } = debuggers;
 
@@ -214,7 +215,8 @@ export function ensureErrorModel<T extends IModel>(
  * @param schema the yup schema or user function for validation.
  */
 export function normalizeValidator<T extends IModel>(
-  schema: ValidationSchema<T>, findField?: IGetElement<T>): IValidator<T> {
+  schema: ValidationSchema<T>, findField: IGetElement<T>, 
+  fields: MutableRefObject<Set<IRegisteredElement<T>>>): IValidator<T> {
 
   let validator: IValidator<T>;
 
@@ -225,7 +227,7 @@ export function normalizeValidator<T extends IModel>(
     validator = {
       validate: (model: T) => {
 
-        const result = (schema as ValidateModelHandler<T>)(model, findField);
+        const result = (schema as ValidateModelHandler<T>)(model, fields.current);
 
         if (isPromise(result))
           return (result as Promise<T>)

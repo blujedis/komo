@@ -24,7 +24,7 @@ export interface IModel {
 /**
  * Validation handler function for user defined validationSchema.
  */
-export declare type ValidateModelHandler<T extends IModel> = (model: T, findField?: IGetElement<T>) => null | undefined | ErrorMessageModel<T> | ErrorModel<T> | PromiseStrict<T, ErrorModel<T> | ErrorMessageModel<T>>;
+export declare type ValidateModelHandler<T extends IModel> = (model: T, fields?: Set<IRegisteredElement<T>>) => null | undefined | ErrorMessageModel<T> | ErrorModel<T> | PromiseStrict<T, ErrorModel<T> | ErrorMessageModel<T>>;
 /**
  * Generic type for either yup ObjectSchema or user defined Validation Schema handler function.
  */

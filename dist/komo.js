@@ -66,7 +66,7 @@ function initApi(options) {
         if (schemaAst.current)
             options.validationSchema = validate_1.astToSchema(schemaAst.current, options.validationSchema);
         // Create the validator.
-        validator.current = validate_1.normalizeValidator(options.validationSchema, getElement);
+        validator.current = validate_1.normalizeValidator(options.validationSchema, getElement, fields);
         schema = options.validationSchema;
         return schema;
     };
@@ -143,12 +143,12 @@ function initApi(options) {
     const vanities = () => {
         return Object.keys(model.current).filter(k => !defaultKeys.current.includes(k));
     };
-    const cleanModel = (model) => {
+    const cleanModel = (m) => {
         const _model = {};
-        for (const k in model) {
-            if (!model.hasOwnProperty(k) || !defaultKeys.current.includes(k))
+        for (const k in m) {
+            if (!m.hasOwnProperty(k) || !defaultKeys.current.includes(k))
                 continue;
-            _model[k] = model[k];
+            _model[k] = m[k];
         }
         return _model;
     };
@@ -422,14 +422,14 @@ function initForm(options) {
             });
         };
     }, []);
-    async function init(defaults, isReinit = false, validate = false) {
+    async function init(defs, isReinit = false, validate = false) {
         if (mounted.current && !isReinit)
             return;
         debug_init('mount:fields', getRegistered());
         debug_init('mount:schema', options.validationSchema);
         let _defaults = options.defaults;
-        if (defaults)
-            _defaults = validate_1.promisifyDefaults(defaults, options.yupDefaults);
+        if (defs)
+            _defaults = validate_1.promisifyDefaults(defs, options.yupDefaults);
         const { err, data } = await utils_1.me(_defaults);
         debug_init('mount:defaults', data);
         if (err && utils_1.isPlainObject(err))
@@ -459,9 +459,9 @@ function initForm(options) {
             render('form:effect');
         }
     }
-    const update = (model, validate = false) => {
-        setModel(model);
-        init(model, true, validate);
+    const update = (m, validate = false) => {
+        setModel(m);
+        init(m, true, validate);
     };
     /**
      * Manually resets model, dirty touched and clears errors.
@@ -554,7 +554,7 @@ function initForm(options) {
         unregister,
         // Form
         render,
-        reinit: (defaults) => init(defaults, true),
+        reinit: (defs) => init(defs, true),
         reset,
         handleReset,
         handleSubmit,

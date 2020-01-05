@@ -34,7 +34,7 @@ export interface IModel { [key: string]: any; }
  * Validation handler function for user defined validationSchema.
  */
 export type ValidateModelHandler<T extends IModel> =
-  (model: T, findField?: IGetElement<T>) => null | undefined | ErrorMessageModel<T> | ErrorModel<T> |
+  (model: T, fields?: Set<IRegisteredElement<T>>) => null | undefined | ErrorMessageModel<T> | ErrorModel<T> |
     PromiseStrict<T, ErrorModel<T> | ErrorMessageModel<T>>;
 
 /**

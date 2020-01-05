@@ -6,9 +6,8 @@ Object.defineProperty(exports, "__esModule", { value: true });
 const react_1 = __importDefault(require("react"));
 const __1 = __importDefault(require(".."));
 // Example using Custom Function //
-const schema = (model, findField) => {
+const schema = (model, fields) => {
     const errors = {};
-    const message = findField('message'); // gets the bound element at 'message';
     const add = (key, msg) => {
         errors[key] = errors[key] || [];
         msg = !Array.isArray(msg) ? [msg] : msg;

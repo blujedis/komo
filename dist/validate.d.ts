@@ -1,5 +1,6 @@
 import { ValidationError, ObjectSchema } from 'yup';
 import { IModel, ErrorModel, ValidationSchema, IValidator, IRegisteredElement, ISchemaAst, IGetElement, ErrorMessageModel, CastHandler } from './types';
+import { MutableRefObject } from 'react';
 /**
  * Parses yup error to friendly form errors.
  *
@@ -26,7 +27,7 @@ export declare function ensureErrorModel<T extends IModel>(errors: ErrorModel<T>
  *
  * @param schema the yup schema or user function for validation.
  */
-export declare function normalizeValidator<T extends IModel>(schema: ValidationSchema<T>, findField?: IGetElement<T>): IValidator<T>;
+export declare function normalizeValidator<T extends IModel>(schema: ValidationSchema<T>, findField: IGetElement<T>, fields: MutableRefObject<Set<IRegisteredElement<T>>>): IValidator<T>;
 /**
  * Gets list of native validation keys.
  *

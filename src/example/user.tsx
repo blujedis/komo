@@ -1,9 +1,17 @@
 import React, { FC } from 'react';
-import useForm from '..';
+import useForm, { IRegisteredElement, ErrorMessageModel } from '..';
 
 // Example using Custom Function //
 
-const schema = (model, fields) => {
+const DEFAULTS = {
+  numbers: {
+    home: '7771212',
+    mobile: '8881456'
+  },
+  message: ''
+};
+
+function schema<T extends typeof DEFAULTS>(model: T, fields: Set<IRegisteredElement<T>>, vanities: string[]) {
 
   const errors = {};
 
@@ -21,9 +29,9 @@ const schema = (model, fields) => {
     add('message', 'Message must be at least 5 characters in length.');
   }
 
-  return errors;
+  return errors as ErrorMessageModel<T>;
 
-};
+}
 
 const User: FC = () => {
 

@@ -216,7 +216,7 @@ export function ensureErrorModel<T extends IModel>(
  */
 export function normalizeValidator<T extends IModel>(
   schema: ValidationSchema<T>, findField: IGetElement<T>, 
-  fields: MutableRefObject<Set<IRegisteredElement<T>>>): IValidator<T> {
+  fields: MutableRefObject<Set<IRegisteredElement<T>>>, vanities: string[]): IValidator<T> {
 
   let validator: IValidator<T>;
 
@@ -227,7 +227,7 @@ export function normalizeValidator<T extends IModel>(
     validator = {
       validate: (model: T) => {
 
-        const result = (schema as ValidateModelHandler<T>)(model, fields.current);
+        const result = (schema as ValidateModelHandler<T>)(model, fields.current, vanities);
 
         if (isPromise(result))
           return (result as Promise<T>)

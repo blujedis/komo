@@ -66,7 +66,7 @@ function initApi(options) {
         if (schemaAst.current)
             options.validationSchema = validate_1.astToSchema(schemaAst.current, options.validationSchema);
         // Create the validator.
-        validator.current = validate_1.normalizeValidator(options.validationSchema, getElement, fields);
+        validator.current = validate_1.normalizeValidator(options.validationSchema, getElement, fields, vanities());
         schema = options.validationSchema;
         return schema;
     };

@@ -24,7 +24,8 @@
     "sourceMap": true,
     "forceConsistentCasingInFileNames": true,
     "resolveJsonModule": true,
-    "noImplicitAny": false
+    "noImplicitAny": false,
+    "downlevelIteration": true
   },
   "include": [
     "./src/**/*.ts",

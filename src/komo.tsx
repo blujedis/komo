@@ -1,5 +1,7 @@
-import { useRef, useEffect, FormEvent, useState, useCallback, 
-  BaseSyntheticEvent } from 'react';
+import {
+  useRef, useEffect, FormEvent, useState, useCallback,
+  BaseSyntheticEvent
+} from 'react';
 import { initElement } from './register';
 import get from 'lodash.get';
 import set from 'lodash.set';
@@ -96,7 +98,7 @@ function initApi<T extends IModel>(options: IOptions<T>) {
       options.validationSchema = astToSchema(schemaAst.current, options.validationSchema as ObjectSchema<T>);
 
     // Create the validator.
-    validator.current = normalizeValidator(options.validationSchema as ObjectSchema<T>, getElement, fields);
+    validator.current = normalizeValidator(options.validationSchema as ObjectSchema<T>, getElement, fields, vanities());
 
     schema = options.validationSchema as any;
 
@@ -213,7 +215,7 @@ function initApi<T extends IModel>(options: IOptions<T>) {
   };
 
   const vanities = () => {
-    return Object.keys(model.current).filter(k => !defaultKeys.current.includes(k))
+    return Object.keys(model.current).filter(k => !defaultKeys.current.includes(k));
   };
 
   const cleanModel = (m) => {

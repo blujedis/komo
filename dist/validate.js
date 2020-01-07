@@ -166,14 +166,14 @@ exports.ensureErrorModel = ensureErrorModel;
  *
  * @param schema the yup schema or user function for validation.
  */
-function normalizeValidator(schema, findField, fields) {
+function normalizeValidator(schema, findField, fields, vanities) {
     let validator;
     // User supplied custom validation script
     // map to same interface as yup.
     if (utils_1.isFunction(schema)) {
         validator = {
             validate: (model) => {
-                const result = schema(model, fields.current);
+                const result = schema(model, fields.current, vanities);
                 if (utils_1.isPromise(result))
                     return result
                         .catch(err => {

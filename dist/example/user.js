@@ -6,7 +6,14 @@ Object.defineProperty(exports, "__esModule", { value: true });
 const react_1 = __importDefault(require("react"));
 const __1 = __importDefault(require(".."));
 // Example using Custom Function //
-const schema = (model, fields) => {
+const DEFAULTS = {
+    numbers: {
+        home: '7771212',
+        mobile: '8881456'
+    },
+    message: ''
+};
+function schema(model, fields, vanities) {
     const errors = {};
     const add = (key, msg) => {
         errors[key] = errors[key] || [];
@@ -20,7 +27,7 @@ const schema = (model, fields) => {
         add('message', 'Message must be at least 5 characters in length.');
     }
     return errors;
-};
+}
 const User = () => {
     const { register, handleSubmit, handleReset, state } = __1.default({
         defaults: {

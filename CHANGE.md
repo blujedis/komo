@@ -1,8 +1,13 @@
 # Changes
 
+
+## 01/06/2020
+
+- Should also pass vanity element names (not bound in model) to user validation script. `const validate = (model, fields, vanities) => errors`.
+
 ## 01/03/2020
 
-- Pass getter to get bound element for custom validation e.g. `const validate = (model, fields) => errors`.
+- Pass bound fields in Set. `const validate = (model, fields) => errors`.
 - Allow binding to inner element in custom registrations e.g. `<input ref={register({ bindTo: 'input' })}/>`.
 
 ## 11/30/2019

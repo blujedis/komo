@@ -19,6 +19,16 @@ OR
 $ yarn add komo
 ```
 
+## Running Examples
+
+I would encourage you to look at the examples in <code>src/example</code>. You can also clone the repository source then run these examples. Form validation no matter your effort can get complicated. Komo works hard to simplify that but in the end some things just require more control. The examples will help you work through those use cases!
+
+```sh
+$ git clone https://github.com/blujedis/komo.git
+$ yarn install
+$ yarn start
+```
+
 ## The Basics
 
 Below we import react and komo then initialize the useForm hook.

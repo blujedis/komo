@@ -367,7 +367,9 @@ export function initElement<T extends IModel>(api?: IKomoBase<T>) {
     // Attach event to prevent enter key 
     // submissions for input like types
     // such as textarea, text, select etc.
-    if (isPreventEnter(element.type)) {
+    // some duplication here need to sort
+    // through this.
+    if (isPreventEnter(element.type) || element.tagName === 'INPUT') {
 
       const handleEnter = (e: Event) => {
         // @ts-ignore

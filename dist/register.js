@@ -263,7 +263,9 @@ function initElement(api) {
         // Attach event to prevent enter key 
         // submissions for input like types
         // such as textarea, text, select etc.
-        if (utils_1.isPreventEnter(element.type)) {
+        // some duplication here need to sort
+        // through this.
+        if (utils_1.isPreventEnter(element.type) || element.tagName === 'INPUT') {
             const handleEnter = (e) => {
                 // @ts-ignore
                 if (e.key === 'Enter')

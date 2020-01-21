@@ -1,5 +1,8 @@
 # Changes
 
+## 01/21/2020
+
+- Fix issue where some inputs allow enter key to submit form which causes issues for onBlur or onChange handlers.
 
 ## 01/06/2020
 

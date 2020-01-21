@@ -144,7 +144,8 @@ export function isTextLike(value: ElementType) {
 export function isPreventEnter(value: ElementType) {
   const type = (value as any).type || value;
   return ['select-one', 'select-multiple', 'text',
-    'textarea', 'file'].includes(type);
+    'textarea', 'file', 'email', 'color', 'date', 
+    'datetime-local', 'month', 'number', 'time', 'url', 'week' ].includes(type);
 }
 
 /**

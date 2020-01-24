@@ -1,5 +1,9 @@
 # Changes
 
+## 01/24/2020
+
+- Don't warn in console of missing element for virtual hook fields.
+
 ## 01/21/2020
 
 - Fix issue where some inputs allow enter key to submit form which causes issues for onBlur or onChange handlers.

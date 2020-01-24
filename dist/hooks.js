@@ -22,8 +22,9 @@ function initHooks(komo) {
             if (!element && !state.mounted)
                 return;
             if (!element && state.mounted) {
-                // tslint:disable-next-line: no-console
-                console.warn(message);
+                if (!virtual)
+                    // tslint:disable-next-line: no-console
+                    console.warn(message);
                 return def;
             }
             if (utils_1.isUndefined(prop))

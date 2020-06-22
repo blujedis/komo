@@ -80,7 +80,7 @@ export function initHooks<T extends IModel>(komo: IKomo<T>) {
         // binds hidden prop so we know this 
         // is a hooked element or virtual.
         if (isObject(elementOrOptions)) {
-
+ 
           elementOrOptions.__hooked__ = true;
           elementOrOptions.virtual = virtual;
 

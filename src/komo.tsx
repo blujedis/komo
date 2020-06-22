@@ -159,13 +159,11 @@ function initApi<T extends IModel>(options: IOptions<T>) {
     else
       model.current = merge({ ...defs }, { ...model.current });
 
-
     const keys = Object.keys(defs);
     defaultKeys.current = keys;
 
     // Iterate bound elements and update default values.
     [...fields.current.values()].forEach(element => {
-      ``
 
       if (keys.includes(element.name) && element.virtual)
         // tslint:disable-next-line: no-console
@@ -432,7 +430,6 @@ function initApi<T extends IModel>(options: IOptions<T>) {
     removeTouched(_element.name);
     removeError(_element.name);
 
-
     // Unbind any listener events.
     _element.unbind();
 
@@ -575,7 +572,9 @@ function initForm<T extends IModel>(options?: IOptions<T>) {
 
   useEffect(() => {
 
-    init();
+    const isReinit = mounted.current;
+
+    init(isReinit);
 
     return () => {
       mounted.current = false;
@@ -585,9 +584,14 @@ function initForm<T extends IModel>(options?: IOptions<T>) {
 
     };
 
-  }, []);
+  }, [defaults]);
 
-  async function init(defs?, isReinit: boolean = false, validate: boolean = false) {
+  async function init(defs?, isReinit = false, validate = false) {
+
+    if (typeof defs === 'boolean') {
+      validate = isReinit;
+      isReinit = defs;
+    }
 
     if (mounted.current && !isReinit)
       return;
@@ -597,6 +601,7 @@ function initForm<T extends IModel>(options?: IOptions<T>) {
 
     let _defaults = options.defaults as Promise<Partial<T>>;
 
+    // TODO: Need to fix typings so .yupDefaults exists.
     if (defs)
       _defaults = promisifyDefaults(defs, (options as any).yupDefaults) as Promise<T>;
 

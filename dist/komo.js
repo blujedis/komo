@@ -109,7 +109,6 @@ function initApi(options) {
         defaultKeys.current = keys;
         // Iterate bound elements and update default values.
         [...fields.current.values()].forEach(element => {
-            ``;
             if (keys.includes(element.name) && element.virtual)
                 // tslint:disable-next-line: no-console
                 console.error(`Attempted to set bound property "${element.name}" as vanity, try useField('${element.name}') NOT useField('${element.name}', true).`);
@@ -414,20 +413,26 @@ function initForm(options) {
     const base = initApi(options);
     const { options: formOptions, defaults, render, clearDirty, clearTouched, clearError, setModel, fields, submitCount, submitting, submitted, validateModel, validateModelAt, syncDefaults, state, hasModel, isValidatable, errors, setError, unregister, mounted, initSchema, model, getRegistered, getModel, removeError, isDirty, isTouched, getDefault, getElement } = base;
     react_1.useEffect(() => {
-        init();
+        const isReinit = mounted.current;
+        init(isReinit);
         return () => {
             mounted.current = false;
             [...fields.current.values()].forEach(e => {
                 unregister(e);
             });
         };
-    }, []);
+    }, [defaults]);
     async function init(defs, isReinit = false, validate = false) {
+        if (typeof defs === 'boolean') {
+            validate = isReinit;
+            isReinit = defs;
+        }
         if (mounted.current && !isReinit)
             return;
         debug_init('mount:fields', getRegistered());
         debug_init('mount:schema', options.validationSchema);
         let _defaults = options.defaults;
+        // TODO: Need to fix typings so .yupDefaults exists.
         if (defs)
             _defaults = validate_1.promisifyDefaults(defs, options.yupDefaults);
         const { err, data } = await utils_1.me(_defaults);

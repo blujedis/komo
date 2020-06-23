@@ -1,6 +1,6 @@
-import { IModel, KeyOf, IKomo, IUseFields, IUseField } from './types';
-import { useCallback, BaseSyntheticEvent, useEffect, useRef } from 'react';
-import { isUndefined, isString, isObject, isElement } from './utils';
+import { IModel, KeyOf, IKomo, IUseFields, IUseField, IRegisteredElement } from './types';
+import { useCallback, BaseSyntheticEvent } from 'react';
+import { isUndefined, isString, isObject } from './utils';
 
 export function initHooks<T extends IModel>(komo: IKomo<T>) {
 
@@ -54,22 +54,28 @@ export function initHooks<T extends IModel>(komo: IKomo<T>) {
       return `Element "${name}" is unavailable or not mounted.`;
     };
 
-    const getElementOrProp = (prop?: string, message?: string, def: any = null) => {
+    function getElementOrProp(prop: string, def?: any): any;
+    function getElementOrProp(): IRegisteredElement<T>;
+    function getElementOrProp(prop?: string, def: any = null) {
 
       const element = getElement(name);
-      message = message || unavailableMsg(prop);
+
       if (!element && !state.mounted) return;
+
       if (!element && state.mounted) {
         if (!virtual)
           // tslint:disable-next-line: no-console
-          console.warn(message);
+          console.warn(unavailableMsg(prop));
         return def;
       }
+
       if (isUndefined(prop))
         return element || def;
+
       const val = element[prop];
       return isUndefined(val) ? def : val;
-    };
+
+    }
 
     const field = {
 
@@ -80,7 +86,7 @@ export function initHooks<T extends IModel>(komo: IKomo<T>) {
         // binds hidden prop so we know this 
         // is a hooked element or virtual.
         if (isObject(elementOrOptions)) {
- 
+
           elementOrOptions.__hooked__ = true;
           elementOrOptions.virtual = virtual;
 
@@ -133,7 +139,12 @@ export function initHooks<T extends IModel>(komo: IKomo<T>) {
       },
 
       get value() {
-        return getElementOrProp('value', null, '');
+        const element = getElementOrProp();
+        if (!element)
+          return (element.type === 'checkbox' ? false : '');
+        if (element.type !== 'checkbox')
+          return element.value || '';
+        return element.checked;
       },
 
       get data() {

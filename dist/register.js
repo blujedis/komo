@@ -1,5 +1,6 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
+exports.initElement = void 0;
 const utils_1 = require("./utils");
 const validate_1 = require("./validate");
 const { debug_register, debug_event, debug_set } = utils_1.debuggers;
@@ -423,8 +424,8 @@ function initElement(api) {
             const initVal = element.initValue(model.current);
             // const initChecked = element.initChecked(model.current);
             element.defaultValue = element.defaultValuePersist =
-                initVal || element.value || element.checked || modelVal || false;
-            element.defaultChecked = element.defaultCheckedPersist = element.defaultValue || false;
+                initVal || element.checked || modelVal;
+            element.defaultChecked = element.defaultCheckedPersist = element.defaultValue;
         }
         else if (element.multiple) {
             const initVal = element.initValue(model.current);

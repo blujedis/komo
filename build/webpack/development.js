@@ -74,9 +74,9 @@ module.exports = {
       __BLU_DEV_VARS__: JSON.stringify(devVars)
     }),
 
-    new CopyWebpackPlugin([
-      { from: resolve(`${pub}`), to: resolve(`${dist}`) }
-    ]),
+    new CopyWebpackPlugin({
+      patterns: [ { from: resolve(`${pub}`), to: resolve(`${dist}`) } ]
+  }),
 
     new HtmlWebpackPlugin({
       title: 'Komo',

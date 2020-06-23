@@ -156,10 +156,16 @@ function initApi<T extends IModel>(options: IOptions<T>) {
     if (isReinit)
       model.current = merge({ ...model.current }, { ...defs });
 
+    // If not mounted then defaults should override the current model.
+    else if (!mounted.current)
+      model.current = merge({ ...model.current }, { ...defs });
+
+    // If we get here model wins.
     else
       model.current = merge({ ...defs }, { ...model.current });
 
     const keys = Object.keys(defs);
+
     defaultKeys.current = keys;
 
     // Iterate bound elements and update default values.

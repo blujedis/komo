@@ -583,9 +583,10 @@ export function initElement<T extends IModel>(api?: IKomoBase<T>) {
       // const initChecked = element.initChecked(model.current);
 
       element.defaultValue = element.defaultValuePersist =
-        initVal || element.value || element.checked || modelVal || false;
+        initVal || element.checked || modelVal;
 
-      element.defaultChecked = element.defaultCheckedPersist = element.defaultValue || false;
+      element.defaultChecked = element.defaultCheckedPersist = element.defaultValue;
+
     }
 
     else if (element.multiple) {

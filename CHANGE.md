@@ -1,5 +1,10 @@
 # Changes
 
+## 06/22/2020
+
+- Bug, fix issue where checkboxes do not init correctly in some cases.
+- Add "onChange" listener in hook for convenience.
+
 ## 01/24/2020
 
 - Don't warn in console of missing element for virtual hook fields.

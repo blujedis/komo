@@ -1,5 +1,6 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
+exports.initHooks = void 0;
 const react_1 = require("react");
 const utils_1 = require("./utils");
 function initHooks(komo) {
@@ -16,22 +17,21 @@ function initHooks(komo) {
                 return `Prop "${prop}" undefined, element "${name}" is unavailable or not mounted.`;
             return `Element "${name}" is unavailable or not mounted.`;
         };
-        const getElementOrProp = (prop, message, def = null) => {
+        function getElementOrProp(prop, def = null) {
             const element = getElement(name);
-            message = message || unavailableMsg(prop);
             if (!element && !state.mounted)
                 return;
             if (!element && state.mounted) {
                 if (!virtual)
                     // tslint:disable-next-line: no-console
-                    console.warn(message);
+                    console.warn(unavailableMsg(prop));
                 return def;
             }
             if (utils_1.isUndefined(prop))
                 return element || def;
             const val = element[prop];
             return utils_1.isUndefined(val) ? def : val;
-        };
+        }
         const field = {
             // register: komo.register.bind(komo),
             register: (elementOrOptions) => {
@@ -75,7 +75,12 @@ function initHooks(komo) {
                 return getElementOrProp('path');
             },
             get value() {
-                return getElementOrProp('value', null, '');
+                const element = getElementOrProp();
+                if (!element)
+                    return (element.type === 'checkbox' ? false : '');
+                if (element.type !== 'checkbox')
+                    return element.value || '';
+                return element.checked;
             },
             get data() {
                 if (!field.path)

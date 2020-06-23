@@ -4,7 +4,7 @@
 	<meta charset="utf-8">
 	<meta http-equiv="X-UA-Compatible" content="IE=edge">
 	<title>Komo</title>
-	<meta name="description" content="">
+	<meta name="description" content="Documentation for Komo">
 	<meta name="viewport" content="width=device-width, initial-scale=1">
 	<link rel="stylesheet" href="assets/css/main.css">
 </head>
@@ -13,7 +13,7 @@
 	<div class="tsd-page-toolbar">
 		<div class="container">
 			<div class="table-wrap">
-				<div class="table-cell" id="tsd-search" data-index="assets/js/search.js" data-base=".">
+				<div class="table-cell" id="tsd-search" data-index="assets/js/search.json" data-base=".">
 					<div class="field">
 						<label for="tsd-search-field" class="tsd-widget search no-caption">Search</label>
 						<input id="tsd-search-field" type="text" />
@@ -56,7 +56,7 @@
 					<a href="globals.html">Globals</a>
 				</li>
 			</ul>
-			<h1> Komo</h1>
+			<h1>Komo</h1>
 		</div>
 	</div>
 </header>
@@ -87,22 +87,22 @@ $ yarn start</code></pre>
 				</a>
 				<p>Below we import react and komo then initialize the useForm hook.
 				We create our <code>form</code> element and the elements we need for our form inputs. We&#39;ll do a more complete example below but let&#39;s take it in steps so it&#39;s easier to make sense of.</p>
-				<pre><code class="language-jsx"><span class="hljs-keyword">import</span> React, { FC } <span class="hljs-keyword">from</span> <span class="hljs-string">'react'</span>;
-<span class="hljs-keyword">import</span> useForm <span class="hljs-keyword">from</span> <span class="hljs-string">'komo'</span>;
+				<pre><code class="language-jsx"><span class="hljs-keyword">import</span> React, { FC } <span class="hljs-keyword">from</span> <span class="hljs-string">&#x27;react&#x27;</span>;
+<span class="hljs-keyword">import</span> useForm <span class="hljs-keyword">from</span> <span class="hljs-string">&#x27;komo&#x27;</span>;
 
-<span class="hljs-keyword">const</span> MyForm: FC = <span class="hljs-function"><span class="hljs-params">()</span> =&gt;</span> {
+<span class="hljs-keyword">const</span> MyForm: FC = <span class="hljs-function">() =&gt;</span> {
 
   <span class="hljs-keyword">const</span> { register } = useForm();
 
   <span class="hljs-keyword">return</span> (
     <span class="xml"><span class="hljs-tag">&lt;<span class="hljs-name">form</span> <span class="hljs-attr">noValidate</span>&gt;</span>
-        <span class="hljs-tag">&lt;<span class="hljs-name">label</span> <span class="hljs-attr">htmlFor</span>=<span class="hljs-string">"firstName"</span>&gt;</span>First Name: <span class="hljs-tag">&lt;/<span class="hljs-name">label</span>&gt;</span>
-        <span class="hljs-tag">&lt;<span class="hljs-name">input</span> <span class="hljs-attr">name</span>=<span class="hljs-string">"firstName"</span> <span class="hljs-attr">type</span>=<span class="hljs-string">"text"</span> <span class="hljs-attr">ref</span>=<span class="hljs-string">{register}</span> /&gt;</span>
-    <span class="hljs-tag">&lt;/<span class="hljs-name">form</span>&gt;</span>
+        <span class="hljs-tag">&lt;<span class="hljs-name">label</span> <span class="hljs-attr">htmlFor</span>=<span class="hljs-string">&quot;firstName&quot;</span>&gt;</span>First Name: <span class="hljs-tag">&lt;/<span class="hljs-name">label</span>&gt;</span>
+        <span class="hljs-tag">&lt;<span class="hljs-name">input</span> <span class="hljs-attr">name</span>=<span class="hljs-string">&quot;firstName&quot;</span> <span class="hljs-attr">type</span>=<span class="hljs-string">&quot;text&quot;</span> <span class="hljs-attr">ref</span>=<span class="hljs-string">{register}</span> /&gt;</span>
+    <span class="hljs-tag">&lt;/<span class="hljs-name">form</span>&gt;</span></span>
   );
 
 };
-export default MyForm;</span></code></pre>
+<span class="hljs-keyword">export</span> <span class="hljs-keyword">default</span> MyForm;</code></pre>
 				<a href="#error-component" id="error-component" style="color: inherit; text-decoration: none;">
 					<h3>Error Component</h3>
 				</a>
@@ -119,7 +119,7 @@ export default MyForm;</span></code></pre>
 
     <span class="hljs-comment">// Simply return a div colored red with the error message.</span>
     <span class="hljs-comment">// See below for error object properties.</span>
-    <span class="hljs-keyword">return</span> (<span class="xml"><span class="hljs-tag">&lt;<span class="hljs-name">div</span> <span class="hljs-attr">style</span>=<span class="hljs-string">{{</span> <span class="hljs-attr">color:</span> '<span class="hljs-attr">red</span>' }}&gt;</span>{err.message}<span class="hljs-tag">&lt;/<span class="hljs-name">div</span>&gt;</span></span>);
+    <span class="hljs-keyword">return</span> (<span class="xml"><span class="hljs-tag">&lt;<span class="hljs-name">div</span> <span class="hljs-attr">style</span>=<span class="hljs-string">{{</span> <span class="hljs-attr">color:</span> &#x27;<span class="hljs-attr">red</span>&#x27; }}&gt;</span>{err.message}<span class="hljs-tag">&lt;/<span class="hljs-name">div</span>&gt;</span></span>);
 
   };</code></pre>
 				<a href="#form-submission" id="form-submission" style="color: inherit; text-decoration: none;">
@@ -135,10 +135,10 @@ export default MyForm;</span></code></pre>
 					<h3>Complete Example Form</h3>
 				</a>
 				<p>Not let&#39;s put it all together so you can see it in one place. </p>
-				<pre><code class="language-jsx"><span class="hljs-keyword">import</span> React, { FC } <span class="hljs-keyword">from</span> <span class="hljs-string">'react'</span>;
-<span class="hljs-keyword">import</span> useForm <span class="hljs-keyword">from</span> <span class="hljs-string">'komo'</span>;
+				<pre><code class="language-jsx"><span class="hljs-keyword">import</span> React, { FC } <span class="hljs-keyword">from</span> <span class="hljs-string">&#x27;react&#x27;</span>;
+<span class="hljs-keyword">import</span> useForm <span class="hljs-keyword">from</span> <span class="hljs-string">&#x27;komo&#x27;</span>;
 
-<span class="hljs-keyword">const</span> MyForm: FC = <span class="hljs-function"><span class="hljs-params">()</span> =&gt;</span> {
+<span class="hljs-keyword">const</span> MyForm: FC = <span class="hljs-function">() =&gt;</span> {
 
   <span class="hljs-comment">// Import the Use Form Hook //</span>
 
@@ -156,17 +156,17 @@ export default MyForm;</span></code></pre>
 
     <span class="hljs-comment">// Could be as simple as Promise.reject(errors);</span>
 
-    validationSchema: <span class="hljs-function">(<span class="hljs-params">model</span>) =&gt;</span> {
+    <span class="hljs-attr">validationSchema</span>: <span class="hljs-function">(<span class="hljs-params">model</span>) =&gt;</span> {
       <span class="hljs-keyword">const</span> errors = {};
       <span class="hljs-keyword">if</span> (message.length &lt; <span class="hljs-number">10</span>) 
-        errors.message = [<span class="hljs-string">'Message must be at least 10 characters'</span>];
+        errors.message = [<span class="hljs-string">&#x27;Message must be at least 10 characters&#x27;</span>];
       <span class="hljs-keyword">return</span> errors;
     },
 
     <span class="hljs-comment">// Enable native validation like required, min, max etc...</span>
     <span class="hljs-comment">// <span class="hljs-doctag">NOTE:</span> Not all native validation types are supported</span>
     <span class="hljs-comment">// but the majority of what you need is there!</span>
-    enableNativeValidation: <span class="hljs-literal">true</span>
+    <span class="hljs-attr">enableNativeValidation</span>: <span class="hljs-literal">true</span>
 
   });
 
@@ -183,44 +183,44 @@ export default MyForm;</span></code></pre>
     <span class="hljs-keyword">if</span> (!prop || !prop.length)<span class="hljs-comment">// No error at this key just return null.</span>
       <span class="hljs-keyword">return</span> <span class="hljs-literal">null</span>;
     <span class="hljs-keyword">const</span> err = prop[<span class="hljs-number">0</span>];
-    <span class="hljs-keyword">return</span> (<span class="xml"><span class="hljs-tag">&lt;<span class="hljs-name">div</span> <span class="hljs-attr">style</span>=<span class="hljs-string">{{</span> <span class="hljs-attr">color:</span> '<span class="hljs-attr">red</span>' }}&gt;</span>{err.message}<span class="hljs-tag">&lt;/<span class="hljs-name">div</span>&gt;</span></span>); <span class="hljs-comment">// return our err message.</span>
+    <span class="hljs-keyword">return</span> (<span class="xml"><span class="hljs-tag">&lt;<span class="hljs-name">div</span> <span class="hljs-attr">style</span>=<span class="hljs-string">{{</span> <span class="hljs-attr">color:</span> &#x27;<span class="hljs-attr">red</span>&#x27; }}&gt;</span>{err.message}<span class="hljs-tag">&lt;/<span class="hljs-name">div</span>&gt;</span></span>); <span class="hljs-comment">// return our err message.</span>
 
   };
 
   <span class="hljs-keyword">return</span> (
-    &lt;div&gt;
+    <span class="xml"><span class="hljs-tag">&lt;<span class="hljs-name">div</span>&gt;</span>
 
-      &lt;h2&gt;My Form&lt;/h2&gt;
-      &lt;hr /&gt;&lt;br /&gt;
+      <span class="hljs-tag">&lt;<span class="hljs-name">h2</span>&gt;</span>My Form<span class="hljs-tag">&lt;/<span class="hljs-name">h2</span>&gt;</span>
+      <span class="hljs-tag">&lt;<span class="hljs-name">hr</span> /&gt;</span><span class="hljs-tag">&lt;<span class="hljs-name">br</span> /&gt;</span>
 
-       &lt;form noValidate onSubmit={handleSubmit(onSubmit)} onReset={handleReset}&gt;
+       <span class="hljs-tag">&lt;<span class="hljs-name">form</span> <span class="hljs-attr">noValidate</span> <span class="hljs-attr">onSubmit</span>=<span class="hljs-string">{handleSubmit(onSubmit)}</span> <span class="hljs-attr">onReset</span>=<span class="hljs-string">{handleReset}</span>&gt;</span>
 
-        &lt;label htmlFor="firstName"&gt;First Name: &lt;/label&gt;
-        &lt;input name="firstName" type="text" ref={register} defaultValue="Peter" /&gt;&lt;br /&gt;&lt;br /&gt;
+        <span class="hljs-tag">&lt;<span class="hljs-name">label</span> <span class="hljs-attr">htmlFor</span>=<span class="hljs-string">&quot;firstName&quot;</span>&gt;</span>First Name: <span class="hljs-tag">&lt;/<span class="hljs-name">label</span>&gt;</span>
+        <span class="hljs-tag">&lt;<span class="hljs-name">input</span> <span class="hljs-attr">name</span>=<span class="hljs-string">&quot;firstName&quot;</span> <span class="hljs-attr">type</span>=<span class="hljs-string">&quot;text&quot;</span> <span class="hljs-attr">ref</span>=<span class="hljs-string">{register}</span> <span class="hljs-attr">defaultValue</span>=<span class="hljs-string">&quot;Peter&quot;</span> /&gt;</span><span class="hljs-tag">&lt;<span class="hljs-name">br</span> /&gt;</span><span class="hljs-tag">&lt;<span class="hljs-name">br</span> /&gt;</span>
 
-        &lt;label htmlFor="lastName"&gt;Last Name: &lt;/label&gt;
-        &lt;input type="text" name="lastName" ref={register} defaultValue="Gibbons" /&gt;&lt;br /&gt;&lt;br /&gt;
+        <span class="hljs-tag">&lt;<span class="hljs-name">label</span> <span class="hljs-attr">htmlFor</span>=<span class="hljs-string">&quot;lastName&quot;</span>&gt;</span>Last Name: <span class="hljs-tag">&lt;/<span class="hljs-name">label</span>&gt;</span>
+        <span class="hljs-tag">&lt;<span class="hljs-name">input</span> <span class="hljs-attr">type</span>=<span class="hljs-string">&quot;text&quot;</span> <span class="hljs-attr">name</span>=<span class="hljs-string">&quot;lastName&quot;</span> <span class="hljs-attr">ref</span>=<span class="hljs-string">{register}</span> <span class="hljs-attr">defaultValue</span>=<span class="hljs-string">&quot;Gibbons&quot;</span> /&gt;</span><span class="hljs-tag">&lt;<span class="hljs-name">br</span> /&gt;</span><span class="hljs-tag">&lt;<span class="hljs-name">br</span> /&gt;</span>
 
-        &lt;label htmlFor="email"&gt;Email: &lt;/label&gt;
-        &lt;input name="email" type="email" ref={register} required /&gt;&lt;br /&gt;&lt;br /&gt;
+        <span class="hljs-tag">&lt;<span class="hljs-name">label</span> <span class="hljs-attr">htmlFor</span>=<span class="hljs-string">&quot;email&quot;</span>&gt;</span>Email: <span class="hljs-tag">&lt;/<span class="hljs-name">label</span>&gt;</span>
+        <span class="hljs-tag">&lt;<span class="hljs-name">input</span> <span class="hljs-attr">name</span>=<span class="hljs-string">&quot;email&quot;</span> <span class="hljs-attr">type</span>=<span class="hljs-string">&quot;email&quot;</span> <span class="hljs-attr">ref</span>=<span class="hljs-string">{register}</span> <span class="hljs-attr">required</span> /&gt;</span><span class="hljs-tag">&lt;<span class="hljs-name">br</span> /&gt;</span><span class="hljs-tag">&lt;<span class="hljs-name">br</span> /&gt;</span>
 
-        &lt;label htmlFor="message"&gt;Message: &lt;/label&gt;
-        &lt;textarea name="message" ref={register} defaultValue="too short" &gt;
-        &lt;/textarea&gt;&lt;Error name="message" /&gt;&lt;br /&gt;&lt;br /&gt;
+        <span class="hljs-tag">&lt;<span class="hljs-name">label</span> <span class="hljs-attr">htmlFor</span>=<span class="hljs-string">&quot;message&quot;</span>&gt;</span>Message: <span class="hljs-tag">&lt;/<span class="hljs-name">label</span>&gt;</span>
+        <span class="hljs-tag">&lt;<span class="hljs-name">textarea</span> <span class="hljs-attr">name</span>=<span class="hljs-string">&quot;message&quot;</span> <span class="hljs-attr">ref</span>=<span class="hljs-string">{register}</span> <span class="hljs-attr">defaultValue</span>=<span class="hljs-string">&quot;too short&quot;</span> &gt;</span>
+        <span class="hljs-tag">&lt;/<span class="hljs-name">textarea</span>&gt;</span><span class="hljs-tag">&lt;<span class="hljs-name">Error</span> <span class="hljs-attr">name</span>=<span class="hljs-string">&quot;message&quot;</span> /&gt;</span><span class="hljs-tag">&lt;<span class="hljs-name">br</span> /&gt;</span><span class="hljs-tag">&lt;<span class="hljs-name">br</span> /&gt;</span>
 
-        &lt;hr /&gt;
-        &lt;br /&gt;
+        <span class="hljs-tag">&lt;<span class="hljs-name">hr</span> /&gt;</span>
+        <span class="hljs-tag">&lt;<span class="hljs-name">br</span> /&gt;</span>
 
-        &lt;input type="reset" value="Reset" /&gt;&amp;nbsp;
-        &lt;input type="submit" value="Submit" /&gt;
+        <span class="hljs-tag">&lt;<span class="hljs-name">input</span> <span class="hljs-attr">type</span>=<span class="hljs-string">&quot;reset&quot;</span> <span class="hljs-attr">value</span>=<span class="hljs-string">&quot;Reset&quot;</span> /&gt;</span><span class="hljs-symbol">&amp;nbsp;</span>
+        <span class="hljs-tag">&lt;<span class="hljs-name">input</span> <span class="hljs-attr">type</span>=<span class="hljs-string">&quot;submit&quot;</span> <span class="hljs-attr">value</span>=<span class="hljs-string">&quot;Submit&quot;</span> /&gt;</span>
 
-      &lt;/form&gt;
+      <span class="hljs-tag">&lt;/<span class="hljs-name">form</span>&gt;</span>
 
-    &lt;/div&gt;
+    <span class="hljs-tag">&lt;/<span class="hljs-name">div</span>&gt;</span></span>
   );
 
 };
-export default MyForm;</code></pre>
+<span class="hljs-keyword">export</span> <span class="hljs-keyword">default</span> MyForm;</code></pre>
 				<a href="#defaults-amp-options" id="defaults-amp-options" style="color: inherit; text-decoration: none;">
 					<h3>Defaults &amp; Options</h3>
 				</a>
@@ -228,29 +228,29 @@ export default MyForm;</code></pre>
 				<a href="#using-a-prop" id="using-a-prop" style="color: inherit; text-decoration: none;">
 					<h4>Using a Prop</h4>
 				</a>
-				<pre><code class="language-jsx">   &lt;input name=<span class="hljs-string">"firstName"</span> type=<span class="hljs-string">"text"</span> ref={register} defaultValue=<span class="hljs-string">"Your_Name_Here"</span> /&gt;</code></pre>
+				<pre><code class="language-jsx">   &lt;input name=<span class="hljs-string">&quot;firstName&quot;</span> type=<span class="hljs-string">&quot;text&quot;</span> ref={register} defaultValue=<span class="hljs-string">&quot;Your_Name_Here&quot;</span> /&gt;</code></pre>
 				<a href="#using-defaults-options" id="using-defaults-options" style="color: inherit; text-decoration: none;">
 					<h4>Using Defaults Options</h4>
 				</a>
 				<pre><code class="language-jsx">  <span class="hljs-keyword">const</span> { register } = useForm({
     <span class="hljs-attr">defaults</span>: {
-      <span class="hljs-attr">firstName</span>: <span class="hljs-string">'Your_Name_Here'</span>
+      <span class="hljs-attr">firstName</span>: <span class="hljs-string">&#x27;Your_Name_Here&#x27;</span>
     }
   });</code></pre>
 				<p>Komo also supports promises for your defaults. Below we&#39;re just using <code>Promise.resolve</code> but you could use fetch or axios etc to get your data. Note errors are logged to the console but does not stop Komo&#39;s initialization. If an error or no data returned Komo will just initialize with an empty defaults object.</p>
 				<pre><code class="language-jsx">  <span class="hljs-keyword">const</span> { register } = useForm({
     <span class="hljs-attr">defaults</span>: <span class="hljs-built_in">Promise</span>.resolve({
-      <span class="hljs-attr">firstName</span>: <span class="hljs-string">'Your_Name_Here'</span>
+      <span class="hljs-attr">firstName</span>: <span class="hljs-string">&#x27;Your_Name_Here&#x27;</span>
     })
   });</code></pre>
 				<a href="#using-yup-schema" id="using-yup-schema" style="color: inherit; text-decoration: none;">
 					<h4>Using Yup Schema</h4>
 				</a>
 				<p>When using a yup schema for your <code>validationSchema</code>, Komo will grab the defaults and use them for your form model.</p>
-				<pre><code class="language-jsx"><span class="hljs-keyword">import</span> * <span class="hljs-keyword">as</span> yup <span class="hljs-keyword">from</span> <span class="hljs-string">'yup'</span>;
+				<pre><code class="language-jsx"><span class="hljs-keyword">import</span> * <span class="hljs-keyword">as</span> yup <span class="hljs-keyword">from</span> <span class="hljs-string">&#x27;yup&#x27;</span>;
 
 <span class="hljs-keyword">const</span> schema = yup.object({
-  <span class="hljs-attr">firstName</span>: string().default(<span class="hljs-string">'Your_Name_Here'</span>)
+  <span class="hljs-attr">firstName</span>: string().default(<span class="hljs-string">&#x27;Your_Name_Here&#x27;</span>)
 });
 
 <span class="hljs-keyword">const</span> { register } = useForm({
@@ -260,13 +260,13 @@ export default MyForm;</code></pre>
 					<h4>Registering with Options</h4>
 				</a>
 				<p>Komo allows you to register with options as well. For example perhaps you wish to disable ALL validation triggers on a given element. </p>
-				<pre><code class="language-jsx">&lt;input name=<span class="hljs-string">"firstName"</span> type=<span class="hljs-string">"text"</span> ref={register({ <span class="hljs-attr">validateChange</span>: <span class="hljs-literal">false</span>, <span class="hljs-attr">validateBlur</span>: <span class="hljs-literal">false</span>})} /&gt;</code></pre>
+				<pre><code class="language-jsx">&lt;input name=<span class="hljs-string">&quot;firstName&quot;</span> type=<span class="hljs-string">&quot;text&quot;</span> ref={register({ <span class="hljs-attr">validateChange</span>: <span class="hljs-literal">false</span>, <span class="hljs-attr">validateBlur</span>: <span class="hljs-literal">false</span>})} /&gt;</code></pre>
 				<a href="#nested-data" id="nested-data" style="color: inherit; text-decoration: none;">
 					<h4>Nested Data</h4>
 				</a>
 				<p>Komo allows models with nested data. Any form field can have a mapped path enabling getting and setting from a nested prop.</p>
 				<p>The below will map errors in our error model <code>{ firstName: [ error objects here ] }</code> but it&#39;s model data will get/set from the nested path of <code>user.name.first</code>.</p>
-				<pre><code class="language-jsx">&lt;input name=<span class="hljs-string">"firstName"</span> type=<span class="hljs-string">"text"</span> ref={register({ <span class="hljs-attr">path</span>: <span class="hljs-string">'user.name.first'</span> })} /&gt;</code></pre>
+				<pre><code class="language-jsx">&lt;input name=<span class="hljs-string">&quot;firstName&quot;</span> type=<span class="hljs-string">&quot;text&quot;</span> ref={register({ <span class="hljs-attr">path</span>: <span class="hljs-string">&#x27;user.name.first&#x27;</span> })} /&gt;</code></pre>
 				<a href="#reinit-after-effect" id="reinit-after-effect" style="color: inherit; text-decoration: none;">
 					<h4>Reinit After Effect</h4>
 				</a>
@@ -296,20 +296,20 @@ useEffect(() =&gt; {
   <span class="hljs-comment">// options here excluded for brevity.</span>
 });
 
-<span class="hljs-keyword">const</span> firstName = useField(<span class="hljs-string">'firstName'</span>);</code></pre>
+<span class="hljs-keyword">const</span> firstName = useField(<span class="hljs-string">&#x27;firstName&#x27;</span>);</code></pre>
 				<a href="#companion-hook-components" id="companion-hook-components" style="color: inherit; text-decoration: none;">
 					<h3>Companion Hook Components</h3>
 				</a>
 				<p>Below we have an Error Component and a TextInput Component that use the errors exposed from our hook.</p>
 				<pre><code class="language-jsx"><span class="hljs-comment">/**
  * Simple component to display our errors.
- * @param props our error component's props.
+ * <span class="hljs-doctag">@param </span>props our error component&#x27;s props.
  */</span>
 <span class="hljs-keyword">const</span> ErrorMessage = <span class="hljs-function">(<span class="hljs-params">{ errors }</span>) =&gt;</span> {
   <span class="hljs-keyword">if</span> (!errors || !errors.length)
     <span class="hljs-keyword">return</span> <span class="hljs-literal">null</span>;
   <span class="hljs-keyword">const</span> err = errors[<span class="hljs-number">0</span>];
-  <span class="hljs-keyword">return</span> (<span class="xml"><span class="hljs-tag">&lt;<span class="hljs-name">div</span> <span class="hljs-attr">style</span>=<span class="hljs-string">{{</span> <span class="hljs-attr">color:</span> '<span class="hljs-attr">red</span>', <span class="hljs-attr">margin:</span> '<span class="hljs-attr">6px</span> <span class="hljs-attr">0</span> <span class="hljs-attr">10px</span>' }}&gt;</span>{err.message}<span class="hljs-tag">&lt;/<span class="hljs-name">div</span>&gt;</span></span>);
+  <span class="hljs-keyword">return</span> (<span class="xml"><span class="hljs-tag">&lt;<span class="hljs-name">div</span> <span class="hljs-attr">style</span>=<span class="hljs-string">{{</span> <span class="hljs-attr">color:</span> &#x27;<span class="hljs-attr">red</span>&#x27;, <span class="hljs-attr">margin:</span> &#x27;<span class="hljs-attr">6px</span> <span class="hljs-attr">0</span> <span class="hljs-attr">10px</span>&#x27; }}&gt;</span>{err.message}<span class="hljs-tag">&lt;/<span class="hljs-name">div</span>&gt;</span></span>);
 };
 
 <span class="hljs-comment">/**
@@ -321,21 +321,21 @@ useEffect(() =&gt; {
   <span class="hljs-keyword">const</span> field = props.hook(name);
   <span class="hljs-keyword">const</span> capitalize = <span class="hljs-function"><span class="hljs-params">v</span> =&gt;</span> v.charAt(<span class="hljs-number">0</span>).toUpperCase() + v.slice(<span class="hljs-number">1</span>);
   <span class="hljs-keyword">return</span> (
-    &lt;div&gt;
-      &lt;label htmlFor={name}&gt;{capitalize(name)}: &lt;/label&gt;
-      &lt;input type="text" ref={field.register} {...clone} /&gt;
-      &lt;ErrorMessage errors={field.errors} /&gt;
-    &lt;/div&gt;
+    <span class="xml"><span class="hljs-tag">&lt;<span class="hljs-name">div</span>&gt;</span>
+      <span class="hljs-tag">&lt;<span class="hljs-name">label</span> <span class="hljs-attr">htmlFor</span>=<span class="hljs-string">{name}</span>&gt;</span>{capitalize(name)}: <span class="hljs-tag">&lt;/<span class="hljs-name">label</span>&gt;</span>
+      <span class="hljs-tag">&lt;<span class="hljs-name">input</span> <span class="hljs-attr">type</span>=<span class="hljs-string">&quot;text&quot;</span> <span class="hljs-attr">ref</span>=<span class="hljs-string">{field.register}</span> {<span class="hljs-attr">...clone</span>} /&gt;</span>
+      <span class="hljs-tag">&lt;<span class="hljs-name">ErrorMessage</span> <span class="hljs-attr">errors</span>=<span class="hljs-string">{field.errors}</span> /&gt;</span>
+    <span class="hljs-tag">&lt;/<span class="hljs-name">div</span>&gt;</span></span>
   );
 };</code></pre>
 				<a href="#form-with-hooks" id="form-with-hooks" style="color: inherit; text-decoration: none;">
 					<h3>Form with Hooks</h3>
 				</a>
-				<pre><code class="language-jsx"><span class="hljs-keyword">const</span> App = <span class="hljs-function"><span class="hljs-params">()</span> =&gt;</span> {
+				<pre><code class="language-jsx"><span class="hljs-keyword">const</span> App = <span class="hljs-function">() =&gt;</span> {
 
 <span class="hljs-comment">// Create some hooks to our fields</span>
-<span class="hljs-keyword">const</span> firstName = useField(<span class="hljs-string">'firstName'</span>);
-<span class="hljs-keyword">const</span> lastName = useField(<span class="hljs-string">'lastName'</span>);
+<span class="hljs-keyword">const</span> firstName = useField(<span class="hljs-string">&#x27;firstName&#x27;</span>);
+<span class="hljs-keyword">const</span> lastName = useField(<span class="hljs-string">&#x27;lastName&#x27;</span>);
 
 <span class="hljs-comment">// When the first name field blurs set the </span>
 <span class="hljs-comment">// focus to the last name field.</span>
@@ -350,29 +350,29 @@ useEffect(() =&gt; {
   };
 
   <span class="hljs-keyword">return</span> (
-    &lt;form noValidate onSubmit={handleSubmit(onSubmit)} onReset={handleReset}&gt;
+    <span class="xml"><span class="hljs-tag">&lt;<span class="hljs-name">form</span> <span class="hljs-attr">noValidate</span> <span class="hljs-attr">onSubmit</span>=<span class="hljs-string">{handleSubmit(onSubmit)}</span> <span class="hljs-attr">onReset</span>=<span class="hljs-string">{handleReset}</span>&gt;</span>
 
-      &lt;label htmlFor="firstName"&gt;First Name: &lt;/label&gt;
-      &lt;input name="firstName" type="text" ref={register} onChange={onFirstBlur} /&gt;&lt;br /&gt;&lt;br /&gt;
+      <span class="hljs-tag">&lt;<span class="hljs-name">label</span> <span class="hljs-attr">htmlFor</span>=<span class="hljs-string">&quot;firstName&quot;</span>&gt;</span>First Name: <span class="hljs-tag">&lt;/<span class="hljs-name">label</span>&gt;</span>
+      <span class="hljs-tag">&lt;<span class="hljs-name">input</span> <span class="hljs-attr">name</span>=<span class="hljs-string">&quot;firstName&quot;</span> <span class="hljs-attr">type</span>=<span class="hljs-string">&quot;text&quot;</span> <span class="hljs-attr">ref</span>=<span class="hljs-string">{register}</span> <span class="hljs-attr">onChange</span>=<span class="hljs-string">{onFirstBlur}</span> /&gt;</span><span class="hljs-tag">&lt;<span class="hljs-name">br</span> /&gt;</span><span class="hljs-tag">&lt;<span class="hljs-name">br</span> /&gt;</span>
 
-      &lt;TextInput name="lastName" hook={useField} onChange={onLastChange} /&gt;&lt;br /&gt;
+      <span class="hljs-tag">&lt;<span class="hljs-name">TextInput</span> <span class="hljs-attr">name</span>=<span class="hljs-string">&quot;lastName&quot;</span> <span class="hljs-attr">hook</span>=<span class="hljs-string">{useField}</span> <span class="hljs-attr">onChange</span>=<span class="hljs-string">{onLastChange}</span> /&gt;</span><span class="hljs-tag">&lt;<span class="hljs-name">br</span> /&gt;</span>
 
-      &lt;button type="button" onClick={lastName.focus}&gt;Set LastName Focus&lt;/button&gt;&lt;br /&gt;&lt;br /&gt;
+      <span class="hljs-tag">&lt;<span class="hljs-name">button</span> <span class="hljs-attr">type</span>=<span class="hljs-string">&quot;button&quot;</span> <span class="hljs-attr">onClick</span>=<span class="hljs-string">{lastName.focus}</span>&gt;</span>Set LastName Focus<span class="hljs-tag">&lt;/<span class="hljs-name">button</span>&gt;</span><span class="hljs-tag">&lt;<span class="hljs-name">br</span> /&gt;</span><span class="hljs-tag">&lt;<span class="hljs-name">br</span> /&gt;</span>
 
-      &lt;button type="button" onClick={updateLast('Waddams')}&gt;Set LastName to Waddams&lt;/button&gt;&lt;br /&gt;&lt;br /&gt;
+      <span class="hljs-tag">&lt;<span class="hljs-name">button</span> <span class="hljs-attr">type</span>=<span class="hljs-string">&quot;button&quot;</span> <span class="hljs-attr">onClick</span>=<span class="hljs-string">{updateLast(</span>&#x27;<span class="hljs-attr">Waddams</span>&#x27;)}&gt;</span>Set LastName to Waddams<span class="hljs-tag">&lt;/<span class="hljs-name">button</span>&gt;</span><span class="hljs-tag">&lt;<span class="hljs-name">br</span> /&gt;</span><span class="hljs-tag">&lt;<span class="hljs-name">br</span> /&gt;</span>
 
-      &lt;button type="button" onClick={updateLast('')}&gt;Set LastName to Undefined&lt;/button&gt;&lt;br /&gt;&lt;br /&gt;
+      <span class="hljs-tag">&lt;<span class="hljs-name">button</span> <span class="hljs-attr">type</span>=<span class="hljs-string">&quot;button&quot;</span> <span class="hljs-attr">onClick</span>=<span class="hljs-string">{updateLast(</span>&#x27;&#x27;)}&gt;</span>Set LastName to Undefined<span class="hljs-tag">&lt;/<span class="hljs-name">button</span>&gt;</span><span class="hljs-tag">&lt;<span class="hljs-name">br</span> /&gt;</span><span class="hljs-tag">&lt;<span class="hljs-name">br</span> /&gt;</span>
 
-      &lt;JsonErrors errors={state.errors} /&gt;
+      <span class="hljs-tag">&lt;<span class="hljs-name">JsonErrors</span> <span class="hljs-attr">errors</span>=<span class="hljs-string">{state.errors}</span> /&gt;</span>
 
-      &lt;br /&gt;
-      &lt;hr /&gt;
-      &lt;br /&gt;
+      <span class="hljs-tag">&lt;<span class="hljs-name">br</span> /&gt;</span>
+      <span class="hljs-tag">&lt;<span class="hljs-name">hr</span> /&gt;</span>
+      <span class="hljs-tag">&lt;<span class="hljs-name">br</span> /&gt;</span>
 
-      &lt;input type="reset" value="Reset" /&gt;&amp;nbsp;
-      &lt;input type="submit" value="Submit" /&gt;
+      <span class="hljs-tag">&lt;<span class="hljs-name">input</span> <span class="hljs-attr">type</span>=<span class="hljs-string">&quot;reset&quot;</span> <span class="hljs-attr">value</span>=<span class="hljs-string">&quot;Reset&quot;</span> /&gt;</span><span class="hljs-symbol">&amp;nbsp;</span>
+      <span class="hljs-tag">&lt;<span class="hljs-name">input</span> <span class="hljs-attr">type</span>=<span class="hljs-string">&quot;submit&quot;</span> <span class="hljs-attr">value</span>=<span class="hljs-string">&quot;Submit&quot;</span> /&gt;</span>
 
-    &lt;/form&gt;
+    <span class="hljs-tag">&lt;/<span class="hljs-name">form</span>&gt;</span></span>
   );
 
 }</code></pre>
@@ -388,8 +388,8 @@ useEffect(() =&gt; {
 				of both <code>name.first</code> and <code>name.last</code>. We only want to trigger validation for fullName.</p>
 				<pre><code class="language-js"><span class="hljs-keyword">const</span> model = {
   <span class="hljs-attr">name</span>: {
-    <span class="hljs-attr">first</span>: <span class="hljs-string">'Milton'</span>,
-    <span class="hljs-attr">last</span>: <span class="hljs-string">'Waddams'</span>
+    <span class="hljs-attr">first</span>: <span class="hljs-string">&#x27;Milton&#x27;</span>,
+    <span class="hljs-attr">last</span>: <span class="hljs-string">&#x27;Waddams&#x27;</span>
   }
 }</code></pre>
 				<a href="#virtual-component" id="virtual-component" style="color: inherit; text-decoration: none;">
@@ -489,9 +489,9 @@ useEffect(() =&gt; {
 				</a>
 				<p>We&#39;ll show just the form and one input for brevity/clarity but using with Matieral is as simple as passing our register function to Material&#39;s <code>inputRef</code> prop.</p>
 				<p><a href="https://material-ui.com/api/text-field/">See More From Material-UI Docs</a></p>
-				<pre><code class="language-jsx"><span class="hljs-keyword">import</span> Input <span class="hljs-keyword">from</span> <span class="hljs-string">'@material-ui/core/Input'</span>;
+				<pre><code class="language-jsx"><span class="hljs-keyword">import</span> Input <span class="hljs-keyword">from</span> <span class="hljs-string">&#x27;@material-ui/core/Input&#x27;</span>;
 <span class="xml"><span class="hljs-tag">&lt;<span class="hljs-name">form</span>&gt;</span>
-    <span class="hljs-tag">&lt;<span class="hljs-name">Input</span> <span class="hljs-attr">name</span>=<span class="hljs-string">"phone"</span> <span class="hljs-attr">inputRef</span>=<span class="hljs-string">{register({</span> <span class="hljs-attr">path:</span> '<span class="hljs-attr">numbers.home</span>' })} <span class="hljs-attr">placeholder</span>=<span class="hljs-string">"Phone"</span> /&gt;</span>
+    <span class="hljs-tag">&lt;<span class="hljs-name">Input</span> <span class="hljs-attr">name</span>=<span class="hljs-string">&quot;phone&quot;</span> <span class="hljs-attr">inputRef</span>=<span class="hljs-string">{register({</span> <span class="hljs-attr">path:</span> &#x27;<span class="hljs-attr">numbers.home</span>&#x27; })} <span class="hljs-attr">placeholder</span>=<span class="hljs-string">&quot;Phone&quot;</span> /&gt;</span>
 <span class="hljs-tag">&lt;/<span class="hljs-name">form</span>&gt;</span></span></code></pre>
 				<a href="#docs" id="docs" style="color: inherit; text-decoration: none;">
 					<h2>Docs</h2>
@@ -516,50 +516,50 @@ useEffect(() =&gt; {
 					<li class="label tsd-is-external">
 						<span>Internals</span>
 					</li>
-					<li class=" tsd-kind-external-module">
-						<a href="modules/_hooks_.html">"hooks"</a>
+					<li class=" tsd-kind-module">
+						<a href="modules/_hooks_.html">&quot;hooks&quot;</a>
 					</li>
-					<li class=" tsd-kind-external-module">
-						<a href="modules/_index_.html">"index"</a>
+					<li class=" tsd-kind-module">
+						<a href="modules/_index_.html">&quot;index&quot;</a>
 					</li>
-					<li class=" tsd-kind-external-module">
-						<a href="modules/_komo_.html">"komo"</a>
+					<li class=" tsd-kind-module">
+						<a href="modules/_komo_.html">&quot;komo&quot;</a>
 					</li>
-					<li class=" tsd-kind-external-module">
-						<a href="modules/_register_.html">"register"</a>
+					<li class=" tsd-kind-module">
+						<a href="modules/_register_.html">&quot;register&quot;</a>
 					</li>
-					<li class=" tsd-kind-external-module">
-						<a href="modules/_types_.html">"types"</a>
+					<li class=" tsd-kind-module">
+						<a href="modules/_types_.html">&quot;types&quot;</a>
 					</li>
-					<li class=" tsd-kind-external-module">
-						<a href="modules/_utils_events_.html">"utils/events"</a>
+					<li class=" tsd-kind-module">
+						<a href="modules/_utils_events_.html">&quot;utils/events&quot;</a>
 					</li>
-					<li class=" tsd-kind-external-module">
-						<a href="modules/_utils_helpers_.html">"utils/helpers"</a>
+					<li class=" tsd-kind-module">
+						<a href="modules/_utils_helpers_.html">&quot;utils/helpers&quot;</a>
 					</li>
-					<li class=" tsd-kind-external-module">
-						<a href="modules/_utils_index_.html">"utils/index"</a>
+					<li class=" tsd-kind-module">
+						<a href="modules/_utils_index_.html">&quot;utils/index&quot;</a>
 					</li>
-					<li class=" tsd-kind-external-module">
-						<a href="modules/_utils_observer_.html">"utils/observer"</a>
+					<li class=" tsd-kind-module">
+						<a href="modules/_utils_observer_.html">&quot;utils/observer&quot;</a>
 					</li>
-					<li class=" tsd-kind-external-module">
-						<a href="modules/_utils_renders_.html">"utils/renders"</a>
+					<li class=" tsd-kind-module">
+						<a href="modules/_utils_renders_.html">&quot;utils/renders&quot;</a>
 					</li>
-					<li class=" tsd-kind-external-module">
-						<a href="modules/_utils_tools_.html">"utils/tools"</a>
+					<li class=" tsd-kind-module">
+						<a href="modules/_utils_tools_.html">&quot;utils/tools&quot;</a>
 					</li>
-					<li class=" tsd-kind-external-module">
-						<a href="modules/_validate_.html">"validate"</a>
+					<li class=" tsd-kind-module">
+						<a href="modules/_validate_.html">&quot;validate&quot;</a>
 					</li>
 					<li class="label tsd-is-external">
 						<span>Externals</span>
 					</li>
-					<li class=" tsd-kind-external-module tsd-is-external">
-						<a href="modules/_example_jsonerrors_.html">"example/jsonerrors"</a>
+					<li class=" tsd-kind-module tsd-is-external">
+						<a href="modules/_example_jsonerrors_.html">&quot;example/jsonerrors&quot;</a>
 					</li>
-					<li class=" tsd-kind-external-module tsd-is-external">
-						<a href="modules/_example_virtual_.html">"example/virtual"</a>
+					<li class=" tsd-kind-module tsd-is-external">
+						<a href="modules/_example_virtual_.html">&quot;example/virtual&quot;</a>
 					</li>
 				</ul>
 			</nav>
@@ -575,57 +575,16 @@ useEffect(() =&gt; {
 		<h2>Legend</h2>
 		<div class="tsd-legend-group">
 			<ul class="tsd-legend">
-				<li class="tsd-kind-module"><span class="tsd-kind-icon">Module</span></li>
 				<li class="tsd-kind-object-literal"><span class="tsd-kind-icon">Object literal</span></li>
 				<li class="tsd-kind-variable"><span class="tsd-kind-icon">Variable</span></li>
 				<li class="tsd-kind-function"><span class="tsd-kind-icon">Function</span></li>
 				<li class="tsd-kind-function tsd-has-type-parameter"><span class="tsd-kind-icon">Function with type parameter</span></li>
-				<li class="tsd-kind-index-signature"><span class="tsd-kind-icon">Index signature</span></li>
 				<li class="tsd-kind-type-alias"><span class="tsd-kind-icon">Type alias</span></li>
 				<li class="tsd-kind-type-alias tsd-has-type-parameter"><span class="tsd-kind-icon">Type alias with type parameter</span></li>
 			</ul>
 			<ul class="tsd-legend">
-				<li class="tsd-kind-enum"><span class="tsd-kind-icon">Enumeration</span></li>
-				<li class="tsd-kind-enum-member"><span class="tsd-kind-icon">Enumeration member</span></li>
-				<li class="tsd-kind-property tsd-parent-kind-enum"><span class="tsd-kind-icon">Property</span></li>
-				<li class="tsd-kind-method tsd-parent-kind-enum"><span class="tsd-kind-icon">Method</span></li>
-			</ul>
-			<ul class="tsd-legend">
 				<li class="tsd-kind-interface"><span class="tsd-kind-icon">Interface</span></li>
 				<li class="tsd-kind-interface tsd-has-type-parameter"><span class="tsd-kind-icon">Interface with type parameter</span></li>
-				<li class="tsd-kind-constructor tsd-parent-kind-interface"><span class="tsd-kind-icon">Constructor</span></li>
-				<li class="tsd-kind-property tsd-parent-kind-interface"><span class="tsd-kind-icon">Property</span></li>
-				<li class="tsd-kind-method tsd-parent-kind-interface"><span class="tsd-kind-icon">Method</span></li>
-				<li class="tsd-kind-index-signature tsd-parent-kind-interface"><span class="tsd-kind-icon">Index signature</span></li>
-			</ul>
-			<ul class="tsd-legend">
-				<li class="tsd-kind-class"><span class="tsd-kind-icon">Class</span></li>
-				<li class="tsd-kind-class tsd-has-type-parameter"><span class="tsd-kind-icon">Class with type parameter</span></li>
-				<li class="tsd-kind-constructor tsd-parent-kind-class"><span class="tsd-kind-icon">Constructor</span></li>
-				<li class="tsd-kind-property tsd-parent-kind-class"><span class="tsd-kind-icon">Property</span></li>
-				<li class="tsd-kind-method tsd-parent-kind-class"><span class="tsd-kind-icon">Method</span></li>
-				<li class="tsd-kind-accessor tsd-parent-kind-class"><span class="tsd-kind-icon">Accessor</span></li>
-				<li class="tsd-kind-index-signature tsd-parent-kind-class"><span class="tsd-kind-icon">Index signature</span></li>
-			</ul>
-			<ul class="tsd-legend">
-				<li class="tsd-kind-constructor tsd-parent-kind-class tsd-is-inherited"><span class="tsd-kind-icon">Inherited constructor</span></li>
-				<li class="tsd-kind-property tsd-parent-kind-class tsd-is-inherited"><span class="tsd-kind-icon">Inherited property</span></li>
-				<li class="tsd-kind-method tsd-parent-kind-class tsd-is-inherited"><span class="tsd-kind-icon">Inherited method</span></li>
-				<li class="tsd-kind-accessor tsd-parent-kind-class tsd-is-inherited"><span class="tsd-kind-icon">Inherited accessor</span></li>
-			</ul>
-			<ul class="tsd-legend">
-				<li class="tsd-kind-property tsd-parent-kind-class tsd-is-protected"><span class="tsd-kind-icon">Protected property</span></li>
-				<li class="tsd-kind-method tsd-parent-kind-class tsd-is-protected"><span class="tsd-kind-icon">Protected method</span></li>
-				<li class="tsd-kind-accessor tsd-parent-kind-class tsd-is-protected"><span class="tsd-kind-icon">Protected accessor</span></li>
-			</ul>
-			<ul class="tsd-legend">
-				<li class="tsd-kind-property tsd-parent-kind-class tsd-is-private"><span class="tsd-kind-icon">Private property</span></li>
-				<li class="tsd-kind-method tsd-parent-kind-class tsd-is-private"><span class="tsd-kind-icon">Private method</span></li>
-				<li class="tsd-kind-accessor tsd-parent-kind-class tsd-is-private"><span class="tsd-kind-icon">Private accessor</span></li>
-			</ul>
-			<ul class="tsd-legend">
-				<li class="tsd-kind-property tsd-parent-kind-class tsd-is-static"><span class="tsd-kind-icon">Static property</span></li>
-				<li class="tsd-kind-call-signature tsd-parent-kind-class tsd-is-static"><span class="tsd-kind-icon">Static method</span></li>
 			</ul>
 		</div>
 	</div>

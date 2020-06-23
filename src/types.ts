@@ -291,11 +291,6 @@ export interface IRegisterOptions<T extends IModel> {
   path?: string;
 
   /**
-   * Maps to an existing model prop virtually.
-   */
-  // virtual?: boolean;
-
-  /**
    * Whether element should validate on change overrides main options.
    */
   validateChange?: boolean;

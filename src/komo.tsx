@@ -25,6 +25,7 @@ import {
   normalizeValidator, astToSchema, promisifyDefaults, parseYupDefaults, isYupSchema, normalizeCasting
 } from './validate';
 import { ValidateOptions, ObjectSchema, InferType } from 'yup';
+import Reinit from './example/reinit';
 
 /**
  * Native Validation reference.
@@ -73,7 +74,7 @@ function initApi<T extends IModel>(options: IOptions<T>) {
 
   function _getElement(
     namePathOrElement: string | IRegisteredElement<T>,
-    asGroup: boolean): Array<IRegisteredElement<T>>;
+    asGroup: boolean): IRegisteredElement<T>[];
   function _getElement(namePathOrElement: string | IRegisteredElement<T>): IRegisteredElement<T>;
   function _getElement(namePathOrElement: string | IRegisteredElement<T>, asGroup: boolean = false) {
     if (isObject(namePathOrElement))
@@ -86,7 +87,7 @@ function initApi<T extends IModel>(options: IOptions<T>) {
   }
   const getElement = useCallback(_getElement, [fields]);
 
-  const getRegistered = useCallback((asPath: boolean = false): Array<KeyOf<T>> => {
+  const getRegistered = useCallback((asPath: boolean = false): KeyOf<T>[] => {
     return [...fields.current.values()].map(f => asPath ? f.path : f.name) as any;
   }, [fields]);
 
@@ -212,7 +213,7 @@ function initApi<T extends IModel>(options: IOptions<T>) {
 
     }
 
-  }, [defaults, model]);
+  }, [defaults.current, model]);
 
   const hasModel = (path?: string) => {
     return has(model.current, path);
@@ -565,7 +566,7 @@ function initApi<T extends IModel>(options: IOptions<T>) {
  * 
  * @param options form api options.
  */
-function initForm<T extends IModel>(options?: IOptions<T>) {
+function initForm<T extends IModel>(options: IOptions<T>) {
 
   const base = initApi(options);
 
@@ -578,9 +579,10 @@ function initForm<T extends IModel>(options?: IOptions<T>) {
 
   useEffect(() => {
 
-    const isReinit = mounted.current;
-
-    init(isReinit);
+    if (!mounted.current)
+      init();
+    else if (mounted.current)
+      init(true);
 
     return () => {
       mounted.current = false;
@@ -590,7 +592,7 @@ function initForm<T extends IModel>(options?: IOptions<T>) {
 
     };
 
-  }, [defaults]);
+  }, [options.defaults]);
 
   async function init(defs?, isReinit = false, validate = false) {
 
@@ -605,11 +607,11 @@ function initForm<T extends IModel>(options?: IOptions<T>) {
     debug_init('mount:fields', getRegistered());
     debug_init('mount:schema', options.validationSchema);
 
-    let _defaults = options.defaults as Promise<Partial<T>>;
+    let _defaults = options.promisifiedDefaults as Promise<Partial<T>>;
 
     // TODO: Need to fix typings so .yupDefaults exists.
     if (defs)
-      _defaults = promisifyDefaults(defs, (options as any).yupDefaults) as Promise<T>;
+      _defaults = promisifyDefaults(defs, options.yupDefaults) as Promise<T>;
 
     const { err, data } = await me(_defaults);
 
@@ -819,28 +821,31 @@ function initForm<T extends IModel>(options?: IOptions<T>) {
 
 }
 
+export type Options<T, D> = Omit<IOptions<T, D>, 'promisifiedDefaults' | 'yupDefaults'>;
+
 /**
  * Initializes Komo.
  * 
  * @param options the komo options.
  */
-export function initKomo<T extends IModel, D extends IModel = {}>(options?: IOptions<T, D>) {
+export function initKomo<T extends IModel, D extends IModel = {}>(options?: Options<T, D>) {
 
   type Model = T & Partial<D>;
 
-  options = { ...DEFAULTS, ...options } as IOptions<Model>;
+  const _options = { ...DEFAULTS, ...options } as IOptions<Model>;
 
-  const normalizeYup = parseYupDefaults(options.validationSchema, options.validationSchemaPurge);
-  options.validationSchema = normalizeYup.schema;
-  (options as any).yupDefaults = normalizeYup.defaults;
-  options.defaults = promisifyDefaults(options.defaults, normalizeYup.defaults) as Promise<Model>;
-  options.castHandler = normalizeCasting(options.castHandler);
+  const normalizeYup = parseYupDefaults(_options.validationSchema, _options.validationSchemaPurge);
+  _options.validationSchema = normalizeYup.schema;
+  _options.yupDefaults = normalizeYup.defaults;
+  _options.promisifiedDefaults = promisifyDefaults(_options.defaults, normalizeYup.defaults) as Promise<Model>;
+  _options.castHandler = normalizeCasting(_options.castHandler);
 
-  const api = initForm<Model>(options);
+  const api = initForm<Model>(_options);
 
   // Override setModel so exposed method
   // causes render.
   const { render, setModel } = api;
+
   api.setModel = (pathOrModel, value?) => { setModel(pathOrModel, value); render(`model:set`); };
 
   const hooks = initHooks<Model>(api);

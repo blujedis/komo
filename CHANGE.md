@@ -1,9 +1,12 @@
 # Changes
 
+## 06/23/2020
+
+- Watch for defaults change, then reinit.
+
 ## 06/22/2020
 
 - Bug, fix issue where checkboxes do not init correctly in some cases.
-- Add "onChange" listener in hook for convenience.
 
 ## 01/24/2020
 

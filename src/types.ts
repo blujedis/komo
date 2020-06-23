@@ -174,6 +174,16 @@ export interface IOptions<T extends IModel, D extends IModel = {}> {
   defaults?: Partial<D> | Promise<Partial<D>>;
 
   /**
+   * Defaults normalized to a promise.
+   */
+  promisifiedDefaults?: Partial<D> | Promise<Partial<D>>;
+
+  /**
+   * Internal options parsed from Yup.
+   */
+  yupDefaults?: any;
+
+  /**
    * A Yup ObjectSchema or custom function for validating form (default: undefined)
    */
   validationSchema?: ValidationSchema<T & Partial<D>>;

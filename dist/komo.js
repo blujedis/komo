@@ -140,7 +140,7 @@ function initApi(options) {
                 current = pathOrModel;
             model.current = current;
         }
-    }, [defaults, model]);
+    }, [defaults.current, model]);
     const hasModel = (path) => {
         return lodash_has_1.default(model.current, path);
     };
@@ -418,15 +418,17 @@ function initForm(options) {
     const base = initApi(options);
     const { options: formOptions, defaults, render, clearDirty, clearTouched, clearError, setModel, fields, submitCount, submitting, submitted, validateModel, validateModelAt, syncDefaults, state, hasModel, isValidatable, errors, setError, unregister, mounted, initSchema, model, getRegistered, getModel, removeError, isDirty, isTouched, getDefault, getElement } = base;
     react_1.useEffect(() => {
-        const isReinit = mounted.current;
-        init(isReinit);
+        if (!mounted.current)
+            init();
+        else if (mounted.current)
+            init(true);
         return () => {
             mounted.current = false;
             [...fields.current.values()].forEach(e => {
                 unregister(e);
             });
         };
-    }, [defaults]);
+    }, [options.defaults]);
     async function init(defs, isReinit = false, validate = false) {
         if (typeof defs === 'boolean') {
             validate = isReinit;
@@ -436,7 +438,7 @@ function initForm(options) {
             return;
         debug_init('mount:fields', getRegistered());
         debug_init('mount:schema', options.validationSchema);
-        let _defaults = options.defaults;
+        let _defaults = options.promisifiedDefaults;
         // TODO: Need to fix typings so .yupDefaults exists.
         if (defs)
             _defaults = validate_1.promisifyDefaults(defs, options.yupDefaults);
@@ -592,13 +594,13 @@ function initForm(options) {
  * @param options the komo options.
  */
 function initKomo(options) {
-    options = { ...DEFAULTS, ...options };
-    const normalizeYup = validate_1.parseYupDefaults(options.validationSchema, options.validationSchemaPurge);
-    options.validationSchema = normalizeYup.schema;
-    options.yupDefaults = normalizeYup.defaults;
-    options.defaults = validate_1.promisifyDefaults(options.defaults, normalizeYup.defaults);
-    options.castHandler = validate_1.normalizeCasting(options.castHandler);
-    const api = initForm(options);
+    const _options = { ...DEFAULTS, ...options };
+    const normalizeYup = validate_1.parseYupDefaults(_options.validationSchema, _options.validationSchemaPurge);
+    _options.validationSchema = normalizeYup.schema;
+    _options.yupDefaults = normalizeYup.defaults;
+    _options.promisifiedDefaults = validate_1.promisifyDefaults(_options.defaults, normalizeYup.defaults);
+    _options.castHandler = validate_1.normalizeCasting(_options.castHandler);
+    const api = initForm(_options);
     // Override setModel so exposed method
     // causes render.
     const { render, setModel } = api;

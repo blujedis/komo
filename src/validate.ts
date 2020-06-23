@@ -215,7 +215,7 @@ export function ensureErrorModel<T extends IModel>(
  * @param schema the yup schema or user function for validation.
  */
 export function normalizeValidator<T extends IModel>(
-  schema: ValidationSchema<T>, findField: IGetElement<T>, 
+  schema: ValidationSchema<T>, findField: IGetElement<T>,
   fields: MutableRefObject<Set<IRegisteredElement<T>>>, vanities: string[]): IValidator<T> {
 
   let validator: IValidator<T>;

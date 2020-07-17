@@ -13,7 +13,7 @@ const DEFAULTS = {
     },
     message: ''
 };
-function schema(model, fields, vanities) {
+function schema(model, fields, vanities, ast) {
     const errors = {};
     const add = (key, msg) => {
         errors[key] = errors[key] || [];
@@ -29,7 +29,7 @@ function schema(model, fields, vanities) {
     return errors;
 }
 const User = () => {
-    const { register, handleSubmit, handleReset, state } = __1.default({
+    const options = {
         defaults: {
             numbers: {
                 home: '7771212',
@@ -38,7 +38,8 @@ const User = () => {
         },
         validationSchema: schema,
         validateNative: true
-    });
+    };
+    const { register, handleSubmit, handleReset, state } = __1.default(options);
     const onSubmit = (model) => {
         console.log(model);
         console.log(state.errors);

@@ -1,6 +1,6 @@
 import {
   isRadio, isCheckbox, addListener, isTextLike, removeListener,
-  initObserver, isBooleanLike, isString, isUndefined, isNullOrUndefined, me, isFunction,
+  initObserver, isBooleanLike, isString, isUndefined, isNullOrUndefined, promise, isFunction,
   debuggers, isSelectMultiple, isEqual, isArray, isElementOrVirtual, isObject, isPreventEnter, noop, parseBoolean
 } from './utils';
 import { parseNativeValidators } from './validate';
@@ -388,7 +388,7 @@ export function initElement<T extends IModel>(api?: IKomoBase<T>) {
       await updateStateAndModel(element);
       debug_event(element.name, element.value);
       if (isValidateBlur(element)) {
-        await me(element.validate());
+        await promise(element.validate());
       }
     };
 
@@ -396,7 +396,7 @@ export function initElement<T extends IModel>(api?: IKomoBase<T>) {
       await updateStateAndModel(element);
       debug_event(element.name, element.value);
       if (isValidateChange(element)) {
-        await me(element.validate());
+        await promise(element.validate());
       }
     };
 
@@ -429,7 +429,7 @@ export function initElement<T extends IModel>(api?: IKomoBase<T>) {
     if (!isValidatable())
       return Promise.resolve(value) as Promise<Partial<T>>;
 
-    const { err, data } = await me(validateModelAt(element));
+    const { err, data } = await promise(validateModelAt(element));
 
     if (err) {
       setError(element.name, err[element.name]);
@@ -509,7 +509,7 @@ export function initElement<T extends IModel>(api?: IKomoBase<T>) {
       const additional = isArray(validate) ? (validate as string[]).map(v => getElement(v)) : undefined;
 
       // await me(validateElementModels(element, value, additional));
-      await me(validateElementModels(element, value, additional));
+      await promise(validateElementModels(element, value, additional));
 
     };
 
@@ -724,7 +724,8 @@ export function initElement<T extends IModel>(api?: IKomoBase<T>) {
       const allowNative = !isUndefined(element.enableNativeValidation) ?
         element.enableNativeValidation : komoOptions.validateNative;
 
-      if (allowNative && !isFunction(komoOptions.validationSchema))
+      //  if (allowNative && !isFunction(komoOptions.validationSchema))
+      if (allowNative)
         schemaAst.current = parseNativeValidators(element, schemaAst.current);
 
     }

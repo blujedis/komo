@@ -19,7 +19,7 @@ export declare function noop(def?: any): (...args: any[]) => any;
  *
  * @param promise the promise to be executed.
  */
-export declare const me: <T, E = Error>(promise: PromiseStrict<T, E>) => {
+export declare const promise: <T, E = Error>(p: PromiseStrict<T, E>) => {
     err?: E;
     data?: T;
 };

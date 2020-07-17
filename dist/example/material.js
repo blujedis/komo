@@ -46,11 +46,13 @@ const Material = () => {
     const firstName = initError('firstName');
     // Use built in Komo field hook
     const lastName = useField('lastName');
-    const MyError = ({ hook }) => {
-        if (hook.valid)
-            return null;
-        return (react_1.default.createElement("span", { style: { color: 'red' } }, hook.message));
-    };
+    // const MyError = ({ hook }: { hook: ReturnType<typeof useField>; }) => {
+    //   if (hook.valid)
+    //     return null;
+    //   return (
+    //     <span style={{ color: 'red' }}>{hook.message}</span>
+    //   );
+    // };
     return (react_1.default.createElement("div", null,
         react_1.default.createElement("h2", null, "Material Design - Yup Validation"),
         react_1.default.createElement("hr", null),
@@ -60,9 +62,6 @@ const Material = () => {
             react_1.default.createElement("br", null),
             react_1.default.createElement("br", null),
             react_1.default.createElement(TextField_1.default, { name: "lastName", error: lastName.invalid, inputRef: register, label: lastName.message, margin: "normal" }),
-            react_1.default.createElement("br", null),
-            react_1.default.createElement("br", null),
-            react_1.default.createElement(MyError, { hook: lastName }),
             react_1.default.createElement("br", null),
             react_1.default.createElement("br", null),
             react_1.default.createElement(Input_1.default, { name: "email", inputRef: register, placeholder: "Email" }),

@@ -281,14 +281,14 @@ function initElement(api) {
             await updateStateAndModel(element);
             debug_event(element.name, element.value);
             if (isValidateBlur(element)) {
-                await utils_1.me(element.validate());
+                await utils_1.promise(element.validate());
             }
         };
         const handleChange = async (e) => {
             await updateStateAndModel(element);
             debug_event(element.name, element.value);
             if (isValidateChange(element)) {
-                await utils_1.me(element.validate());
+                await utils_1.promise(element.validate());
             }
         };
         // Attach blur
@@ -314,7 +314,7 @@ function initElement(api) {
     async function validateElementModel(element, value, shouldRender = true) {
         if (!isValidatable())
             return Promise.resolve(value);
-        const { err, data } = await utils_1.me(validateModelAt(element));
+        const { err, data } = await utils_1.promise(validateModelAt(element));
         if (err) {
             setError(element.name, err[element.name]);
             if (shouldRender)
@@ -371,7 +371,7 @@ function initElement(api) {
             }
             const additional = utils_1.isArray(validate) ? validate.map(v => getElement(v)) : undefined;
             // await me(validateElementModels(element, value, additional));
-            await utils_1.me(validateElementModels(element, value, additional));
+            await utils_1.promise(validateElementModels(element, value, additional));
         };
         element.validate = async () => {
             const currentValue = getModel(element.path);
@@ -521,7 +521,8 @@ function initElement(api) {
         if (!rebind) {
             const allowNative = !utils_1.isUndefined(element.enableNativeValidation) ?
                 element.enableNativeValidation : komoOptions.validateNative;
-            if (allowNative && !utils_1.isFunction(komoOptions.validationSchema))
+            //  if (allowNative && !isFunction(komoOptions.validationSchema))
+            if (allowNative)
                 schemaAst.current = validate_1.parseNativeValidators(element, schemaAst.current);
         }
         // Set the Initial Value.

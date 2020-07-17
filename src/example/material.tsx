@@ -50,13 +50,13 @@ const Material: FC = () => {
   // Use built in Komo field hook
   const lastName = useField('lastName');
 
-  const MyError = ({ hook }: { hook: ReturnType<typeof useField> }) => {
-    if (hook.valid)
-      return null;
-    return (
-      <span style={{ color: 'red' }}>{hook.message}</span>
-    );
-  };
+  // const MyError = ({ hook }: { hook: ReturnType<typeof useField>; }) => {
+  //   if (hook.valid)
+  //     return null;
+  //   return (
+  //     <span style={{ color: 'red' }}>{hook.message}</span>
+  //   );
+  // };
 
   return (
     <div>
@@ -72,7 +72,6 @@ const Material: FC = () => {
         <TextField name="lastName"
           error={lastName.invalid}
           inputRef={register} label={lastName.message} margin="normal" /><br /><br />
-        <MyError hook={lastName} /><br /><br />
 
         <Input name="email" inputRef={register} placeholder="Email" /><br /><br />
         <Input name="phone" inputRef={register({ path: 'numbers.home' })} placeholder="Phone" /><br /><br />

@@ -16,10 +16,9 @@ import {
   INativeValidators,
 } from './types';
 import {
-  debuggers, isPromise, isTruthy, isString, isFunction, me,
+  debuggers, isPromise, isTruthy, isString, isFunction, promise,
   isNullOrUndefined, isEmpty, isPlainObject, isUndefined, isObject, isArray
 } from './utils';
-import Virtual from './example/virtual';
 import { MutableRefObject } from 'react';
 
 const { debug_validate } = debuggers;
@@ -84,6 +83,11 @@ export function yupToErrors<T extends IModel>(
  * @param schema optional existing schema.
  */
 export function astToSchema<T extends IModel>(ast: ISchemaAst, schema?: ObjectSchema<T>): ObjectSchema<T> {
+
+  const isFunc = typeof schema === 'function';
+
+  if (isFunc)
+    return schema;
 
   const obj = schema || object();
 
@@ -216,7 +220,7 @@ export function ensureErrorModel<T extends IModel>(
  */
 export function normalizeValidator<T extends IModel>(
   schema: ValidationSchema<T>, findField: IGetElement<T>,
-  fields: MutableRefObject<Set<IRegisteredElement<T>>>, vanities: string[]): IValidator<T> {
+  fields: MutableRefObject<Set<IRegisteredElement<T>>>, vanities: string[], ast?: ISchemaAst): IValidator<T> {
 
   let validator: IValidator<T>;
 
@@ -225,15 +229,17 @@ export function normalizeValidator<T extends IModel>(
   if (isFunction(schema)) {
 
     validator = {
+
       validate: (model: T) => {
 
-        const result = (schema as ValidateModelHandler<T>)(model, fields.current, vanities);
+        const result = (schema as ValidateModelHandler<T>)(model, fields.current, vanities, ast);
 
-        if (isPromise(result))
+        if (isPromise(result)) {
           return (result as Promise<T>)
             .catch(err => {
-              Promise.reject(ensureErrorModel(err as ErrorModel<T> | ErrorMessageModel<T>));
+              return Promise.reject(ensureErrorModel(err as ErrorModel<T> | ErrorMessageModel<T>));
             });
+        }
 
         // convert empty result set.
         const isErr = isEmpty(result) ? null : result;
@@ -249,7 +255,7 @@ export function normalizeValidator<T extends IModel>(
     };
 
     validator.validateAt = async (path: string, model: T) => {
-      const { err, data } = await me(validator.validate(model));
+      const { err, data } = await promise(validator.validate(model));
       if (err)
         return Promise.reject(err);
       Promise.resolve(data);
@@ -325,26 +331,25 @@ export function hasNativeValidators(element: IRegisteredElement<any>) {
  * Normalizes default values.
  * 
  * @param defaults user defined defaults.
- * @param schema a yup validation schema or user defined function.
- * @param purge when true purge defaults from yup schema
+ * @param normalizedDefaults the normalized defaults for yup or empty object
  */
-export function promisifyDefaults<T extends IModel>(defaults: T, yupDefaults: Partial<T> = {}) {
+export function promisifyDefaults<T extends IModel>(defaults: T, normalizedDefaults: Partial<T> = {}) {
 
-  const initDefaults: Partial<T> = isPlainObject(defaults) ? { ...defaults } : {};
+  const userDefaults: Partial<T> = isPlainObject(defaults) ? { ...defaults } : {};
 
   if (!isPromise(defaults))
-    return Promise.resolve({ ...yupDefaults, ...initDefaults }) as Promise<T>;
+    return Promise.resolve({ ...normalizedDefaults, ...userDefaults }) as Promise<T>;
 
-  // On error we return yupDefaults.
+  // On error we return normalizedDefaults.
   // We merge these in Komo sync event.
   return (defaults as any)
     .then(res => {
-      return { ...yupDefaults, ...res }; // merge schema defs with user defs.
+      return { ...normalizedDefaults, ...res }; // merge normalized with promised result.
     })
     .catch(err => {
       // tslint:disable-next-line: no-console
       if (err) console.log(err);
-      return { ...yupDefaults };
+      return { ...normalizedDefaults };
     }) as Promise<T>;
 
 }
@@ -364,7 +369,7 @@ export function isYupSchema(schema: any) {
  * 
  * @param schema the provided validation schema.
  */
-export function parseYupDefaults<T extends IModel>(schema: ValidationSchema<T>, purge: boolean) {
+export function parseDefaults<T extends IModel>(schema: ValidationSchema<T>, purge: boolean) {
 
   let _schema = schema as any;
 

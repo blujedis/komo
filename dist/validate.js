@@ -3,7 +3,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.parseNativeValidators = exports.normalizeCasting = exports.castValue = exports.simpleClone = exports.parseYupDefaults = exports.isYupSchema = exports.promisifyDefaults = exports.hasNativeValidators = exports.getNativeValidatorTypes = exports.getNativeValidators = exports.normalizeValidator = exports.ensureErrorModel = exports.astToSchema = exports.yupToErrors = void 0;
+exports.parseNativeValidators = exports.normalizeCasting = exports.castValue = exports.simpleClone = exports.parseDefaults = exports.isYupSchema = exports.promisifyDefaults = exports.hasNativeValidators = exports.getNativeValidatorTypes = exports.getNativeValidators = exports.normalizeValidator = exports.ensureErrorModel = exports.astToSchema = exports.yupToErrors = void 0;
 const yup_1 = require("yup");
 const lodash_get_1 = __importDefault(require("lodash.get"));
 const lodash_set_1 = __importDefault(require("lodash.set"));
@@ -60,6 +60,9 @@ exports.yupToErrors = yupToErrors;
  * @param schema optional existing schema.
  */
 function astToSchema(ast, schema) {
+    const isFunc = typeof schema === 'function';
+    if (isFunc)
+        return schema;
     const obj = schema || yup_1.object();
     function getPath(path) {
         const segments = path.split('.');
@@ -167,19 +170,20 @@ exports.ensureErrorModel = ensureErrorModel;
  *
  * @param schema the yup schema or user function for validation.
  */
-function normalizeValidator(schema, findField, fields, vanities) {
+function normalizeValidator(schema, findField, fields, vanities, ast) {
     let validator;
     // User supplied custom validation script
     // map to same interface as yup.
     if (utils_1.isFunction(schema)) {
         validator = {
             validate: (model) => {
-                const result = schema(model, fields.current, vanities);
-                if (utils_1.isPromise(result))
+                const result = schema(model, fields.current, vanities, ast);
+                if (utils_1.isPromise(result)) {
                     return result
                         .catch(err => {
-                        Promise.reject(ensureErrorModel(err));
+                        return Promise.reject(ensureErrorModel(err));
                     });
+                }
                 // convert empty result set.
                 const isErr = utils_1.isEmpty(result) ? null : result;
                 if (isErr)
@@ -189,7 +193,7 @@ function normalizeValidator(schema, findField, fields, vanities) {
             }
         };
         validator.validateAt = async (path, model) => {
-            const { err, data } = await utils_1.me(validator.validate(model));
+            const { err, data } = await utils_1.promise(validator.validate(model));
             if (err)
                 return Promise.reject(err);
             Promise.resolve(data);
@@ -254,24 +258,23 @@ exports.hasNativeValidators = hasNativeValidators;
  * Normalizes default values.
  *
  * @param defaults user defined defaults.
- * @param schema a yup validation schema or user defined function.
- * @param purge when true purge defaults from yup schema
+ * @param normalizedDefaults the normalized defaults for yup or empty object
  */
-function promisifyDefaults(defaults, yupDefaults = {}) {
-    const initDefaults = utils_1.isPlainObject(defaults) ? { ...defaults } : {};
+function promisifyDefaults(defaults, normalizedDefaults = {}) {
+    const userDefaults = utils_1.isPlainObject(defaults) ? { ...defaults } : {};
     if (!utils_1.isPromise(defaults))
-        return Promise.resolve({ ...yupDefaults, ...initDefaults });
-    // On error we return yupDefaults.
+        return Promise.resolve({ ...normalizedDefaults, ...userDefaults });
+    // On error we return normalizedDefaults.
     // We merge these in Komo sync event.
     return defaults
         .then(res => {
-        return { ...yupDefaults, ...res }; // merge schema defs with user defs.
+        return { ...normalizedDefaults, ...res }; // merge normalized with promised result.
     })
         .catch(err => {
         // tslint:disable-next-line: no-console
         if (err)
             console.log(err);
-        return { ...yupDefaults };
+        return { ...normalizedDefaults };
     });
 }
 exports.promisifyDefaults = promisifyDefaults;
@@ -290,7 +293,7 @@ exports.isYupSchema = isYupSchema;
  *
  * @param schema the provided validation schema.
  */
-function parseYupDefaults(schema, purge) {
+function parseDefaults(schema, purge) {
     let _schema = schema;
     if (!isYupSchema(schema))
         return {
@@ -331,7 +334,7 @@ function parseYupDefaults(schema, purge) {
         defaults
     };
 }
-exports.parseYupDefaults = parseYupDefaults;
+exports.parseDefaults = parseDefaults;
 /**
  * If object or array shallow clone otherwise return value.
  *

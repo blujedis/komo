@@ -38,10 +38,10 @@ export function noop(def?: any) {
  * 
  * @param promise the promise to be executed.
  */
-export const me = <T, E = Error>(promise: PromiseStrict<T, E>) => {
-  return promise
+export const promise = <T, E = Error>(p: PromiseStrict<T, E>) => {
+  return p
     .then(data => ({ err: null, data }))
-    .catch(err => ({ err })) as { err?: E, data?: T };
+    .catch(err => ({ err })) as { err?: E, data?: T; };
 };
 
 /**
@@ -144,8 +144,8 @@ export function isTextLike(value: ElementType) {
 export function isPreventEnter(value: ElementType) {
   const type = (value as any).type || value;
   return ['select-one', 'select-multiple', 'text',
-    'textarea', 'file', 'email', 'color', 'date', 
-    'datetime-local', 'month', 'number', 'time', 'url', 'week' ].includes(type);
+    'textarea', 'file', 'email', 'color', 'date',
+    'datetime-local', 'month', 'number', 'time', 'url', 'week'].includes(type);
 }
 
 /**

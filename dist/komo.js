@@ -17,7 +17,6 @@ const validate_1 = require("./validate");
  * @see https://www.html5rocks.com/en/tutorials/forms/constraintvalidation/
  */
 const DEFAULTS = {
-    defaults: {},
     validateSubmit: true,
     validateBlur: true,
     validateChange: false,
@@ -64,10 +63,11 @@ function initApi(options) {
     }, [fields]);
     const initSchema = () => {
         let schema;
-        if (schemaAst.current)
+        if (schemaAst.current) {
             options.validationSchema = validate_1.astToSchema(schemaAst.current, options.validationSchema);
+        }
         // Create the validator.
-        validator.current = validate_1.normalizeValidator(options.validationSchema, getElement, fields, vanities());
+        validator.current = validate_1.normalizeValidator(options.validationSchema, getElement, fields, vanities(), schemaAst.current);
         schema = options.validationSchema;
         return schema;
     };
@@ -417,22 +417,11 @@ function initApi(options) {
 function initForm(options) {
     const base = initApi(options);
     const { options: formOptions, defaults, render, clearDirty, clearTouched, clearError, setModel, fields, submitCount, submitting, submitted, validateModel, validateModelAt, syncDefaults, state, hasModel, isValidatable, errors, setError, unregister, mounted, initSchema, model, getRegistered, getModel, removeError, isDirty, isTouched, getDefault, getElement } = base;
-    react_1.useEffect(() => {
-        if (!mounted.current)
-            init();
-        else if (mounted.current)
-            init(true);
-        return () => {
-            mounted.current = false;
-            [...fields.current.values()].forEach(e => {
-                unregister(e);
-            });
-        };
-    }, [options.defaults]);
     async function init(defs, isReinit = false, validate = false) {
         if (typeof defs === 'boolean') {
             validate = isReinit;
             isReinit = defs;
+            defs = undefined;
         }
         if (mounted.current && !isReinit)
             return;
@@ -441,8 +430,8 @@ function initForm(options) {
         let _defaults = options.promisifiedDefaults;
         // TODO: Need to fix typings so .yupDefaults exists.
         if (defs)
-            _defaults = validate_1.promisifyDefaults(defs, options.yupDefaults);
-        const { err, data } = await utils_1.me(_defaults);
+            _defaults = validate_1.promisifyDefaults(defs, options.normalizedDefaults);
+        const { err, data } = await utils_1.promise(_defaults);
         debug_init('mount:defaults', data);
         if (err && utils_1.isPlainObject(err))
             debug_init('err', err);
@@ -551,7 +540,7 @@ function initForm(options) {
                 return;
             }
             clearError();
-            const { err } = await utils_1.me(validateModel());
+            const { err, data } = await utils_1.promise(validateModel());
             if (err)
                 setError(err);
             await handleCallback(_model, err, event);
@@ -562,15 +551,18 @@ function initForm(options) {
     const handleSubmit = _handleSubmit;
     const api = {
         // Elements
+        mounted,
         register: register_1.initElement(base),
         unregister,
         // Form
         render,
+        init,
         reinit: (defs) => init(defs, true),
         reset,
         handleReset,
         handleSubmit,
         state,
+        fields,
         // Model
         getDefault,
         getElement,
@@ -594,11 +586,12 @@ function initForm(options) {
  * @param options the komo options.
  */
 function initKomo(options) {
+    const initDefaults = react_1.useRef(null);
     const _options = { ...DEFAULTS, ...options };
-    const normalizeYup = validate_1.parseYupDefaults(_options.validationSchema, _options.validationSchemaPurge);
-    _options.validationSchema = normalizeYup.schema;
-    _options.yupDefaults = normalizeYup.defaults;
-    _options.promisifiedDefaults = validate_1.promisifyDefaults(_options.defaults, normalizeYup.defaults);
+    const normalizedSchema = validate_1.parseDefaults(_options.validationSchema, _options.validationSchemaPurge);
+    _options.validationSchema = normalizedSchema.schema;
+    _options.normalizedDefaults = normalizedSchema.defaults;
+    _options.promisifiedDefaults = validate_1.promisifyDefaults(options.defaults, normalizedSchema.defaults);
     _options.castHandler = validate_1.normalizeCasting(_options.castHandler);
     const api = initForm(_options);
     // Override setModel so exposed method
@@ -607,6 +600,24 @@ function initKomo(options) {
     api.setModel = (pathOrModel, value) => { setModel(pathOrModel, value); render(`model:set`); };
     const hooks = hooks_1.initHooks(api);
     const komo = utils_1.extend(api, hooks);
+    // Init after effect.
+    react_1.useEffect(() => {
+        if (initDefaults.current === null)
+            initDefaults.current = options.defaults;
+        if (!api.mounted.current) {
+            api.init();
+        }
+        else if (api.mounted.current) {
+            initDefaults.current = options.defaults;
+            api.init(options.defaults, true);
+        }
+        return () => {
+            api.mounted.current = false;
+            [...api.fields.current.values()].forEach(e => {
+                api.unregister(e);
+            });
+        };
+    }, [options.defaults && options.defaults !== initDefaults.current]);
     return komo;
 }
 exports.initKomo = initKomo;

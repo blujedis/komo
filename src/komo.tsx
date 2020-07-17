@@ -14,18 +14,18 @@ import {
   IKomoBase,
   PromiseStrict,
   IKomo,
-  IFormState
+  IFormState,
+  IKomoInternal
 } from './types';
 import { initHooks } from './hooks';
 import {
-  debuggers, isString, me, isUndefined, isFunction,
+  debuggers, isString, promise, isUndefined, isFunction,
   merge, extend, isPlainObject, isObject, isArray, isEqual, toDefault
 } from './utils';
 import {
-  normalizeValidator, astToSchema, promisifyDefaults, parseYupDefaults, isYupSchema, normalizeCasting
+  normalizeValidator, astToSchema, promisifyDefaults, parseDefaults as parseSchema, isYupSchema, normalizeCasting
 } from './validate';
 import { ValidateOptions, ObjectSchema, InferType } from 'yup';
-import Reinit from './example/reinit';
 
 /**
  * Native Validation reference.
@@ -33,7 +33,6 @@ import Reinit from './example/reinit';
  */
 
 const DEFAULTS: IOptions<any> = {
-  defaults: {},
   validateSubmit: true,
   validateBlur: true,
   validateChange: false,
@@ -95,11 +94,12 @@ function initApi<T extends IModel>(options: IOptions<T>) {
 
     let schema: T & InferType<typeof options.validationSchema>;
 
-    if (schemaAst.current)
+    if (schemaAst.current) {
       options.validationSchema = astToSchema(schemaAst.current, options.validationSchema as ObjectSchema<T>);
+    }
 
     // Create the validator.
-    validator.current = normalizeValidator(options.validationSchema as ObjectSchema<T>, getElement, fields, vanities());
+    validator.current = normalizeValidator(options.validationSchema as ObjectSchema<T>, getElement, fields, vanities(), schemaAst.current);
 
     schema = options.validationSchema as any;
 
@@ -320,6 +320,7 @@ function initApi<T extends IModel>(options: IOptions<T>) {
 
   const setError = useCallback((nameOrErrors: KeyOf<T> | ErrorModel<T>, value?: any) => {
     const currentErrors = { ...errors.current };
+
     if (isString(nameOrErrors)) {
       errors.current = { ...currentErrors, [nameOrErrors as KeyOf<T>]: value };
     }
@@ -572,33 +573,15 @@ function initForm<T extends IModel>(options: IOptions<T>) {
 
   const {
     options: formOptions, defaults, render, clearDirty, clearTouched, clearError, setModel,
-    fields, submitCount, submitting, submitted, validateModel, validateModelAt, syncDefaults, state, hasModel,
-    isValidatable, errors, setError, unregister, mounted, initSchema, model, getRegistered,
-    getModel, removeError, isDirty, isTouched, getDefault, getElement
+    fields, submitCount, submitting, submitted, validateModel, validateModelAt, syncDefaults, state, hasModel, isValidatable, errors, setError, unregister, mounted, initSchema, model, getRegistered, getModel, removeError, isDirty, isTouched, getDefault, getElement
   } = base;
-
-  useEffect(() => {
-
-    if (!mounted.current)
-      init();
-    else if (mounted.current)
-      init(true);
-
-    return () => {
-      mounted.current = false;
-      [...fields.current.values()].forEach(e => {
-        unregister(e);
-      });
-
-    };
-
-  }, [options.defaults]);
 
   async function init(defs?, isReinit = false, validate = false) {
 
     if (typeof defs === 'boolean') {
       validate = isReinit;
       isReinit = defs;
+      defs = undefined;
     }
 
     if (mounted.current && !isReinit)
@@ -611,9 +594,9 @@ function initForm<T extends IModel>(options: IOptions<T>) {
 
     // TODO: Need to fix typings so .yupDefaults exists.
     if (defs)
-      _defaults = promisifyDefaults(defs, options.yupDefaults) as Promise<T>;
+      _defaults = promisifyDefaults(defs, options.normalizedDefaults) as Promise<T>;
 
-    const { err, data } = await me(_defaults);
+    const { err, data } = await promise(_defaults);
 
     debug_init('mount:defaults', data);
 
@@ -769,7 +752,8 @@ function initForm<T extends IModel>(options: IOptions<T>) {
 
       clearError();
 
-      const { err } = await me<T, ErrorModel<T>>(validateModel());
+
+      const { err, data } = await promise<T, ErrorModel<T>>(validateModel());
 
       if (err)
         setError(err);
@@ -784,19 +768,22 @@ function initForm<T extends IModel>(options: IOptions<T>) {
   const handleReset = _handleReset;
   const handleSubmit = _handleSubmit;
 
-  const api: IKomo<T> = {
+  const api: IKomoInternal<T> = {
 
     // Elements
+    mounted,
     register: initElement<T>(base as any),
     unregister,
 
     // Form
     render,
+    init,
     reinit: (defs?) => init(defs, true),
     reset,
     handleReset,
     handleSubmit,
     state,
+    fields,
 
     // Model
     getDefault,
@@ -821,7 +808,9 @@ function initForm<T extends IModel>(options: IOptions<T>) {
 
 }
 
-export type Options<T, D> = Omit<IOptions<T, D>, 'promisifiedDefaults' | 'yupDefaults'>;
+export type Options<T, D> = Omit<IOptions<T, D>, 'promisifiedDefaults' | 'normalizedDefaults'>;
+
+
 
 /**
  * Initializes Komo.
@@ -832,12 +821,14 @@ export function initKomo<T extends IModel, D extends IModel = {}>(options?: Opti
 
   type Model = T & Partial<D>;
 
+  const initDefaults = useRef(null);
+
   const _options = { ...DEFAULTS, ...options } as IOptions<Model>;
 
-  const normalizeYup = parseYupDefaults(_options.validationSchema, _options.validationSchemaPurge);
-  _options.validationSchema = normalizeYup.schema;
-  _options.yupDefaults = normalizeYup.defaults;
-  _options.promisifiedDefaults = promisifyDefaults(_options.defaults, normalizeYup.defaults) as Promise<Model>;
+  const normalizedSchema = parseSchema(_options.validationSchema, _options.validationSchemaPurge);
+  _options.validationSchema = normalizedSchema.schema;
+  _options.normalizedDefaults = normalizedSchema.defaults;
+  _options.promisifiedDefaults = promisifyDefaults(options.defaults, normalizedSchema.defaults) as Promise<Model>;
   _options.castHandler = normalizeCasting(_options.castHandler);
 
   const api = initForm<Model>(_options);
@@ -850,6 +841,30 @@ export function initKomo<T extends IModel, D extends IModel = {}>(options?: Opti
 
   const hooks = initHooks<Model>(api);
   const komo = extend(api, hooks);
+
+  // Init after effect.
+  useEffect(() => {
+
+    if (initDefaults.current === null)
+      initDefaults.current = options.defaults;
+
+    if (!api.mounted.current) {
+      api.init();
+    }
+    else if (api.mounted.current) {
+      initDefaults.current = options.defaults;
+      api.init(options.defaults as any, true);
+    }
+
+    return () => {
+      api.mounted.current = false;
+      [...api.fields.current.values()].forEach(e => {
+        api.unregister(e);
+      });
+
+    };
+
+  }, [options.defaults && options.defaults !== initDefaults.current]);
 
   return komo as IKomo<Model>;
 

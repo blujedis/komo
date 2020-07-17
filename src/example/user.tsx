@@ -11,7 +11,7 @@ const DEFAULTS = {
   message: ''
 };
 
-function schema<T extends typeof DEFAULTS>(model: T, fields: Set<IRegisteredElement<T>>, vanities: string[]) {
+function schema<T extends typeof DEFAULTS>(model: T, fields: Set<IRegisteredElement<T>>, vanities: string[], ast) {
 
   const errors = {};
 
@@ -35,7 +35,7 @@ function schema<T extends typeof DEFAULTS>(model: T, fields: Set<IRegisteredElem
 
 const User: FC = () => {
 
-  const { register, handleSubmit, handleReset, state } = useForm({
+  const options = {
     defaults: {
       numbers: {
         home: '7771212',
@@ -44,7 +44,9 @@ const User: FC = () => {
     },
     validationSchema: schema,
     validateNative: true
-  });
+  };
+
+  const { register, handleSubmit, handleReset, state } = useForm(options);
 
   const onSubmit = (model) => {
     console.log(model);

@@ -1,5 +1,10 @@
 # Changes
 
+## 07/16/2020
+
+- Fix infinite loop when setting defaults in some scenarios.
+- For user validationSchema pass generated Ast Schema so user can build error messages.
+
 ## 06/23/2020
 
 - Watch for defaults change, then reinit.

@@ -24,7 +24,7 @@ export interface IModel {
 /**
  * Validation handler function for user defined validationSchema.
  */
-export declare type ValidateModelHandler<T extends IModel> = (model: T, fields?: Set<IRegisteredElement<T>>, vanities?: string[]) => null | undefined | ErrorMessageModel<T> | ErrorModel<T> | PromiseStrict<T, ErrorModel<T> | ErrorMessageModel<T>>;
+export declare type ValidateModelHandler<T extends IModel> = (model: T, fields?: Set<IRegisteredElement<T>>, vanities?: string[], ast?: ISchemaAst) => null | undefined | ErrorMessageModel<T> | ErrorModel<T> | PromiseStrict<T, ErrorModel<T> | ErrorMessageModel<T>>;
 /**
  * Generic type for either yup ObjectSchema or user defined Validation Schema handler function.
  */
@@ -101,7 +101,7 @@ export interface INativeValidators {
  * Array of configuration AST to convert to yup ObjectSchema.
  */
 export interface ISchemaAst {
-    [key: string]: Array<[KeyOf<INativeValidators>, INativeValidators[KeyOf<INativeValidators>]]>;
+    [key: string]: [KeyOf<INativeValidators>, INativeValidators[KeyOf<INativeValidators>]][];
 }
 /**
  * Handler type for form submission.
@@ -135,9 +135,9 @@ export interface IOptions<T extends IModel, D extends IModel = {}> {
      */
     promisifiedDefaults?: Partial<D> | Promise<Partial<D>>;
     /**
-     * Internal options parsed from Yup.
+     * Internal defaults parsed from yup or user.
      */
-    yupDefaults?: any;
+    normalizedDefaults?: any;
     /**
      * A Yup ObjectSchema or custom function for validating form (default: undefined)
      */
@@ -489,11 +489,11 @@ export interface IFormState<T extends IModel> {
     /**
      * Array of current touched fields.
      */
-    readonly touched: Array<KeyOf<T>>;
+    readonly touched: KeyOf<T>[];
     /**
      * Array of current dirty fields.
      */
-    readonly dirty: Array<KeyOf<T>>;
+    readonly dirty: KeyOf<T>[];
     /**
      * Array of vanity properties.
      */
@@ -699,7 +699,7 @@ export interface IUseFieldsHook<T extends IModel> {
 /**
  * Create useFields type returning IUseFields.
  */
-declare type BasePicked = 'render' | 'state' | 'getModel' | 'hasModel' | 'setModel' | 'validateModel' | 'validateModelAt' | 'setError' | 'removeError' | 'clearError' | 'getElement' | 'getDefault' | 'isTouched' | 'isDirty' | 'unregister';
+declare type BasePicked = 'render' | 'state' | 'getModel' | 'hasModel' | 'setModel' | 'validateModel' | 'validateModelAt' | 'setError' | 'removeError' | 'clearError' | 'getElement' | 'getDefault' | 'isTouched' | 'isDirty' | 'unregister' | 'fields' | 'mounted';
 /**
  * The base API interface used by form field elements and form submit, reset handlers.
  */
@@ -950,7 +950,7 @@ export interface IKomoBase<T extends IModel> {
      * @param nameOrPath the name or path used to lookup element.
      * @param asGroup when true will return all matching names such as in a radio group.
      */
-    getElement(nameOrPath: string, asGroup: boolean): Array<IRegisteredElement<T>>;
+    getElement(nameOrPath: string, asGroup: boolean): IRegisteredElement<T>[];
     /**
      * Finds a field/element by name or path.
      *
@@ -962,11 +962,11 @@ export interface IKomoBase<T extends IModel> {
      *
      * @param asPath when true registered paths are returned.
      */
-    getRegistered(asPath?: boolean): Array<KeyOf<T>>;
+    getRegistered(asPath?: boolean): KeyOf<T>[];
     /**
      * Gets the registered names.
      */
-    getRegistered(): Array<KeyOf<T>>;
+    getRegistered(): KeyOf<T>[];
     /**
      * Unregisters an element by instance.
      *
@@ -980,7 +980,13 @@ export interface IKomoBase<T extends IModel> {
      */
     unregister(name: KeyOf<T>): void;
 }
-export interface IKomo<T extends IModel> extends Pick<IKomoBase<T>, BasePicked> {
+export interface IKomoInternal<T extends IModel> extends Pick<IKomoBase<T>, BasePicked> {
+    /**
+     * React MutableRefObject indicating if form/Komo is mounted.
+     */
+    /**
+     * React MutableRefObject of registered elements.
+     */
     /**
      * Registers an element/field with Komo.
      */
@@ -1022,6 +1028,25 @@ export interface IKomo<T extends IModel> extends Pick<IKomoBase<T>, BasePicked> 
      */
     useFields?: IUseFieldsHook<T>;
     /**
+     * Initialize Komo, sync defaults and init the schema.
+     *
+     * @param defaults the defaults to initialize with.
+     * @param isReinit whether or not we are reinitizlizing.
+     * @param validate when true validate on init.
+     */
+    init(defaults: Partial<T> | Promise<Partial<T>>, isReinit?: boolean, validate?: boolean): void;
+    /**
+     * Initialize Komo, sync defaults and init the schema.
+     *
+     * @param isReinit whether or not we are reinitizlizing.
+     * @param validate when true validate on init.
+     */
+    init(isReinit: boolean, validate?: boolean): void;
+    /**
+     * Initialize Komo, sync defaults and init the schema.
+     */
+    init(): void;
+    /**
      * Reinitializes Komo synchronizing default values.
      *
      * @param defaults default values to reinitialize with.
@@ -1034,5 +1059,7 @@ export interface IKomo<T extends IModel> extends Pick<IKomoBase<T>, BasePicked> 
      * @param validate validates the model after update.
      */
     update(model: Partial<T>, validate?: boolean): void;
+}
+export interface IKomo<T extends IModel> extends Omit<IKomoInternal<T>, 'init'> {
 }
 export {};

@@ -27,7 +27,7 @@ export declare function ensureErrorModel<T extends IModel>(errors: ErrorModel<T>
  *
  * @param schema the yup schema or user function for validation.
  */
-export declare function normalizeValidator<T extends IModel>(schema: ValidationSchema<T>, findField: IGetElement<T>, fields: MutableRefObject<Set<IRegisteredElement<T>>>, vanities: string[]): IValidator<T>;
+export declare function normalizeValidator<T extends IModel>(schema: ValidationSchema<T>, findField: IGetElement<T>, fields: MutableRefObject<Set<IRegisteredElement<T>>>, vanities: string[], ast?: ISchemaAst): IValidator<T>;
 /**
  * Gets list of native validation keys.
  *
@@ -50,10 +50,9 @@ export declare function hasNativeValidators(element: IRegisteredElement<any>): b
  * Normalizes default values.
  *
  * @param defaults user defined defaults.
- * @param schema a yup validation schema or user defined function.
- * @param purge when true purge defaults from yup schema
+ * @param normalizedDefaults the normalized defaults for yup or empty object
  */
-export declare function promisifyDefaults<T extends IModel>(defaults: T, yupDefaults?: Partial<T>): Promise<T>;
+export declare function promisifyDefaults<T extends IModel>(defaults: T, normalizedDefaults?: Partial<T>): Promise<T>;
 /**
  * Checks if object is a Yup Schema.
  *
@@ -66,7 +65,7 @@ export declare function isYupSchema(schema: any): any;
  *
  * @param schema the provided validation schema.
  */
-export declare function parseYupDefaults<T extends IModel>(schema: ValidationSchema<T>, purge: boolean): {
+export declare function parseDefaults<T extends IModel>(schema: ValidationSchema<T>, purge: boolean): {
     schema: any;
     defaults: any;
 };

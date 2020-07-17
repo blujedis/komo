@@ -1,5 +1,5 @@
 import { IOptions, IModel, IKomo } from './types';
-export declare type Options<T, D> = Omit<IOptions<T, D>, 'promisifiedDefaults' | 'yupDefaults'>;
+export declare type Options<T, D> = Omit<IOptions<T, D>, 'promisifiedDefaults' | 'normalizedDefaults'>;
 /**
  * Initializes Komo.
  *

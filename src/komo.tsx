@@ -753,7 +753,7 @@ function initForm<T extends IModel>(options: IOptions<T>) {
       clearError();
 
 
-      const { err, data } = await promise<T, ErrorModel<T>>(validateModel());
+      const { err } = await promise<T, ErrorModel<T>>(validateModel());
 
       if (err)
         setError(err);

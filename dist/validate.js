@@ -144,20 +144,25 @@ exports.astToSchema = astToSchema;
 function ensureErrorModel(errors) {
     if (utils_1.isNullOrUndefined(errors) || utils_1.isEmpty(errors))
         return {};
-    const keys = Object.keys(errors);
-    const first = errors[keys[0]];
-    if (utils_1.isPlainObject(first[0]))
-        return errors;
+    // const keys = Object.keys(errors);
+    // const first = errors[keys[0]];
+    // if (isPlainObject(first[0]))
+    //   return errors as ErrorModel<T>;
     for (const k in errors) {
-        if (!errors.hasOwnProperty(k))
+        if (!errors.hasOwnProperty(k) || !errors[k])
             continue;
-        const errs = errors;
-        const val = (!Array.isArray(errs[k]) ? [errs] : errs[k]);
+        //  const errs = errors as ErrorMessageModel<T>;
+        // const val = (!Array.isArray(errs[k]) ? [errs] : errs[k]) as string[];
+        const errs = errors[k];
+        const val = (!Array.isArray(errs) ? [errs] : errs);
         const mapped = val.map(message => {
-            // tslint:disable-next-line: no-object-literal-type-assertion
-            return {
-                message
-            };
+            if (typeof message === 'string')
+                return {
+                    message
+                };
+            if (utils_1.isPlainObject(message))
+                return message;
+            throw new Error(`Komo encountered invalid error model type of ${typeof message} - ${JSON.stringify(message)}`);
         });
         errors[k] = mapped;
     }

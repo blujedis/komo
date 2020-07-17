@@ -191,25 +191,34 @@ export function astToSchema<T extends IModel>(ast: ISchemaAst, schema?: ObjectSc
  */
 export function ensureErrorModel<T extends IModel>(
   errors: ErrorModel<T> | ErrorMessageModel<T>) {
+
   if (isNullOrUndefined(errors) || isEmpty(errors))
     return ({} as any) as ErrorModel<T>;
-  const keys = Object.keys(errors);
-  const first = errors[keys[0]];
-  if (isPlainObject(first[0]))
-    return errors as ErrorModel<T>;
+  // const keys = Object.keys(errors);
+  // const first = errors[keys[0]];
+  // if (isPlainObject(first[0]))
+  //   return errors as ErrorModel<T>;
   for (const k in errors) {
-    if (!errors.hasOwnProperty(k)) continue;
-    const errs = errors as ErrorMessageModel<T>;
-    const val = (!Array.isArray(errs[k]) ? [errs] : errs[k]) as string[];
+    if (!errors.hasOwnProperty(k) || !errors[k])
+      continue;
+    //  const errs = errors as ErrorMessageModel<T>;
+    // const val = (!Array.isArray(errs[k]) ? [errs] : errs[k]) as string[];
+    const errs = errors[k];
+    const val = (!Array.isArray(errs) ? [errs] : errs) as any;
     const mapped = val.map(message => {
-      // tslint:disable-next-line: no-object-literal-type-assertion
-      return {
-        message
-      } as IValidationError;
+      if (typeof message === 'string')
+        return {
+          message
+        } as IValidationError;
+      if (isPlainObject(message))
+        return message;
+      throw new Error(`Komo encountered invalid error model type of ${typeof message} - ${JSON.stringify(message)}`);
     });
-    (errors as ErrorModel<T>)[k] = mapped;
+    errors[k] = mapped;
   }
+
   return errors as ErrorModel<T>;
+
 }
 
 /**

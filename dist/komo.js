@@ -540,7 +540,7 @@ function initForm(options) {
                 return;
             }
             clearError();
-            const { err, data } = await utils_1.promise(validateModel());
+            const { err } = await utils_1.promise(validateModel());
             if (err)
                 setError(err);
             await handleCallback(_model, err, event);

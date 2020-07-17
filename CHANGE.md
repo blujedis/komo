@@ -2,6 +2,7 @@
 
 ## 07/16/2020
 
+- Improve error normalization, flag with error when incorrect type.
 - Fix infinite loop when setting defaults in some scenarios.
 - For user validationSchema pass generated Ast Schema so user can build error messages.
 

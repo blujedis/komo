@@ -1,5 +1,6 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
+exports.debuggers = exports.getLogger = exports.createDebuggers = exports.createLogger = exports.vars = exports.isWebpack = void 0;
 const WINDOW = typeof window === 'undefined' ? global : window;
 const levels = {
     fatal: 'font-weight: bold; color: yellow; background-color: #8B0000;',

@@ -1,8 +1,8 @@
-import { IModel, IKomo, IUseFields, IUseField } from './types';
+import { IModel, KeyOf, IKomo, IUseFields, IUseField } from './types';
 export declare function initHooks<T extends IModel>(komo: IKomo<T>): {
     useField: {
         <K extends string>(name: K, virtual: boolean): IUseField<Record<K, T>, import("./types").IRegister<Record<K, T>>>;
-        (name: Extract<keyof T, string>): IUseField<T, import("./types").IRegister<T>>;
+        (name: KeyOf<T>): IUseField<T>;
     };
     useFields: {
         <A extends string>(vanity: boolean, ...keys: A[]): IUseFields<A, IUseField<Record<A, T>, import("./types").IRegister<Record<A, T>>>>;

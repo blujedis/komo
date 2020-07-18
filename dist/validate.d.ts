@@ -1,5 +1,5 @@
 import { ValidationError, ObjectSchema } from 'yup';
-import { IModel, ErrorModel, ValidationSchema, IValidator, IRegisteredElement, ISchemaAst, IGetElement, ErrorMessageModel, CastHandler } from './types';
+import { IModel, ErrorModel, ValidationSchema, IValidator, IRegisteredElement, ISchemaAst, KeyOf, IGetElement, ErrorMessageModel, CastHandler } from './types';
 import { MutableRefObject } from 'react';
 /**
  * Parses yup error to friendly form errors.
@@ -87,7 +87,7 @@ export declare function castValue(value: any): any;
  *
  * @param handler the cast handler or whether the handler is enabled.
  */
-export declare function normalizeCasting<T extends IModel>(handler: boolean | CastHandler): (value: any, path: string, name: Extract<keyof T, string>) => void;
+export declare function normalizeCasting<T extends IModel>(handler: boolean | CastHandler): (value: any, path: string, name: KeyOf<T>) => void;
 /**
  * Parses the element for native validators building up an ast for use with Yup.
  * Only a minimal subset of yup validations are supported in converting from native

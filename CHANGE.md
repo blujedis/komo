@@ -1,5 +1,10 @@
 # Changes
 
+## 07/18/2020
+
+- Add additional native validator support.
+- Add convenience callback for "onValidated".
+
 ## 07/16/2020
 
 - Improve error normalization, flag with error when incorrect type.

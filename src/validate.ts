@@ -228,10 +228,17 @@ export function ensureErrorModel<T extends IModel>(
  * @param schema the yup schema or user function for validation.
  */
 export function normalizeValidator<T extends IModel>(
-  schema: ValidationSchema<T>, findField: IGetElement<T>,
-  fields: MutableRefObject<Set<IRegisteredElement<T>>>, vanities: string[], ast?: ISchemaAst): IValidator<T> {
+  schema: ValidationSchema<T>,
+  findField: IGetElement<T>,
+  fields: MutableRefObject<Set<IRegisteredElement<T>>>,
+  vanities: string[],
+  ast: ISchemaAst,
+  onValidated: (model: T, errors: ErrorModel<T>) => void): IValidator<T> {
 
   let validator: IValidator<T>;
+
+  // tslint:disable-next-line: no-empty
+  onValidated = onValidated || ((...args) => { });
 
   // User supplied custom validation script
   // map to same interface as yup.
@@ -245,18 +252,24 @@ export function normalizeValidator<T extends IModel>(
 
         if (isPromise(result)) {
           return (result as Promise<T>)
+            .then(res => {
+              onValidated(model, null);
+              return res;
+            })
             .catch(err => {
-              return Promise.reject(ensureErrorModel(err as ErrorModel<T> | ErrorMessageModel<T>));
+              const normalized = ensureErrorModel(err as ErrorModel<T> | ErrorMessageModel<T>);
+              onValidated(model, err);
+              return Promise.reject(normalized);
             });
         }
 
         // convert empty result set.
-        const isErr = isEmpty(result) ? null : result;
+        const normalizedErr = isEmpty(result) ? null : ensureErrorModel(result as ErrorModel<T> | ErrorMessageModel<T>);
 
-        if (isErr)
-          return Promise
-            .reject(ensureErrorModel(result as ErrorModel<T> | ErrorMessageModel<T>)) as any;
+        onValidated(model, normalizedErr);
 
+        if (normalizedErr)
+          return Promise.reject(normalizedErr) as any;
         return Promise.resolve(model);
 
       }
@@ -265,6 +278,7 @@ export function normalizeValidator<T extends IModel>(
 
     validator.validateAt = async (path: string, model: T) => {
       const { err, data } = await promise(validator.validate(model));
+      onValidated(model, err);
       if (err)
         return Promise.reject(err);
       Promise.resolve(data);
@@ -280,10 +294,13 @@ export function normalizeValidator<T extends IModel>(
 
       return (schema as ObjectSchema<T>).validate(model, options)
         .then(res => {
+          onValidated(model, null);
           return res;
         })
         .catch(err => {
-          return Promise.reject(yupToErrors(err, findField));
+          const normalized = yupToErrors(err, findField);
+          onValidated(model, normalized);
+          return Promise.reject(normalized);
         });
 
     };
@@ -291,10 +308,13 @@ export function normalizeValidator<T extends IModel>(
     validator.validateAt = (path: string, model: T, options?: ValidateOptions) => {
       return (schema as ObjectSchema<T>).validateAt(path, model, options)
         .then(res => {
+          onValidated(model, null);
           return set({}, path, res) as Partial<T>;
         })
         .catch(err => {
-          return Promise.reject(yupToErrors(err, findField));
+          const normalized = yupToErrors(err, findField);
+          onValidated(model, normalized);
+          return Promise.reject(normalized);
         });
     };
 

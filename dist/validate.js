@@ -175,8 +175,10 @@ exports.ensureErrorModel = ensureErrorModel;
  *
  * @param schema the yup schema or user function for validation.
  */
-function normalizeValidator(schema, findField, fields, vanities, ast) {
+function normalizeValidator(schema, findField, fields, vanities, ast, onValidated) {
     let validator;
+    // tslint:disable-next-line: no-empty
+    onValidated = onValidated || ((...args) => { });
     // User supplied custom validation script
     // map to same interface as yup.
     if (utils_1.isFunction(schema)) {
@@ -185,20 +187,27 @@ function normalizeValidator(schema, findField, fields, vanities, ast) {
                 const result = schema(model, fields.current, vanities, ast);
                 if (utils_1.isPromise(result)) {
                     return result
+                        .then(res => {
+                        onValidated(model, null);
+                        return res;
+                    })
                         .catch(err => {
-                        return Promise.reject(ensureErrorModel(err));
+                        const normalized = ensureErrorModel(err);
+                        onValidated(model, err);
+                        return Promise.reject(normalized);
                     });
                 }
                 // convert empty result set.
-                const isErr = utils_1.isEmpty(result) ? null : result;
-                if (isErr)
-                    return Promise
-                        .reject(ensureErrorModel(result));
+                const normalizedErr = utils_1.isEmpty(result) ? null : ensureErrorModel(result);
+                onValidated(model, normalizedErr);
+                if (normalizedErr)
+                    return Promise.reject(normalizedErr);
                 return Promise.resolve(model);
             }
         };
         validator.validateAt = async (path, model) => {
             const { err, data } = await utils_1.promise(validator.validate(model));
+            onValidated(model, err);
             if (err)
                 return Promise.reject(err);
             Promise.resolve(data);
@@ -209,19 +218,25 @@ function normalizeValidator(schema, findField, fields, vanities, ast) {
         validator.validate = (model, options) => {
             return schema.validate(model, options)
                 .then(res => {
+                onValidated(model, null);
                 return res;
             })
                 .catch(err => {
-                return Promise.reject(yupToErrors(err, findField));
+                const normalized = yupToErrors(err, findField);
+                onValidated(model, normalized);
+                return Promise.reject(normalized);
             });
         };
         validator.validateAt = (path, model, options) => {
             return schema.validateAt(path, model, options)
                 .then(res => {
+                onValidated(model, null);
                 return lodash_set_1.default({}, path, res);
             })
                 .catch(err => {
-                return Promise.reject(yupToErrors(err, findField));
+                const normalized = yupToErrors(err, findField);
+                onValidated(model, normalized);
+                return Promise.reject(normalized);
             });
         };
     }

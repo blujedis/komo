@@ -27,7 +27,7 @@ export declare function ensureErrorModel<T extends IModel>(errors: ErrorModel<T>
  *
  * @param schema the yup schema or user function for validation.
  */
-export declare function normalizeValidator<T extends IModel>(schema: ValidationSchema<T>, findField: IGetElement<T>, fields: MutableRefObject<Set<IRegisteredElement<T>>>, vanities: string[], ast?: ISchemaAst): IValidator<T>;
+export declare function normalizeValidator<T extends IModel>(schema: ValidationSchema<T>, findField: IGetElement<T>, fields: MutableRefObject<Set<IRegisteredElement<T>>>, vanities: string[], ast: ISchemaAst, onValidated: (model: T, errors: ErrorModel<T>) => void): IValidator<T>;
 /**
  * Gets list of native validation keys.
  *

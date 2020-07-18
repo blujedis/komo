@@ -172,6 +172,10 @@ export interface IOptions<T extends IModel, D extends IModel = {}> {
      */
     validateNative?: boolean;
     /**
+     * Called when model is validated.
+     */
+    onValidated?: (model?: T & Partial<D>, errors?: ErrorModel<T & Partial<D>>) => void;
+    /**
      * True to enable casting using Yup internally, false or null to disable or custom function
      * for user defined model value casting.
      */

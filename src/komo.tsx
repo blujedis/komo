@@ -99,7 +99,7 @@ function initApi<T extends IModel>(options: IOptions<T>) {
     }
 
     // Create the validator.
-    validator.current = normalizeValidator(options.validationSchema as ObjectSchema<T>, getElement, fields, vanities(), schemaAst.current);
+    validator.current = normalizeValidator(options.validationSchema as ObjectSchema<T>, getElement, fields, vanities(), schemaAst.current, options.onValidated);
 
     schema = options.validationSchema as any;
 

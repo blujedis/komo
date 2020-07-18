@@ -1,6 +1,5 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.useRenderCount = void 0;
 // tslint:disable
 const react_1 = require("react");
 /**

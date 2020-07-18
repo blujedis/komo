@@ -101,7 +101,7 @@ export interface INativeValidators {
  * Array of configuration AST to convert to yup ObjectSchema.
  */
 export interface ISchemaAst {
-    [key: string]: [KeyOf<INativeValidators>, INativeValidators[KeyOf<INativeValidators>]][];
+    [key: string]: [KeyOf<INativeValidators>, string | INativeValidators[KeyOf<INativeValidators>]][];
 }
 /**
  * Handler type for form submission.

@@ -1,6 +1,5 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.initElement = void 0;
 const utils_1 = require("./utils");
 const validate_1 = require("./validate");
 const { debug_register, debug_event, debug_set } = utils_1.debuggers;

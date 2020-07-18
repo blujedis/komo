@@ -1,6 +1,5 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.initObserver = exports.isDetached = void 0;
 /**
  * Checks if element is detached.
  *

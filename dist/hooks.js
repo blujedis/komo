@@ -1,6 +1,5 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.initHooks = void 0;
 const react_1 = require("react");
 const utils_1 = require("./utils");
 function initHooks(komo) {

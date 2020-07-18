@@ -1,6 +1,5 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.removeListener = exports.addListener = void 0;
 /**
  * Adds an event listener to element.
  *

@@ -3,7 +3,6 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.parseNativeValidators = exports.normalizeCasting = exports.castValue = exports.simpleClone = exports.parseDefaults = exports.isYupSchema = exports.promisifyDefaults = exports.hasNativeValidators = exports.getNativeValidatorTypes = exports.getNativeValidators = exports.normalizeValidator = exports.ensureErrorModel = exports.astToSchema = exports.yupToErrors = void 0;
 const yup_1 = require("yup");
 const lodash_get_1 = __importDefault(require("lodash.get"));
 const lodash_set_1 = __importDefault(require("lodash.set"));
@@ -261,7 +260,7 @@ exports.getNativeValidators = getNativeValidators;
  * @param element the element to be inpsected.
  */
 function getNativeValidatorTypes(element) {
-    return ['email', 'url']
+    return ['email', 'url', 'tel', 'date', 'time']
         .filter(k => utils_1.isTruthy(element.type === k));
 }
 exports.getNativeValidatorTypes = getNativeValidatorTypes;
@@ -428,7 +427,7 @@ function parseNativeValidators(element, schemaAst) {
         schemaAst[element.path] = schemaAst[element.path] || [];
         const baseType = typeToYup[element.type];
         // Set the type.
-        schemaAst[element.path] = [[baseType || 'string', undefined]];
+        schemaAst[element.path] = [[baseType || 'string', element.name]];
         // These are basically sub types of string
         // like email or url.
         if (nativeValidatorTypes.length) {

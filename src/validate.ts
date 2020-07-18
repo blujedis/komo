@@ -343,7 +343,7 @@ export function getNativeValidators(element: IRegisteredElement<any>) {
  * @param element the element to be inpsected.
  */
 export function getNativeValidatorTypes(element: IRegisteredElement<any>) {
-  return ['email', 'url']
+  return ['email', 'url', 'tel', 'date', 'time']
     .filter(k => isTruthy(element.type === k));
 }
 
@@ -541,7 +541,7 @@ export function parseNativeValidators<T extends IModel>(element: IRegisteredElem
     const baseType = typeToYup[element.type];
 
     // Set the type.
-    schemaAst[element.path] = [[baseType || 'string', undefined]];
+    schemaAst[element.path] = [[baseType || 'string', element.name]];
 
     // These are basically sub types of string
     // like email or url.

@@ -1,7 +1,7 @@
 import {
   isRadio, isCheckbox, addListener, isTextLike, removeListener,
   initObserver, isBooleanLike, isString, isUndefined, isNullOrUndefined, promise, isFunction,
-  debuggers, isSelectMultiple, isEqual, isArray, isElementOrVirtual, isObject, isPreventEnter, noop, parseBoolean
+  debuggers, isSelectMultiple, isEqual, isArray, isElementOrVirtual, isObject, isPreventEnter, noop, parseBoolean, isFile
 } from './utils';
 import { parseNativeValidators } from './validate';
 import {
@@ -181,6 +181,11 @@ export function initElement<T extends IModel>(api?: IKomoBase<T>) {
 
     else if (isCheckbox(element.type)) {
       value = element.checked;
+    }
+
+    else if (isFile(element.type)) {
+      // @ts-ignore
+      value = (element as any).files;
     }
 
     else if (element.multiple) {
@@ -692,6 +697,17 @@ export function initElement<T extends IModel>(api?: IKomoBase<T>) {
       element.multiple = false;
       element.enableBlurEvents = false;
       element.enableChangeEvents = false;
+    }
+
+    // We need change events for file inputs.
+    // if user hasn't defined values only watch
+    // change events for file inputs. You could
+    // talk me out of this but seems sane, reasonable.
+    if (element.type === 'file') {
+      if (typeof element.enableChangeEvents === 'undefined')
+        element.enableChangeEvents = true;
+      if (typeof element.enableBlurEvents === 'undefined')
+        element.enableBlurEvents = false;
     }
 
     element.initValue = element.initValue || noop();

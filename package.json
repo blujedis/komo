@@ -1,6 +1,6 @@
 {
   "name": "komo",
-  "version": "0.1.36",
+  "version": "0.1.37",
   "description": "React form helper",
   "main": "dist/index.js",
   "repository": "https://github.com/blujedis/komo.git",

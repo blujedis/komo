@@ -127,6 +127,10 @@ function initElement(api) {
         else if (utils_1.isCheckbox(element.type)) {
             value = element.checked;
         }
+        else if (utils_1.isFile(element.type)) {
+            // @ts-ignore
+            value = element.files;
+        }
         else if (element.multiple) {
             value = getMultiple(element);
         }
@@ -498,6 +502,16 @@ function initElement(api) {
             element.multiple = false;
             element.enableBlurEvents = false;
             element.enableChangeEvents = false;
+        }
+        // We need change events for file inputs.
+        // if user hasn't defined values only watch
+        // change events for file inputs. You could
+        // talk me out of this but seems sane, reasonable.
+        if (element.type === 'file') {
+            if (typeof element.enableChangeEvents === 'undefined')
+                element.enableChangeEvents = true;
+            if (typeof element.enableBlurEvents === 'undefined')
+                element.enableBlurEvents = false;
         }
         element.initValue = element.initValue || utils_1.noop();
         element.initChecked = element.initChecked || utils_1.noop();

@@ -810,8 +810,6 @@ function initForm<T extends IModel>(options: IOptions<T>) {
 
 export type Options<T, D> = Omit<IOptions<T, D>, 'promisifiedDefaults' | 'normalizedDefaults'>;
 
-
-
 /**
  * Initializes Komo.
  * 

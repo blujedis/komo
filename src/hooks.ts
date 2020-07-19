@@ -1,4 +1,4 @@
-import { IModel, KeyOf, IKomo, IUseFields, IUseField, IRegisteredElement } from './types';
+import { IModel, KeyOf, IKomo, IUseFields, IUseField, IRegisteredElement, IValidationError } from './types';
 import { useCallback, BaseSyntheticEvent } from 'react';
 import { isUndefined, isString, isObject } from './utils';
 
@@ -9,7 +9,7 @@ export function initHooks<T extends IModel>(komo: IKomo<T>) {
     isTouched, isDirty, getDefault, render
   } = komo;
 
-  function getErrors(prop: KeyOf<T>) {
+  function getErrors(prop: KeyOf<T>): IValidationError[] {
     if (!state.errors || !state.errors[prop] || !state.errors[prop].length)
       return [];
     return state.errors[prop];

@@ -710,7 +710,7 @@ export interface IUseField<T extends IModel, R = IRegister<T>> {
   /**
    * Returns the current errors for a field/element.
    */
-  readonly errors: ErrorModel<T>;
+  readonly errors: IValidationError[];
 
   /**
    * Returns true if the field/element is valid or without errors.

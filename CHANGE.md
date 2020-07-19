@@ -4,6 +4,8 @@
 
 - Add additional native validator support.
 - Add convenience callback for "onValidated".
+- Improve useField typings for errors.
+- Improve input file, FileList support.
 
 ## 07/16/2020
 

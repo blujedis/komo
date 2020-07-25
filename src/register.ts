@@ -392,7 +392,7 @@ export function initElement<T extends IModel>(api?: IKomoBase<T>) {
     const handleBlur = async (e: Event) => {
       await updateStateAndModel(element);
       debug_event(element.name, element.value);
-      if (isValidateBlur(element)) {
+      if (isValidateBlur(element) && !element.hasAttribute('disabled')) {
         await promise(element.validate());
       }
     };
@@ -400,7 +400,7 @@ export function initElement<T extends IModel>(api?: IKomoBase<T>) {
     const handleChange = async (e: Event) => {
       await updateStateAndModel(element);
       debug_event(element.name, element.value);
-      if (isValidateChange(element)) {
+      if (isValidateChange(element) && !element.hasAttribute('disabled')) {
         await promise(element.validate());
       }
     };

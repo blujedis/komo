@@ -174,8 +174,7 @@ function initApi(options) {
             touched.current.add(name);
     };
     const removeTouched = (name) => {
-        const removed = touched.current.delete(name);
-        return removed;
+        return touched.current.delete(name);
     };
     const clearTouched = () => {
         touched.current.clear();
@@ -416,7 +415,7 @@ function initApi(options) {
  */
 function initForm(options) {
     const base = initApi(options);
-    const { options: formOptions, defaults, render, clearDirty, clearTouched, clearError, setModel, fields, submitCount, submitting, submitted, validateModel, validateModelAt, syncDefaults, state, hasModel, isValidatable, errors, setError, unregister, mounted, initSchema, model, getRegistered, getModel, removeError, isDirty, isTouched, getDefault, getElement } = base;
+    const { options: formOptions, defaults, render, clearDirty, clearTouched, clearError, setModel, fields, submitCount, submitting, submitted, validateModel, validateModelAt, syncDefaults, state, hasModel, isValidatable, errors, setError, unregister, mounted, initSchema, model, getRegistered, getModel, removeError, isDirty, isTouched, getDefault, getElement, removeTouched, removeDirty } = base;
     async function init(defs, isReinit = false, validate = false) {
         if (typeof defs === 'boolean') {
             validate = isReinit;
@@ -576,7 +575,9 @@ function initForm(options) {
         isDirty,
         setError,
         removeError,
-        clearError
+        clearError,
+        removeDirty,
+        removeTouched
     };
     return api;
 }

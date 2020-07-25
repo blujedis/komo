@@ -4,7 +4,7 @@ exports.initHooks = void 0;
 const react_1 = require("react");
 const utils_1 = require("./utils");
 function initHooks(komo) {
-    const { state, getElement, getModel, setModel, validateModelAt, isTouched, isDirty, getDefault, render } = komo;
+    const { state, getElement, getModel, setModel, validateModelAt, isTouched, isDirty, getDefault, render, removeError, removeTouched, removeDirty } = komo;
     function getErrors(prop) {
         if (!state.errors || !state.errors[prop] || !state.errors[prop].length)
             return [];
@@ -77,7 +77,7 @@ function initHooks(komo) {
             get value() {
                 const element = getElementOrProp();
                 if (!element)
-                    return (element.type === 'checkbox' ? false : '');
+                    return '';
                 if (element.type !== 'checkbox')
                     return element.value || '';
                 return element.checked;
@@ -115,6 +115,21 @@ function initHooks(komo) {
                 setModel(field.path, value);
             },
             // Events //
+            reset() {
+                const element = getElementOrProp();
+                if (element) {
+                    // TODO: Use timeout here so we don't trigger
+                    // too many renders, maybe we should add
+                    // a "noRender" arg to removeError which calls
+                    // setError. 
+                    setTimeout(() => {
+                        removeDirty(name);
+                        removeTouched(name);
+                        removeError(name);
+                        element.reset();
+                    });
+                }
+            },
             focus(e) {
                 const element = getElementOrProp();
                 if (element)

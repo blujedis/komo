@@ -6,7 +6,8 @@ export function initHooks<T extends IModel>(komo: IKomo<T>) {
 
   const {
     state, getElement, getModel, setModel, validateModelAt,
-    isTouched, isDirty, getDefault, render
+    isTouched, isDirty, getDefault, render, removeError, removeTouched,
+    removeDirty
   } = komo;
 
   function getErrors(prop: KeyOf<T>): IValidationError[] {
@@ -141,7 +142,7 @@ export function initHooks<T extends IModel>(komo: IKomo<T>) {
       get value() {
         const element = getElementOrProp();
         if (!element)
-          return (element.type === 'checkbox' ? false : '');
+          return '';
         if (element.type !== 'checkbox')
           return element.value || '';
         return element.checked;
@@ -185,6 +186,23 @@ export function initHooks<T extends IModel>(komo: IKomo<T>) {
       },
 
       // Events //
+
+      reset() {
+        const element = getElementOrProp();
+        if (element) {
+          // TODO: Use timeout here so we don't trigger
+          // too many renders, maybe we should add
+          // a "noRender" arg to removeError which calls
+          // setError. 
+          setTimeout(() => {
+            removeDirty(name);
+            removeTouched(name);
+            removeError(name);
+            element.reset();
+          });
+
+        }
+      },
 
       focus(e?: BaseSyntheticEvent) {
         const element = getElementOrProp();

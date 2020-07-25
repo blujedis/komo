@@ -501,7 +501,7 @@ export interface IRegisteredElement<T extends IModel> extends IRegisterElement {
   /**
    * Validates the element when validationSchema has been provided.
    */
-  validate?: () => PromiseStrict<Partial<T>, Partial<ErrorModel<T>>>;
+  validate?: () => PromiseStrict<Partial<T>, ErrorModel<T>>;
 
   /**
    * Unbinds events for the element.
@@ -774,6 +774,12 @@ export interface IUseField<T extends IModel, R = IRegister<T>> {
   // Events //
 
   /**
+   * Resets the field removing touched, dirty and errors, 
+   * sets back to default value.
+   */
+  reset(): void;
+
+  /**
    * Sets focus for element.
    * 
    * @param event the react synthetice event.
@@ -837,14 +843,14 @@ export interface IUseField<T extends IModel, R = IRegister<T>> {
   /**
    * Validates the field.
    */
-  validate(): PromiseStrict<Partial<T>, Partial<ErrorModel<T>>>;
+  validate(): PromiseStrict<Partial<T>, ErrorModel<T>>;
 
   /**
    * Validate the model at specific keys.
    * 
    * @param names the key names to be validated.
    */
-  validateAt(...names: Array<KeyOf<T>>): Array<PromiseStrict<Partial<T>, Partial<ErrorModel<T>>>>;
+  validateAt(...names: KeyOf<T>[]): PromiseStrict<Partial<T>, Partial<ErrorModel<T>>>[];
 
   /**
    * Validate the model at a specific key.
@@ -913,14 +919,14 @@ export interface IUseFieldsHook<T extends IModel> {
    * @param virtual when true indicates field is virtual.
    * @param names the names of the virtuals you want to create.
    */
-  <K extends string>(virtual: boolean, ...names: K[]): IUseFields<K, IUseField<Partial<T> & Record<K, Partial<T>>>>;
+  <K extends string>(virtual: boolean, ...names: K[]): IUseFields<K, IUseField<T & Record<K, T>>>;
 
   /**
    * Creates object of field hooks.
    * 
    * @param names the names of the virtuals you want to create.
    */
-  <K extends KeyOf<T>>(...names: K[]): IUseFields<K, IUseField<Partial<T>>>;
+  <K extends KeyOf<T>>(...names: K[]): IUseFields<K, IUseField<T>>;
 }
 
 /**
@@ -931,7 +937,7 @@ export interface IUseFieldsHook<T extends IModel> {
 
 type BasePicked = 'render' | 'state' | 'getModel' | 'hasModel' | 'setModel' | 'validateModel' |
   'validateModelAt' | 'setError' | 'removeError' | 'clearError' | 'getElement' | 'getDefault' |
-  'isTouched' | 'isDirty' | 'unregister' | 'fields' | 'mounted';
+  'isTouched' | 'isDirty' | 'unregister' | 'fields' | 'mounted' | 'removeDirty' | 'removeTouched';
 
 /**
  * The base API interface used by form field elements and form submit, reset handlers.

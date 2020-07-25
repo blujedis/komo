@@ -254,8 +254,7 @@ function initApi<T extends IModel>(options: IOptions<T>) {
   };
 
   const removeTouched = (name: KeyOf<T>) => {
-    const removed = touched.current.delete(name);
-    return removed;
+    return touched.current.delete(name);
   };
 
   const clearTouched = () => {
@@ -573,7 +572,7 @@ function initForm<T extends IModel>(options: IOptions<T>) {
 
   const {
     options: formOptions, defaults, render, clearDirty, clearTouched, clearError, setModel,
-    fields, submitCount, submitting, submitted, validateModel, validateModelAt, syncDefaults, state, hasModel, isValidatable, errors, setError, unregister, mounted, initSchema, model, getRegistered, getModel, removeError, isDirty, isTouched, getDefault, getElement
+    fields, submitCount, submitting, submitted, validateModel, validateModelAt, syncDefaults, state, hasModel, isValidatable, errors, setError, unregister, mounted, initSchema, model, getRegistered, getModel, removeError, isDirty, isTouched, getDefault, getElement, removeTouched, removeDirty
   } = base;
 
   async function init(defs?, isReinit = false, validate = false) {
@@ -800,7 +799,9 @@ function initForm<T extends IModel>(options: IOptions<T>) {
 
     setError,
     removeError,
-    clearError
+    clearError,
+    removeDirty,
+    removeTouched
 
   };
 

@@ -1,5 +1,9 @@
 # Changes
 
+## 07/25/2020
+
+- Add .reset() helper in field hook to reset individual field, clear errors, dirty & touched.
+
 ## 07/18/2020
 
 - Add additional native validator support.

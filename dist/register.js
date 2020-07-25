@@ -284,14 +284,14 @@ function initElement(api) {
         const handleBlur = async (e) => {
             await updateStateAndModel(element);
             debug_event(element.name, element.value);
-            if (isValidateBlur(element)) {
+            if (isValidateBlur(element) && !element.hasAttribute('disabled')) {
                 await utils_1.promise(element.validate());
             }
         };
         const handleChange = async (e) => {
             await updateStateAndModel(element);
             debug_event(element.name, element.value);
-            if (isValidateChange(element)) {
+            if (isValidateChange(element) && !element.hasAttribute('disabled')) {
                 await utils_1.promise(element.validate());
             }
         };

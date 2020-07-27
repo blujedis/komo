@@ -31,6 +31,7 @@ function initApi(options) {
     const defaultKeys = react_1.useRef([]);
     const model = react_1.useRef({});
     const fields = react_1.useRef(new Set());
+    const unregistered = react_1.useRef([]);
     const touched = react_1.useRef(new Set());
     const dirty = react_1.useRef(new Set());
     const errors = react_1.useRef({});
@@ -67,7 +68,7 @@ function initApi(options) {
             options.validationSchema = validate_1.astToSchema(schemaAst.current, options.validationSchema);
         }
         // Create the validator.
-        validator.current = validate_1.normalizeValidator(options.validationSchema, getElement, fields, vanities(), schemaAst.current, options.onValidated);
+        validator.current = validate_1.normalizeValidator(options.validationSchema, getElement, fields, getVanities(), schemaAst.current, options.onValidated);
         schema = options.validationSchema;
         return schema;
     };
@@ -114,9 +115,13 @@ function initApi(options) {
         defaultKeys.current = keys;
         // Iterate bound elements and update default values.
         [...fields.current.values()].forEach(element => {
-            if (keys.includes(element.name) && element.virtual)
+            if (keys.includes(element.name) && element.virtual) {
                 // tslint:disable-next-line: no-console
                 console.error(`Attempted to set bound property "${element.name}" as vanity, try useField('${element.name}') NOT useField('${element.name}', true).`);
+            }
+            else if (!defaultKeys.current.includes(element.name)) {
+                defaultKeys.current = [...defaultKeys.current, element.name];
+            }
             element.reinit();
         });
     };
@@ -144,7 +149,7 @@ function initApi(options) {
     const hasModel = (path) => {
         return lodash_has_1.default(model.current, path);
     };
-    const vanities = () => {
+    const getVanities = () => {
         return Object.keys(model.current).filter(k => !defaultKeys.current.includes(k));
     };
     const cleanModel = (m) => {
@@ -300,23 +305,32 @@ function initApi(options) {
         // Nothing to unregister.
         if (!fields.current.size)
             return;
-        // If string find the element in fields.
-        const _element = utils_1.isString(element) ?
-            getElement(element) :
-            element;
-        if (!_element) {
-            // tslint:disable-next-line: no-console
-            console.warn(`Failed to unregister element of undefined.`);
-            return;
+        function _unregister(elem) {
+            // If string find the element in fields.
+            const _element = utils_1.isString(elem) ?
+                getElement(elem) :
+                elem;
+            if (!_element) {
+                // tslint:disable-next-line: no-console
+                console.warn(`Failed to unregister element of undefined.`);
+                return;
+            }
+            const elemName = _element.name;
+            // Remove any flags/errors that are stored.
+            removeDirty(_element.name);
+            removeTouched(_element.name);
+            removeError(_element.name);
+            // Unbind any listener events.
+            _element.unbind();
+            // Delete the element from fields collection.
+            fields.current.delete(_element);
+            unregistered.current.push(elemName);
         }
-        // Remove any flags/errors that are stored.
-        removeDirty(_element.name);
-        removeTouched(_element.name);
-        removeError(_element.name);
-        // Unbind any listener events.
-        _element.unbind();
-        // Delete the element from fields collection.
-        fields.current.delete(_element);
+        // Unregister all elements.
+        if (!element)
+            [...fields.current.values()].forEach(_unregister);
+        else
+            _unregister(element);
     };
     state = {
         get model() {
@@ -335,7 +349,7 @@ function initApi(options) {
             return [...dirty.current.keys()];
         },
         get vanities() {
-            return vanities();
+            return getVanities();
         },
         get valid() {
             return !Object.entries(errors.current).length;
@@ -364,6 +378,7 @@ function initApi(options) {
         options,
         defaults,
         fields,
+        unregistered,
         unregister,
         schemaAst,
         render,

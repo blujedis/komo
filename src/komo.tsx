@@ -50,6 +50,7 @@ function initApi<T extends IModel>(options: IOptions<T>) {
   const defaultKeys = useRef<string[]>([]);
   const model = useRef<T>({} as T);
   const fields = useRef(new Set<IRegisteredElement<T>>());
+  const unregistered = useRef<string[]>([]);
   const touched = useRef(new Set<KeyOf<T>>());
   const dirty = useRef(new Set<KeyOf<T>>());
   const errors = useRef<ErrorModel<T>>({} as any);
@@ -99,7 +100,7 @@ function initApi<T extends IModel>(options: IOptions<T>) {
     }
 
     // Create the validator.
-    validator.current = normalizeValidator(options.validationSchema as ObjectSchema<T>, getElement, fields, vanities(), schemaAst.current, options.onValidated);
+    validator.current = normalizeValidator(options.validationSchema as ObjectSchema<T>, getElement, fields, getVanities(), schemaAst.current, options.onValidated);
 
     schema = options.validationSchema as any;
 
@@ -172,9 +173,13 @@ function initApi<T extends IModel>(options: IOptions<T>) {
     // Iterate bound elements and update default values.
     [...fields.current.values()].forEach(element => {
 
-      if (keys.includes(element.name) && element.virtual)
+      if (keys.includes(element.name) && element.virtual) {
         // tslint:disable-next-line: no-console
         console.error(`Attempted to set bound property "${element.name}" as vanity, try useField('${element.name}') NOT useField('${element.name}', true).`);
+      }
+      else if (!defaultKeys.current.includes(element.name)) {
+        defaultKeys.current = [...defaultKeys.current, element.name];
+      }
 
       element.reinit();
 
@@ -219,7 +224,7 @@ function initApi<T extends IModel>(options: IOptions<T>) {
     return has(model.current, path);
   };
 
-  const vanities = () => {
+  const getVanities = () => {
     return Object.keys(model.current).filter(k => !defaultKeys.current.includes(k));
   };
 
@@ -415,33 +420,47 @@ function initApi<T extends IModel>(options: IOptions<T>) {
     return isUndefined(element.validateBlur) ? options.validateBlur : element.validateBlur;
   };
 
-  const unregister = (element: KeyOf<T> | IRegisteredElement<T>) => {
+  const unregister = (element?: KeyOf<T> | IRegisteredElement<T>) => {
 
     // Nothing to unregister.
     if (!fields.current.size)
       return;
 
-    // If string find the element in fields.
-    const _element = isString(element) ?
-      getElement(element as string) :
-      element as IRegisteredElement<T>;
+    function _unregister(elem) {
 
-    if (!_element) {
-      // tslint:disable-next-line: no-console
-      console.warn(`Failed to unregister element of undefined.`);
-      return;
+      // If string find the element in fields.
+      const _element = isString(elem) ?
+        getElement(elem as string) :
+        elem as IRegisteredElement<T>;
+
+      if (!_element) {
+        // tslint:disable-next-line: no-console
+        console.warn(`Failed to unregister element of undefined.`);
+        return;
+      }
+
+      const elemName = _element.name;
+
+      // Remove any flags/errors that are stored.
+      removeDirty(_element.name);
+      removeTouched(_element.name);
+      removeError(_element.name);
+
+      // Unbind any listener events.
+      _element.unbind();
+
+      // Delete the element from fields collection.
+      fields.current.delete(_element);
+
+      unregistered.current.push(elemName);
+
     }
 
-    // Remove any flags/errors that are stored.
-    removeDirty(_element.name);
-    removeTouched(_element.name);
-    removeError(_element.name);
-
-    // Unbind any listener events.
-    _element.unbind();
-
-    // Delete the element from fields collection.
-    fields.current.delete(_element);
+    // Unregister all elements.
+    if (!element)
+      [...fields.current.values()].forEach(_unregister);
+    else
+      _unregister(element);
 
   };
 
@@ -468,7 +487,7 @@ function initApi<T extends IModel>(options: IOptions<T>) {
     },
 
     get vanities() {
-      return vanities();
+      return getVanities();
     },
 
     get valid() {
@@ -507,6 +526,7 @@ function initApi<T extends IModel>(options: IOptions<T>) {
     options,
     defaults,
     fields,
+    unregistered,
     unregister,
     schemaAst,
     render,

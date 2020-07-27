@@ -544,6 +544,10 @@ export interface IUseField<T extends IModel, R = IRegister<T>> {
      */
     register: R;
     /**
+     * Unregisters the ref/field from Komo.
+     */
+    unregister: () => void;
+    /**
      * Exposes access to the hook's bound element in your form. This allows
      * you to get/set properties directly on your element.
      */
@@ -717,6 +721,10 @@ export interface IKomoBase<T extends IModel> {
      * React MutableRefObject of registered elements.
      */
     fields: MutableRefObject<Set<IRegisteredElement<T>>>;
+    /**
+     * List of unregistered element names.
+     */
+    unregistered: MutableRefObject<string[]>;
     /**
      * React MutableRefObject of native validation AST schema configurations.
      */

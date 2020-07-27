@@ -19,7 +19,7 @@ const REGISTER_DEFAULTS = {
  * @param api the base form api.
  */
 function initElement(api) {
-    const { options: komoOptions, schemaAst, fields, unregister, setModel, getModel, isTouched, isDirty, setDefault, setDirty, setTouched, removeDirty, isValidateBlur, isValidateChange, validateModelAt, isValidatable, removeError, setError, render, getElement, isDirtyCompared, model } = api;
+    const { options: komoOptions, schemaAst, fields, unregister, setModel, getModel, isTouched, isDirty, setDefault, setDirty, setTouched, removeDirty, isValidateBlur, isValidateChange, validateModelAt, isValidatable, removeError, setError, render, getElement, isDirtyCompared, model, unregistered } = api;
     /**
      * Checks if the element is a duplicate and should be ignored.
      * Radio groups never return true.
@@ -546,6 +546,9 @@ function initElement(api) {
         // Attach/extend element with events.
         extendEvents(element, rebind);
         if (!rebind) {
+            // If re-registering ensure removed from unregistered.
+            if (unregistered.current.includes(element.name))
+                unregistered.current = unregistered.current.filter(k => k !== element.name);
             // Add to current field to the collection.
             fields.current.add(element);
         }

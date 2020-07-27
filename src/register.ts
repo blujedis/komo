@@ -6,7 +6,7 @@ import {
 import { parseNativeValidators } from './validate';
 import {
   IRegisterElement, IRegisterOptions, IRegisteredElement,
-  IModel, IKomoBase, RegisterElement, CastHandler, PromiseStrict, ErrorModel, KeyOf
+  IModel, IKomoBase, RegisterElement, CastHandler, PromiseStrict, ErrorModel
 } from './types';
 
 
@@ -34,7 +34,7 @@ export function initElement<T extends IModel>(api?: IKomoBase<T>) {
     getModel, isTouched, isDirty, setDefault,
     setDirty, setTouched, removeDirty, isValidateBlur, isValidateChange,
     validateModelAt, isValidatable, removeError, setError, render, getElement,
-    isDirtyCompared, model
+    isDirtyCompared, model, unregistered
   } = api;
 
   /**
@@ -756,6 +756,10 @@ export function initElement<T extends IModel>(api?: IKomoBase<T>) {
     extendEvents(element, rebind);
 
     if (!rebind) {
+
+      // If re-registering ensure removed from unregistered.
+      if (unregistered.current.includes(element.name))
+        unregistered.current = unregistered.current.filter(k => k !== element.name);
 
       // Add to current field to the collection.
       fields.current.add(element as IRegisteredElement<T>);

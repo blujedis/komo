@@ -7,7 +7,7 @@ export function initHooks<T extends IModel>(komo: IKomo<T>) {
   const {
     state, getElement, getModel, setModel, validateModelAt,
     isTouched, isDirty, getDefault, render, removeError, removeTouched,
-    removeDirty
+    removeDirty, unregister
   } = komo;
 
   function getErrors(prop: KeyOf<T>): IValidationError[] {
@@ -49,6 +49,8 @@ export function initHooks<T extends IModel>(komo: IKomo<T>) {
 
     const name = virtual ? virtualOrName as KeyOf<Record<K, T>> : virtualOrName as KeyOf<T>;
 
+    let unregistered;
+
     const unavailableMsg = prop => {
       if (prop)
         return `Prop "${prop}" undefined, element "${name}" is unavailable or not mounted.`;
@@ -64,7 +66,7 @@ export function initHooks<T extends IModel>(komo: IKomo<T>) {
       if (!element && !state.mounted) return;
 
       if (!element && state.mounted) {
-        if (!virtual)
+        if (!virtual && !unregistered)
           // tslint:disable-next-line: no-console
           console.warn(unavailableMsg(prop));
         return def;
@@ -79,8 +81,6 @@ export function initHooks<T extends IModel>(komo: IKomo<T>) {
     }
 
     const field = {
-
-      // register: komo.register.bind(komo),
 
       register: (elementOrOptions) => {
 
@@ -99,6 +99,12 @@ export function initHooks<T extends IModel>(komo: IKomo<T>) {
 
         return komo.register(elementOrOptions);
 
+      },
+
+      unregister: () => {
+        if (!name) return;
+        unregistered = true;
+        unregister(name);
       },
 
       // Getters //

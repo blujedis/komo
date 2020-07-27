@@ -4,7 +4,7 @@ exports.initHooks = void 0;
 const react_1 = require("react");
 const utils_1 = require("./utils");
 function initHooks(komo) {
-    const { state, getElement, getModel, setModel, validateModelAt, isTouched, isDirty, getDefault, render, removeError, removeTouched, removeDirty } = komo;
+    const { state, getElement, getModel, setModel, validateModelAt, isTouched, isDirty, getDefault, render, removeError, removeTouched, removeDirty, unregister } = komo;
     function getErrors(prop) {
         if (!state.errors || !state.errors[prop] || !state.errors[prop].length)
             return [];
@@ -12,6 +12,7 @@ function initHooks(komo) {
     }
     function useField(virtualOrName, virtual) {
         const name = virtual ? virtualOrName : virtualOrName;
+        let unregistered;
         const unavailableMsg = prop => {
             if (prop)
                 return `Prop "${prop}" undefined, element "${name}" is unavailable or not mounted.`;
@@ -22,7 +23,7 @@ function initHooks(komo) {
             if (!element && !state.mounted)
                 return;
             if (!element && state.mounted) {
-                if (!virtual)
+                if (!virtual && !unregistered)
                     // tslint:disable-next-line: no-console
                     console.warn(unavailableMsg(prop));
                 return def;
@@ -33,7 +34,6 @@ function initHooks(komo) {
             return utils_1.isUndefined(val) ? def : val;
         }
         const field = {
-            // register: komo.register.bind(komo),
             register: (elementOrOptions) => {
                 // binds hidden prop so we know this 
                 // is a hooked element or virtual.
@@ -45,6 +45,12 @@ function initHooks(komo) {
                         elementOrOptions.name = name;
                 }
                 return komo.register(elementOrOptions);
+            },
+            unregister: () => {
+                if (!name)
+                    return;
+                unregistered = true;
+                unregister(name);
             },
             // Getters //
             get mounted() {

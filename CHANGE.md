@@ -1,5 +1,12 @@
 # Changes
 
+## 07/26/2020
+
+- Add unregister method to field hook.
+- Flag element names that have been unregistered.
+- Remove from unregistered if/when element is reregistered.
+- Suppress warning of unmounted element by using flag when unregistered.
+
 ## 07/25/2020
 
 - Add .reset() helper in field hook to reset individual field, clear errors, dirty & touched.

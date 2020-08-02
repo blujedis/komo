@@ -657,6 +657,10 @@ function initForm<T extends IModel>(options: IOptions<T>) {
     init(m, true, validate);
   };
 
+  const reset = _resetForm;
+  const handleReset = _handleReset;
+  const handleSubmit = _handleSubmit;
+
   /**
    * Manually resets model, dirty touched and clears errors.
    * 
@@ -672,7 +676,10 @@ function initForm<T extends IModel>(options: IOptions<T>) {
 
     // Reset all fields.
     [...fields.current.values()].forEach(e => {
-      e.reset();
+      if (!values)
+        e.reset();
+      else
+        e.reinit();
     });
 
     submitCount.current = 0;
@@ -782,10 +789,6 @@ function initForm<T extends IModel>(options: IOptions<T>) {
     };
 
   }
-
-  const reset = _resetForm;
-  const handleReset = _handleReset;
-  const handleSubmit = _handleSubmit;
 
   const api: IKomoInternal<T> = {
 

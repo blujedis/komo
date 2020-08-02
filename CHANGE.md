@@ -1,5 +1,9 @@
 # Changes
 
+## 08/01/2020
+
+- Fix issue where values passed to .reset() aren't updated.
+
 ## 07/26/2020
 
 - Add unregister method to field hook.

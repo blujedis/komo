@@ -478,6 +478,9 @@ function initForm(options) {
         setModel(m);
         init(m, true, validate);
     };
+    const reset = _resetForm;
+    const handleReset = _handleReset;
+    const handleSubmit = _handleSubmit;
     /**
      * Manually resets model, dirty touched and clears errors.
      *
@@ -491,7 +494,10 @@ function initForm(options) {
         clearError();
         // Reset all fields.
         [...fields.current.values()].forEach(e => {
-            e.reset();
+            if (!values)
+                e.reset();
+            else
+                e.reinit();
         });
         submitCount.current = 0;
         submitting.current = false;
@@ -560,9 +566,6 @@ function initForm(options) {
             await handleCallback(_model, err, event);
         };
     }
-    const reset = _resetForm;
-    const handleReset = _handleReset;
-    const handleSubmit = _handleSubmit;
     const api = {
         // Elements
         mounted,

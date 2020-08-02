@@ -486,9 +486,9 @@ function initForm(options) {
      *
      * @param values new values to reset form with.
      */
-    function _resetForm(values = {}) {
+    function _resetForm(values) {
         // Reset all states.
-        setModel({ ...defaults.current, ...values });
+        setModel({ ...defaults.current, ...(values || {}) });
         clearDirty();
         clearTouched();
         clearError();

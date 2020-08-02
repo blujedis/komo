@@ -3,6 +3,7 @@
 ## 08/01/2020
 
 - Fix issue where values passed to .reset() aren't updated.
+- Whoops .reset() can't have default val, check instead.
 
 ## 07/26/2020
 

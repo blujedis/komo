@@ -666,10 +666,10 @@ function initForm<T extends IModel>(options: IOptions<T>) {
    * 
    * @param values new values to reset form with.
    */
-  function _resetForm(values: T = {} as any) {
+  function _resetForm(values: T) {
 
     // Reset all states.
-    setModel({ ...defaults.current, ...values });
+    setModel({ ...defaults.current, ...(values || {}) });
     clearDirty();
     clearTouched();
     clearError();

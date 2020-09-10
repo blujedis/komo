@@ -1,5 +1,9 @@
 # Changes
 
+## 09/09/2020
+
+- Talked me into it, default checkboxes to on change binding vs on blur as the default.
+
 ## 08/01/2020
 
 - Fix issue where values passed to .reset() aren't updated.

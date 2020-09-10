@@ -636,6 +636,7 @@ export function initElement<T extends IModel>(api?: IKomoBase<T>) {
    */
   function normalizeElement(element: IRegisteredElement<T>, options?: IRegisterOptions<T>) {
 
+
     options = { ...REGISTER_DEFAULTS, ...options };
 
     if (element.virtual && (element.path || options.path)) {
@@ -732,6 +733,20 @@ export function initElement<T extends IModel>(api?: IKomoBase<T>) {
       return null;
     }
 
+    // Checkbox must bind on change not blur event which is the default.
+    // change events that are enabled if not defined with init options.
+    if (element.type && (element.type === 'checkbox')) {
+      // @ts-ignore
+      const initOpts = element.__init_options__ as any;
+
+      if (!initOpts || initOpts && typeof initOpts.enableBlurEvents === 'undefined')
+        element.enableBlurEvents = false;
+
+      if (!initOpts || initOpts && typeof initOpts.enableChangeEvents === 'undefined')
+        element.enableChangeEvents = true;
+
+    }
+
     // Normalizes the element and defaults for use with Komo.
     initDefaults(element);
 
@@ -791,9 +806,12 @@ export function initElement<T extends IModel>(api?: IKomoBase<T>) {
     // No element just config return callback to get element.
     if (!isElementOrVirtual(elementOrOptions)) {
 
+      let hasDefaultOptions;
+
       if (!isString(elementOrOptions)) {
         options = elementOrOptions as IRegisterOptions<T>;
         elementOrOptions = undefined;
+        hasDefaultOptions = true;
       }
 
       options = options || {};
@@ -814,13 +832,18 @@ export function initElement<T extends IModel>(api?: IKomoBase<T>) {
           _element = _element[options.bindTo] as IRegisteredElement<T>;
         }
 
-        // TODO: rethink how this works
-        if (_element)
+        // TODO: rethink how this works. This looks like it could be below
+        // the next if check. It can't leave it here. This needs to be redone.
+        if (_element) {
           // @ts-ignore
           _element.__hooked = options.__hooked__;
+          // @ts-ignore
+          _element.__init_options__ = { ...options };
+        }
 
         if (!_element || isRegistered(_element))
           return;
+
 
         const normalized = normalizeElement(_element, options);
 

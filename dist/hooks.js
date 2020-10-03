@@ -43,6 +43,9 @@ function initHooks(komo) {
                     // Virtual props must use same name.
                     if (elementOrOptions.virtual)
                         elementOrOptions.name = name;
+                    // need undefined check here for advanced hook binding example.
+                    if (name !== elementOrOptions.name && !elementOrOptions.virtual && typeof elementOrOptions.name !== 'undefined')
+                        throw new Error(`Attempted to bind element "${elementOrOptions.name}" using hook for "${name}".`);
                 }
                 return komo.register(elementOrOptions);
             },

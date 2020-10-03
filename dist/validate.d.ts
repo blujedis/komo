@@ -52,7 +52,7 @@ export declare function hasNativeValidators(element: IRegisteredElement<any>): b
  * @param defaults user defined defaults.
  * @param normalizedDefaults the normalized defaults for yup or empty object
  */
-export declare function promisifyDefaults<T extends IModel>(defaults: T, normalizedDefaults?: Partial<T>): Promise<T>;
+export declare function promisifyDefaults<T extends IModel>(defaults: T | Promise<T>, normalizedDefaults?: Partial<T>): Promise<T>;
 /**
  * Checks if object is a Yup Schema.
  *

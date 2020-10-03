@@ -153,29 +153,29 @@ function initApi<T extends IModel>(options: IOptions<T>) {
 
     defaults.current = merge({ ...defaults.current }, { ...defs });
 
-    // When reinitializing defaults should
-    // be favored over the current model.
-    if (isReinit)
-      model.current = merge({ ...model.current }, { ...defs });
+    const defKeys = Object.keys(defs);
 
-    // If not mounted then defaults should override the current model.
-    else if (!mounted.current)
-      model.current = merge({ ...model.current }, { ...defs });
+    if (defKeys.length) {
 
-    // If we get here model wins.
-    else
-      model.current = merge({ ...defs }, { ...model.current });
+      // When reinitializing defaults should
+      // be favored over the current model.
+      if (isReinit || !mounted.current)
+        model.current = merge({ ...model.current }, { ...defs });
 
-    const keys = Object.keys(defs);
+      // If we get here model wins.
+      else
+        model.current = merge({ ...defs }, { ...model.current });
 
-    defaultKeys.current = keys;
+    }
+
+    defaultKeys.current = defKeys;
 
     // Iterate bound elements and update default values.
     [...fields.current.values()].forEach(element => {
 
-      if (keys.includes(element.name) && element.virtual) {
+      if (defKeys.includes(element.name) && element.virtual) {
         // tslint:disable-next-line: no-console
-        console.error(`Attempted to set bound property "${element.name}" as vanity, try useField('${element.name}') NOT useField('${element.name}', true).`);
+        console.error(`Attempted to set bound property "${element.name}" from model as vanity, try useField('${element.name}') NOT useField('${element.name}', true) OR initialize with virtual using name not already defined in model.`);
       }
       else if (!defaultKeys.current.includes(element.name)) {
         defaultKeys.current = [...defaultKeys.current, element.name];
@@ -195,26 +195,21 @@ function initApi<T extends IModel>(options: IOptions<T>) {
       return;
     }
 
-    let current = { ...model.current };
-
     if (isString(pathOrModel)) {
 
       if (value === '')
         value = undefined;
 
-      set(current, pathOrModel as string, value);
-      model.current = current;
+      set(model.current, pathOrModel as string, value);
 
     }
 
     else {
 
       if (value)
-        current = { ...current, ...pathOrModel as T };
+        model.current = { ...model.current, ...pathOrModel as T };
       else
-        current = pathOrModel as T;
-
-      model.current = current;
+        model.current = pathOrModel as T;
 
     }
 
@@ -341,6 +336,7 @@ function initApi<T extends IModel>(options: IOptions<T>) {
     render('error:set');
     debug_api('seterror', errors.current);
     return errors.current;
+
   }, [options.validationSchema]);
 
   const removeError = useCallback((name: KeyOf<T>) => {
@@ -623,7 +619,7 @@ function initForm<T extends IModel>(options: IOptions<T>) {
       debug_init('err', err);
 
     // Err and data both 
-    syncDefaults({ ...err, ...data });
+    syncDefaults({ ...err, ...data }, isReinit);
 
     // Init normalize the validation schema.
     if (!isReinit)
@@ -864,7 +860,8 @@ export function initKomo<T extends IModel, D extends IModel = {}>(options?: Opti
   const hooks = initHooks<Model>(api);
   const komo = extend(api, hooks);
 
-  // Init after effect.
+  const shouldInit = (options.defaults !== initDefaults.current);
+
   useEffect(() => {
 
     if (initDefaults.current === null)
@@ -878,15 +875,15 @@ export function initKomo<T extends IModel, D extends IModel = {}>(options?: Opti
       api.init(options.defaults as any, true);
     }
 
+
     return () => {
       api.mounted.current = false;
       [...api.fields.current.values()].forEach(e => {
         api.unregister(e);
       });
-
     };
 
-  }, [options.defaults && options.defaults !== initDefaults.current]);
+  }, [shouldInit]);
 
   return komo as IKomo<Model>;
 

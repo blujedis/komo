@@ -330,7 +330,7 @@ export function initElement<T extends IModel>(api?: IKomoBase<T>) {
     if (modelValue === '') modelValue = undefined;
 
     return new Promise((resolve, reject) => {
-      modelValue = castHandler(modelValue, element.path, element.name);
+      modelValue = castHandler(modelValue, element.path, element.name);;
 
       // Set the model value.
       setModel(element.path, modelValue);
@@ -803,15 +803,15 @@ export function initElement<T extends IModel>(api?: IKomoBase<T>) {
     if (isNullOrUndefined(elementOrOptions))
       return;
 
+    let initOptions;
+
     // No element just config return callback to get element.
     if (!isElementOrVirtual(elementOrOptions)) {
-
-      let hasDefaultOptions;
 
       if (!isString(elementOrOptions)) {
         options = elementOrOptions as IRegisterOptions<T>;
         elementOrOptions = undefined;
-        hasDefaultOptions = true;
+        initOptions = { ...initOptions };
       }
 
       options = options || {};
@@ -834,12 +834,14 @@ export function initElement<T extends IModel>(api?: IKomoBase<T>) {
 
         // TODO: rethink how this works. This looks like it could be below
         // the next if check. It can't leave it here. This needs to be redone.
-        if (_element) {
+        if (_element)
           // @ts-ignore
           _element.__hooked = options.__hooked__;
+
+        if (_element && initOptions)
           // @ts-ignore
-          _element.__init_options__ = { ...options };
-        }
+          _element.__init_options__ = initOptions;
+
 
         if (!_element || isRegistered(_element))
           return;
@@ -860,6 +862,15 @@ export function initElement<T extends IModel>(api?: IKomoBase<T>) {
       };
 
     }
+
+    if ((elementOrOptions as any).name === 'loginDisabled') {
+
+      // console.log((elementOrOptions as any).variant);
+
+      // console.log('registered', isRegistered(elementOrOptions as any));
+
+    }
+
 
     if (!elementOrOptions || isRegistered(elementOrOptions as IRegisteredElement<T>))
       return;

@@ -1049,9 +1049,10 @@ export interface IKomoBase<T extends IModel> {
   /**
    * Updaetes default values from synchronizing with model and elements.
    * 
-   * @param defaults 
+   * @param defaults the defaults to sync.
+   * @param isReinit indicates defaults are reinitializing.
    */
-  syncDefaults(defaults: T): void;
+  syncDefaults(defaults: T, isReinit?: boolean): void;
 
   /**
    * Checks if model contains prop at path.

@@ -1,5 +1,9 @@
 # Changes
 
+## 10/02/2020
+
+- Fix issue where defaults may not bind.
+
 ## 09/09/2020
 
 - Talked me into it, default checkboxes to on change binding vs on blur as the default.

@@ -362,12 +362,10 @@ export function hasNativeValidators(element: IRegisteredElement<any>) {
  * @param defaults user defined defaults.
  * @param normalizedDefaults the normalized defaults for yup or empty object
  */
-export function promisifyDefaults<T extends IModel>(defaults: T, normalizedDefaults: Partial<T> = {}) {
-
-  const userDefaults: Partial<T> = isPlainObject(defaults) ? { ...defaults } : {};
+export function promisifyDefaults<T extends IModel>(defaults: T | Promise<T>, normalizedDefaults: Partial<T> = {}) {
 
   if (!isPromise(defaults))
-    return Promise.resolve({ ...normalizedDefaults, ...userDefaults }) as Promise<T>;
+    defaults = Promise.resolve(defaults);
 
   // On error we return normalizedDefaults.
   // We merge these in Komo sync event.

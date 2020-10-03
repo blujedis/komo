@@ -241,6 +241,7 @@ function initElement(api) {
             modelValue = undefined;
         return new Promise((resolve, reject) => {
             modelValue = castHandler(modelValue, element.path, element.name);
+            ;
             // Set the model value.
             setModel(element.path, modelValue);
             resolve(modelValue);
@@ -567,13 +568,13 @@ function initElement(api) {
     function registerElement(elementOrOptions, options) {
         if (utils_1.isNullOrUndefined(elementOrOptions))
             return;
+        let initOptions;
         // No element just config return callback to get element.
         if (!utils_1.isElementOrVirtual(elementOrOptions)) {
-            let hasDefaultOptions;
             if (!utils_1.isString(elementOrOptions)) {
                 options = elementOrOptions;
                 elementOrOptions = undefined;
-                hasDefaultOptions = true;
+                initOptions = { ...initOptions };
             }
             options = options || {};
             return (element) => {
@@ -590,12 +591,12 @@ function initElement(api) {
                 }
                 // TODO: rethink how this works. This looks like it could be below
                 // the next if check. It can't leave it here. This needs to be redone.
-                if (_element) {
+                if (_element)
                     // @ts-ignore
                     _element.__hooked = options.__hooked__;
+                if (_element && initOptions)
                     // @ts-ignore
-                    _element.__init_options__ = { ...options };
-                }
+                    _element.__init_options__ = initOptions;
                 if (!_element || isRegistered(_element))
                     return;
                 const normalized = normalizeElement(_element, options);
@@ -607,6 +608,10 @@ function initElement(api) {
                     debug_register('custom', _element.name, _element.path);
                 return bindElement(_element);
             };
+        }
+        if (elementOrOptions.name === 'loginDisabled') {
+            // console.log((elementOrOptions as any).variant);
+            // console.log('registered', isRegistered(elementOrOptions as any));
         }
         if (!elementOrOptions || isRegistered(elementOrOptions))
             return;

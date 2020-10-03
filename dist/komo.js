@@ -101,23 +101,22 @@ function initApi(options) {
     };
     const syncDefaults = (defs, isReinit = false) => {
         defaults.current = utils_1.merge({ ...defaults.current }, { ...defs });
-        // When reinitializing defaults should
-        // be favored over the current model.
-        if (isReinit)
-            model.current = utils_1.merge({ ...model.current }, { ...defs });
-        // If not mounted then defaults should override the current model.
-        else if (!mounted.current)
-            model.current = utils_1.merge({ ...model.current }, { ...defs });
-        // If we get here model wins.
-        else
-            model.current = utils_1.merge({ ...defs }, { ...model.current });
-        const keys = Object.keys(defs);
-        defaultKeys.current = keys;
+        const defKeys = Object.keys(defs);
+        if (defKeys.length) {
+            // When reinitializing defaults should
+            // be favored over the current model.
+            if (isReinit || !mounted.current)
+                model.current = utils_1.merge({ ...model.current }, { ...defs });
+            // If we get here model wins.
+            else
+                model.current = utils_1.merge({ ...defs }, { ...model.current });
+        }
+        defaultKeys.current = defKeys;
         // Iterate bound elements and update default values.
         [...fields.current.values()].forEach(element => {
-            if (keys.includes(element.name) && element.virtual) {
+            if (defKeys.includes(element.name) && element.virtual) {
                 // tslint:disable-next-line: no-console
-                console.error(`Attempted to set bound property "${element.name}" as vanity, try useField('${element.name}') NOT useField('${element.name}', true).`);
+                console.error(`Attempted to set bound property "${element.name}" from model as vanity, try useField('${element.name}') NOT useField('${element.name}', true) OR initialize with virtual using name not already defined in model.`);
             }
             else if (!defaultKeys.current.includes(element.name)) {
                 defaultKeys.current = [...defaultKeys.current, element.name];
@@ -131,19 +130,16 @@ function initApi(options) {
             console.error(`Cannot set default value using key or model of undefined.`);
             return;
         }
-        let current = { ...model.current };
         if (utils_1.isString(pathOrModel)) {
             if (value === '')
                 value = undefined;
-            lodash_set_1.default(current, pathOrModel, value);
-            model.current = current;
+            lodash_set_1.default(model.current, pathOrModel, value);
         }
         else {
             if (value)
-                current = { ...current, ...pathOrModel };
+                model.current = { ...model.current, ...pathOrModel };
             else
-                current = pathOrModel;
-            model.current = current;
+                model.current = pathOrModel;
         }
     }, [defaults.current, model]);
     const hasModel = (path) => {
@@ -450,7 +446,7 @@ function initForm(options) {
         if (err && utils_1.isPlainObject(err))
             debug_init('err', err);
         // Err and data both 
-        syncDefaults({ ...err, ...data });
+        syncDefaults({ ...err, ...data }, isReinit);
         // Init normalize the validation schema.
         if (!isReinit)
             initSchema();
@@ -619,7 +615,7 @@ function initKomo(options) {
     api.setModel = (pathOrModel, value) => { setModel(pathOrModel, value); render(`model:set`); };
     const hooks = hooks_1.initHooks(api);
     const komo = utils_1.extend(api, hooks);
-    // Init after effect.
+    const shouldInit = (options.defaults !== initDefaults.current);
     react_1.useEffect(() => {
         if (initDefaults.current === null)
             initDefaults.current = options.defaults;
@@ -636,7 +632,7 @@ function initKomo(options) {
                 api.unregister(e);
             });
         };
-    }, [options.defaults && options.defaults !== initDefaults.current]);
+    }, [shouldInit]);
     return komo;
 }
 exports.initKomo = initKomo;

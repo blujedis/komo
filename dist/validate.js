@@ -281,9 +281,8 @@ exports.hasNativeValidators = hasNativeValidators;
  * @param normalizedDefaults the normalized defaults for yup or empty object
  */
 function promisifyDefaults(defaults, normalizedDefaults = {}) {
-    const userDefaults = utils_1.isPlainObject(defaults) ? { ...defaults } : {};
     if (!utils_1.isPromise(defaults))
-        return Promise.resolve({ ...normalizedDefaults, ...userDefaults });
+        defaults = Promise.resolve(defaults);
     // On error we return normalizedDefaults.
     // We merge these in Komo sync event.
     return defaults

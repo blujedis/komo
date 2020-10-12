@@ -211,6 +211,8 @@ function initApi(options) {
     // If not compare value the model value is used.
     const isDirtyCompared = (name, value, compareValue) => {
         const element = getElement(name);
+        if (!element)
+            return false;
         const modelValue = getModel(element.path);
         compareValue = utils_1.toDefault(compareValue, modelValue);
         value = prepareCompare(value);

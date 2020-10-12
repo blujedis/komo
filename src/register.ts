@@ -8,6 +8,7 @@ import {
   IRegisterElement, IRegisterOptions, IRegisteredElement,
   IModel, IKomoBase, RegisterElement, CastHandler, PromiseStrict, ErrorModel
 } from './types';
+import { SyntheticEvent } from 'react';
 
 
 const { debug_register, debug_event, debug_set } = debuggers;
@@ -378,8 +379,11 @@ export function initElement<T extends IModel>(api?: IKomoBase<T>) {
 
       const handleEnter = (e: Event) => {
         // @ts-ignore
-        if (e.key === 'Enter')
-          return e.preventDefault();
+        if (e.key === 'Enter' || e.keyCode === 13) {
+          if (element.type === 'textarea')
+            return e.stopPropagation();
+          e.preventDefault();
+        }
       };
 
       addListener(element, 'keypress', handleEnter);
@@ -747,6 +751,13 @@ export function initElement<T extends IModel>(api?: IKomoBase<T>) {
 
     }
 
+    if (element.type && element.type.startsWith('select')) {
+      // @ts-ignore
+      const initOpts = element.__init_options__ as any;
+      if (!initOpts || initOpts && typeof initOpts.enableChangeEvents === 'undefined')
+        element.enableChangeEvents = true;
+    }
+
     // Normalizes the element and defaults for use with Komo.
     initDefaults(element);
 
@@ -863,14 +874,7 @@ export function initElement<T extends IModel>(api?: IKomoBase<T>) {
 
     }
 
-    if ((elementOrOptions as any).name === 'loginDisabled') {
-
-      // console.log((elementOrOptions as any).variant);
-
-      // console.log('registered', isRegistered(elementOrOptions as any));
-
-    }
-
+    // if ((elementOrOptions as any).name === 'loginDisabled') {}
 
     if (!elementOrOptions || isRegistered(elementOrOptions as IRegisteredElement<T>))
       return;

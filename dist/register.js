@@ -274,8 +274,11 @@ function initElement(api) {
         if (utils_1.isPreventEnter(element.type) || element.tagName === 'INPUT') {
             const handleEnter = (e) => {
                 // @ts-ignore
-                if (e.key === 'Enter')
-                    return e.preventDefault();
+                if (e.key === 'Enter' || e.keyCode === 13) {
+                    if (element.type === 'textarea')
+                        return e.stopPropagation();
+                    e.preventDefault();
+                }
             };
             utils_1.addListener(element, 'keypress', handleEnter);
             events = [...events, ['keypress', handleEnter]];
@@ -541,6 +544,12 @@ function initElement(api) {
             if (!initOpts || initOpts && typeof initOpts.enableChangeEvents === 'undefined')
                 element.enableChangeEvents = true;
         }
+        if (element.type && element.type.startsWith('select')) {
+            // @ts-ignore
+            const initOpts = element.__init_options__;
+            if (!initOpts || initOpts && typeof initOpts.enableChangeEvents === 'undefined')
+                element.enableChangeEvents = true;
+        }
         // Normalizes the element and defaults for use with Komo.
         initDefaults(element);
         if (!rebind) {
@@ -609,10 +618,7 @@ function initElement(api) {
                 return bindElement(_element);
             };
         }
-        if (elementOrOptions.name === 'loginDisabled') {
-            // console.log((elementOrOptions as any).variant);
-            // console.log('registered', isRegistered(elementOrOptions as any));
-        }
+        // if ((elementOrOptions as any).name === 'loginDisabled') {}
         if (!elementOrOptions || isRegistered(elementOrOptions))
             return;
         debug_register(elementOrOptions.name);

@@ -302,6 +302,8 @@ function initApi<T extends IModel>(options: IOptions<T>) {
   // If not compare value the model value is used.
   const isDirtyCompared = (name: KeyOf<T>, value: any, compareValue?: any) => {
     const element = getElement(name);
+    if (!element)
+      return false;
     const modelValue = getModel(element.path);
     compareValue = toDefault(compareValue, modelValue);
     value = prepareCompare(value);

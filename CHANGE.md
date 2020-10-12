@@ -1,5 +1,9 @@
 # Changes
 
+## 10/10/2020
+
+- favor stopPropagation over preventDefault on keypress for textareas.
+
 ## 10/02/2020
 
 - Fix issue where defaults may not bind.

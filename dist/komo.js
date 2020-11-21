@@ -46,6 +46,8 @@ function initApi(options) {
     let api = {};
     // HELPERS //
     const render = (status) => {
+        if (!mounted.current)
+            return;
         renderStatus({ ...currentStatus, status });
         debug_api('rendered', status);
     };
@@ -464,12 +466,16 @@ function initForm(options) {
                     setError(valErr);
             }).finally(() => {
                 mounted.current = true;
-                render('form:effect:validate'); // this may not be needed.
+                setTimeout(() => {
+                    render('form:effect:validate');
+                });
             });
         }
         else {
             mounted.current = true;
-            render('form:effect');
+            setTimeout(() => {
+                render('form:effect');
+            });
         }
     }
     const update = (m, validate = false) => {

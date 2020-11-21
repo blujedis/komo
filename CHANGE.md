@@ -1,5 +1,9 @@
 # Changes
 
+## 11/19/2020
+
+- fix issue where render was called on unmounted component, for example on Modals.
+
 ## 10/10/2020
 
 - favor stopPropagation over preventDefault on keypress for textareas.

@@ -68,6 +68,8 @@ function initApi<T extends IModel>(options: IOptions<T>) {
   // HELPERS //
 
   const render = (status: string) => {
+    if (!mounted.current)
+      return;
     renderStatus({ ...currentStatus, status });
     debug_api('rendered', status);
   };
@@ -640,12 +642,18 @@ function initForm<T extends IModel>(options: IOptions<T>) {
             setError(valErr);
         }).finally(() => {
           mounted.current = true;
-          render('form:effect:validate'); // this may not be needed.
+          setTimeout(() => { // ensure we don't render when not mounted.
+            render('form:effect:validate');
+          });
+
         });
     }
     else {
       mounted.current = true;
-      render('form:effect');
+      setTimeout(() => { // ensure we don't render when not mounted.
+        render('form:effect');
+      });
+
     }
 
   }

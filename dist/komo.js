@@ -465,17 +465,15 @@ function initForm(options) {
                 if (valErr)
                     setError(valErr);
             }).finally(() => {
-                mounted.current = true;
-                setTimeout(() => {
+                if (mounted.current)
                     render('form:effect:validate');
-                });
+                mounted.current = true;
             });
         }
         else {
-            mounted.current = true;
-            setTimeout(() => {
+            if (mounted.current)
                 render('form:effect');
-            });
+            mounted.current = true;
         }
     }
     const update = (m, validate = false) => {
@@ -623,7 +621,7 @@ function initKomo(options) {
     api.setModel = (pathOrModel, value) => { setModel(pathOrModel, value); render(`model:set`); };
     const hooks = hooks_1.initHooks(api);
     const komo = utils_1.extend(api, hooks);
-    const shouldInit = (options.defaults !== initDefaults.current);
+    const shouldInit = ((options.defaults !== initDefaults.current) && api.mounted.current);
     react_1.useEffect(() => {
         if (initDefaults.current === null)
             initDefaults.current = options.defaults;

@@ -38,6 +38,7 @@ function initApi(options) {
     const validator = react_1.useRef();
     const schemaAst = react_1.useRef();
     const mounted = react_1.useRef(false);
+    const hasInit = react_1.useRef(false);
     const submitCount = react_1.useRef(0);
     const submitting = react_1.useRef(false);
     const submitted = react_1.useRef(false);
@@ -339,6 +340,9 @@ function initApi(options) {
         get mounted() {
             return !!mounted.current;
         },
+        get hasInit() {
+            return !!hasInit.current;
+        },
         get errors() {
             return errors.current;
         },
@@ -387,6 +391,7 @@ function initApi(options) {
         initSchema,
         // Form
         mounted,
+        hasInit,
         state,
         // Model
         model,
@@ -430,14 +435,14 @@ function initApi(options) {
  */
 function initForm(options) {
     const base = initApi(options);
-    const { options: formOptions, defaults, render, clearDirty, clearTouched, clearError, setModel, fields, submitCount, submitting, submitted, validateModel, validateModelAt, syncDefaults, state, hasModel, isValidatable, errors, setError, unregister, mounted, initSchema, model, getRegistered, getModel, removeError, isDirty, isTouched, getDefault, getElement, removeTouched, removeDirty } = base;
+    const { options: formOptions, defaults, render, clearDirty, clearTouched, clearError, setModel, fields, submitCount, submitting, submitted, validateModel, validateModelAt, syncDefaults, state, hasModel, isValidatable, errors, setError, unregister, mounted, initSchema, model, getRegistered, getModel, removeError, isDirty, isTouched, getDefault, getElement, removeTouched, removeDirty, hasInit } = base;
     async function init(defs, isReinit = false, validate = false) {
         if (typeof defs === 'boolean') {
             validate = isReinit;
             isReinit = defs;
             defs = undefined;
         }
-        if (mounted.current && !isReinit)
+        if (mounted.current && !isReinit && hasInit.current)
             return;
         debug_init('mount:fields', getRegistered());
         debug_init('mount:schema', options.validationSchema);
@@ -465,13 +470,19 @@ function initForm(options) {
                 if (valErr)
                     setError(valErr);
             }).finally(() => {
-                setTimeout(() => render('form:effect:validate'));
-                mounted.current = true;
+                setTimeout(() => {
+                    hasInit.current = true;
+                    if (mounted.current)
+                        render('form:effect:validate');
+                });
             });
         }
         else {
-            setTimeout(() => render('form:effect'));
-            mounted.current = true;
+            setTimeout(() => {
+                hasInit.current = true;
+                if (mounted.current)
+                    render('form:effect');
+            });
         }
     }
     const update = (m, validate = false) => {
@@ -619,24 +630,31 @@ function initKomo(options) {
     api.setModel = (pathOrModel, value) => { setModel(pathOrModel, value); render(`model:set`); };
     const hooks = hooks_1.initHooks(api);
     const komo = utils_1.extend(api, hooks);
-    const shouldInit = (options.defaults !== initDefaults.current);
+    const canInit = (options.defaults !== initDefaults.current && api.mounted.current);
     react_1.useEffect(() => {
-        if (initDefaults.current === null)
-            initDefaults.current = options.defaults;
-        if (!api.mounted.current) {
-            api.init();
-        }
-        else if (api.mounted.current) {
-            initDefaults.current = options.defaults;
-            api.init(options.defaults, true);
-        }
+        api.mounted.current = true;
+        return () => api.mounted.current = false;
+    }, []);
+    react_1.useEffect(() => {
+        initDefaults.current = options.defaults;
+        api.init(options.defaults);
+        // if (initDefaults.current === null)
+        //   initDefaults.current = options.defaults;
+        // if (!api.mounted.current) {
+        //   api.init();
+        // }
+        // else if (api.mounted.current) {
+        //   initDefaults.current = options.defaults;
+        //   api.init(options.defaults as any, true);
+        // }
         return () => {
+            // initDefaults.current = null;
             api.mounted.current = false;
             [...api.fields.current.values()].forEach(e => {
                 api.unregister(e);
             });
         };
-    }, [shouldInit]);
+    }, [canInit]);
     return komo;
 }
 exports.initKomo = initKomo;

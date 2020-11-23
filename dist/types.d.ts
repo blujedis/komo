@@ -507,6 +507,10 @@ export interface IFormState<T extends IModel> {
      */
     readonly mounted: boolean;
     /**
+     * Boolean indicating if has initialized mounted.
+     */
+    readonly hasInit: boolean;
+    /**
      * Boolean indicating if form is submitting.
      */
     readonly isSubmitting: boolean;
@@ -745,6 +749,10 @@ export interface IKomoBase<T extends IModel> {
      * React MutableRefObject indicating if form/Komo is mounted.
      */
     mounted: MutableRefObject<boolean>;
+    /**
+    * React MutableRefObject indicating if form/Komo is mounted.
+    */
+    hasInit: MutableRefObject<boolean>;
     /**
      * React MutableRefObject indicating the form submission count.
      */

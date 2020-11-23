@@ -1,5 +1,9 @@
 # Changes
 
+## 11/21/2020
+
+- more render fixes.
+
 ## 11/19/2020
 
 - fix issue where render was called on unmounted component, for example on Modals.

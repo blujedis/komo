@@ -56,10 +56,13 @@ function initApi<T extends IModel>(options: IOptions<T>) {
   const errors = useRef<ErrorModel<T>>({} as any);
   const validator = useRef<IValidator<T>>();
   const schemaAst = useRef<ISchemaAst>();
+
   const mounted = useRef(false);
+  const hasInit = useRef(false);
   const submitCount = useRef(0);
   const submitting = useRef(false);
   const submitted = useRef(false);
+
   const [currentStatus, renderStatus] = useState({ status: 'init' });
 
   let state: IFormState<T> = {} as any;
@@ -474,6 +477,10 @@ function initApi<T extends IModel>(options: IOptions<T>) {
       return !!mounted.current;
     },
 
+    get hasInit() {
+      return !!hasInit.current;
+    },
+
     get errors() {
       return errors.current;
     },
@@ -536,6 +543,7 @@ function initApi<T extends IModel>(options: IOptions<T>) {
 
     // Form
     mounted,
+    hasInit,
     state,
 
     // Model
@@ -592,7 +600,7 @@ function initForm<T extends IModel>(options: IOptions<T>) {
 
   const {
     options: formOptions, defaults, render, clearDirty, clearTouched, clearError, setModel,
-    fields, submitCount, submitting, submitted, validateModel, validateModelAt, syncDefaults, state, hasModel, isValidatable, errors, setError, unregister, mounted, initSchema, model, getRegistered, getModel, removeError, isDirty, isTouched, getDefault, getElement, removeTouched, removeDirty
+    fields, submitCount, submitting, submitted, validateModel, validateModelAt, syncDefaults, state, hasModel, isValidatable, errors, setError, unregister, mounted, initSchema, model, getRegistered, getModel, removeError, isDirty, isTouched, getDefault, getElement, removeTouched, removeDirty, hasInit
   } = base;
 
   async function init(defs?, isReinit = false, validate = false) {
@@ -603,7 +611,7 @@ function initForm<T extends IModel>(options: IOptions<T>) {
       defs = undefined;
     }
 
-    if (mounted.current && !isReinit)
+    if (mounted.current && !isReinit && hasInit.current)
       return;
 
     debug_init('mount:fields', getRegistered());
@@ -641,13 +649,21 @@ function initForm<T extends IModel>(options: IOptions<T>) {
           if (valErr)
             setError(valErr);
         }).finally(() => {
-          setTimeout(() => render('form:effect:validate'));
-          mounted.current = true;
+          setTimeout(() => {
+            hasInit.current = true;
+            if (mounted.current)
+              render('form:effect:validate');
+          });
+
         });
     }
     else {
-      setTimeout(() => render('form:effect'));
-      mounted.current = true;
+      setTimeout(() => {
+        hasInit.current = true;
+        if (mounted.current)
+          render('form:effect');
+      });
+
     }
 
   }
@@ -864,29 +880,38 @@ export function initKomo<T extends IModel, D extends IModel = {}>(options?: Opti
   const hooks = initHooks<Model>(api);
   const komo = extend(api, hooks);
 
-  const shouldInit = (options.defaults !== initDefaults.current);
+  const canInit = (options.defaults !== initDefaults.current && api.mounted.current);
+
+  useEffect(() => {
+    api.mounted.current = true;
+    return () => api.mounted.current = false;
+  }, []);
 
   useEffect(() => {
 
-    if (initDefaults.current === null)
-      initDefaults.current = options.defaults;
+    initDefaults.current = options.defaults;
+    api.init(options.defaults as any);
 
-    if (!api.mounted.current) {
-      api.init();
-    }
-    else if (api.mounted.current) {
-      initDefaults.current = options.defaults;
-      api.init(options.defaults as any, true);
-    }
+    // if (initDefaults.current === null)
+    //   initDefaults.current = options.defaults;
+
+    // if (!api.mounted.current) {
+    //   api.init();
+    // }
+    // else if (api.mounted.current) {
+    //   initDefaults.current = options.defaults;
+    //   api.init(options.defaults as any, true);
+    // }
 
     return () => {
+      // initDefaults.current = null;
       api.mounted.current = false;
       [...api.fields.current.values()].forEach(e => {
         api.unregister(e);
       });
     };
 
-  }, [shouldInit]);
+  }, [canInit]);
 
   return komo as IKomo<Model>;
 

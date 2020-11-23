@@ -641,14 +641,12 @@ function initForm<T extends IModel>(options: IOptions<T>) {
           if (valErr)
             setError(valErr);
         }).finally(() => {
-          if (mounted.current)
-            render('form:effect:validate');
+          setTimeout(() => render('form:effect:validate'));
           mounted.current = true;
         });
     }
     else {
-      if (mounted.current)
-        render('form:effect');
+      setTimeout(() => render('form:effect'));
       mounted.current = true;
     }
 
@@ -866,7 +864,7 @@ export function initKomo<T extends IModel, D extends IModel = {}>(options?: Opti
   const hooks = initHooks<Model>(api);
   const komo = extend(api, hooks);
 
-  const shouldInit = ((options.defaults !== initDefaults.current) && api.mounted.current);
+  const shouldInit = (options.defaults !== initDefaults.current);
 
   useEffect(() => {
 

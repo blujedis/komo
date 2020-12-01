@@ -470,19 +470,11 @@ function initForm(options) {
                 if (valErr)
                     setError(valErr);
             }).finally(() => {
-                setTimeout(() => {
-                    hasInit.current = true;
-                    if (mounted.current)
-                        render('form:effect:validate');
-                });
+                hasInit.current = true;
             });
         }
         else {
-            setTimeout(() => {
-                hasInit.current = true;
-                if (mounted.current)
-                    render('form:effect');
-            });
+            hasInit.current = true;
         }
     }
     const update = (m, validate = false) => {
@@ -580,6 +572,7 @@ function initForm(options) {
     const api = {
         // Elements
         mounted,
+        hasInit,
         register: register_1.initElement(base),
         unregister,
         // Form
@@ -630,23 +623,12 @@ function initKomo(options) {
     api.setModel = (pathOrModel, value) => { setModel(pathOrModel, value); render(`model:set`); };
     const hooks = hooks_1.initHooks(api);
     const komo = utils_1.extend(api, hooks);
-    const canInit = (options.defaults !== initDefaults.current && api.mounted.current);
+    const canInit = options.defaults !== initDefaults.current;
     react_1.useEffect(() => {
+        const reinit = api.mounted.current ? true : false;
+        api.init(options.defaults, reinit);
         api.mounted.current = true;
-        return () => api.mounted.current = false;
-    }, []);
-    react_1.useEffect(() => {
         initDefaults.current = options.defaults;
-        api.init(options.defaults);
-        // if (initDefaults.current === null)
-        //   initDefaults.current = options.defaults;
-        // if (!api.mounted.current) {
-        //   api.init();
-        // }
-        // else if (api.mounted.current) {
-        //   initDefaults.current = options.defaults;
-        //   api.init(options.defaults as any, true);
-        // }
         return () => {
             // initDefaults.current = null;
             api.mounted.current = false;
@@ -655,6 +637,9 @@ function initKomo(options) {
             });
         };
     }, [canInit]);
+    react_1.useEffect(() => {
+        render();
+    }, [api.hasInit.current]);
     return komo;
 }
 exports.initKomo = initKomo;

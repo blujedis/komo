@@ -1,6 +1,6 @@
 {
   "name": "komo",
-  "version": "0.1.48",
+  "version": "0.1.49",
   "description": "React form helper",
   "main": "dist/index.js",
   "repository": "https://github.com/blujedis/komo.git",
@@ -37,6 +37,7 @@
     "README.md"
   ],
   "dependencies": {
+    "komo": "0.1.47",
     "lodash.get": "^4.4.2",
     "lodash.has": "^4.5.2",
     "lodash.isequal": "^4.5.0",

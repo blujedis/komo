@@ -4232,6 +4232,17 @@ kind-of@^6.0.0, kind-of@^6.0.2:
   resolved "http://blujedi.ddns.net:4873/kind-of/-/kind-of-6.0.3.tgz#07c05034a6c349fa06e24fa35aa76db4580ce4dd"
   integrity sha512-dcS1ul+9tmeD95T+x28/ehLgd9mENa3LsvDTtzm3vyBEO7RPptvAD+t44WVXaUjTBRcrpFeFlC8WCruUR456hw==
 
+komo@0.1.47:
+  version "0.1.47"
+  resolved "https://registry.yarnpkg.com/komo/-/komo-0.1.47.tgz#7f9d27799e7ea541a590a3ebe254d95910fdd214"
+  integrity sha512-hoByyKoZhlVP5XDTMBoDWM2VE/UxNru2HHZrqbirumREPMSpeYVPGUk4B3Z691E/Jpjk0dtyaisgmGPhJzfiZA==
+  dependencies:
+    lodash.get "^4.4.2"
+    lodash.has "^4.5.2"
+    lodash.isequal "^4.5.0"
+    lodash.set "^4.3.2"
+    yup "^0.29.1"
+
 leven@^3.1.0:
   version "3.1.0"
   resolved "http://blujedi.ddns.net:4873/leven/-/leven-3.1.0.tgz#77891de834064cccba82ae7842bb6b14a13ed7f2"

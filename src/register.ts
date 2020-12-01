@@ -874,6 +874,7 @@ export function initElement<T extends IModel>(api?: IKomoBase<T>) {
 
     }
 
+
     // if ((elementOrOptions as any).name === 'loginDisabled') {}
 
     if (!elementOrOptions || isRegistered(elementOrOptions as IRegisteredElement<T>))

@@ -716,7 +716,7 @@ export interface IUseFieldsHook<T extends IModel> {
 /**
  * Create useFields type returning IUseFields.
  */
-declare type BasePicked = 'render' | 'state' | 'getModel' | 'hasModel' | 'setModel' | 'validateModel' | 'validateModelAt' | 'setError' | 'removeError' | 'clearError' | 'getElement' | 'getDefault' | 'isTouched' | 'isDirty' | 'unregister' | 'fields' | 'mounted' | 'removeDirty' | 'removeTouched';
+declare type BasePicked = 'render' | 'state' | 'getModel' | 'hasModel' | 'setModel' | 'validateModel' | 'validateModelAt' | 'setError' | 'removeError' | 'clearError' | 'getElement' | 'getDefault' | 'isTouched' | 'isDirty' | 'unregister' | 'fields' | 'mounted' | 'removeDirty' | 'removeTouched' | 'hasInit';
 /**
  * The base API interface used by form field elements and form submit, reset handlers.
  */
@@ -750,8 +750,8 @@ export interface IKomoBase<T extends IModel> {
      */
     mounted: MutableRefObject<boolean>;
     /**
-    * React MutableRefObject indicating if form/Komo is mounted.
-    */
+     * React MutableRefObject indicating if form/Komo is mounted.
+     */
     hasInit: MutableRefObject<boolean>;
     /**
      * React MutableRefObject indicating the form submission count.

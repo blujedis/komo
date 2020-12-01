@@ -649,21 +649,11 @@ function initForm<T extends IModel>(options: IOptions<T>) {
           if (valErr)
             setError(valErr);
         }).finally(() => {
-          setTimeout(() => {
-            hasInit.current = true;
-            if (mounted.current)
-              render('form:effect:validate');
-          });
-
+          hasInit.current = true;
         });
     }
     else {
-      setTimeout(() => {
-        hasInit.current = true;
-        if (mounted.current)
-          render('form:effect');
-      });
-
+      hasInit.current = true;
     }
 
   }
@@ -810,6 +800,7 @@ function initForm<T extends IModel>(options: IOptions<T>) {
 
     // Elements
     mounted,
+    hasInit,
     register: initElement<T>(base as any),
     unregister,
 
@@ -880,28 +871,15 @@ export function initKomo<T extends IModel, D extends IModel = {}>(options?: Opti
   const hooks = initHooks<Model>(api);
   const komo = extend(api, hooks);
 
-  const canInit = (options.defaults !== initDefaults.current && api.mounted.current);
+  const canInit = options.defaults !== initDefaults.current;
 
   useEffect(() => {
+
+    const reinit = api.mounted.current ? true : false;
+
+    api.init(options.defaults as any, reinit);
     api.mounted.current = true;
-    return () => api.mounted.current = false;
-  }, []);
-
-  useEffect(() => {
-
     initDefaults.current = options.defaults;
-    api.init(options.defaults as any);
-
-    // if (initDefaults.current === null)
-    //   initDefaults.current = options.defaults;
-
-    // if (!api.mounted.current) {
-    //   api.init();
-    // }
-    // else if (api.mounted.current) {
-    //   initDefaults.current = options.defaults;
-    //   api.init(options.defaults as any, true);
-    // }
 
     return () => {
       // initDefaults.current = null;
@@ -912,6 +890,11 @@ export function initKomo<T extends IModel, D extends IModel = {}>(options?: Opti
     };
 
   }, [canInit]);
+
+  useEffect(() => {
+    render();
+  }, [api.hasInit.current]);
+
 
   return komo as IKomo<Model>;
 

@@ -618,6 +618,11 @@ function initKomo(options) {
     _options.normalizedDefaults = normalizedSchema.defaults;
     _options.promisifiedDefaults = validate_1.promisifyDefaults(options.defaults, normalizedSchema.defaults);
     _options.castHandler = validate_1.normalizeCasting(_options.castHandler);
+    function setInitDefaults(defs) {
+        if (!defs || !Object.keys(defs || {}).length)
+            initDefaults.current = null;
+        initDefaults.current = defs;
+    }
     const api = initForm(_options);
     // Override setModel so exposed method
     // causes render.
@@ -629,7 +634,6 @@ function initKomo(options) {
     react_1.useEffect(() => {
         const reinit = !api.hasInit.current ? false : true;
         api.init(options.defaults, reinit);
-        initDefaults.current = !options.defaults || !Object.keys(options.defaults || {}).length ? null : options.defaults;
         api.mounted.current = true;
         return () => {
             initDefaults.current = null;
@@ -641,10 +645,11 @@ function initKomo(options) {
     }, [canInit]);
     react_1.useEffect(() => {
         if (options.defaults !== initDefaults.current) {
-            [...api.fields.current.values()].forEach(element => {
+            render();
+            [...api.fields.current.values()].forEach((element) => {
                 element.reinit();
             });
-            initDefaults.current = options.defaults;
+            setInitDefaults(options.defaults);
             setTimeout(() => {
                 render();
             });

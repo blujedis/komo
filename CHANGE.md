@@ -3,6 +3,7 @@
 ## 12/3/2020
 
 - fix issue where valid form still tiggers invalid after blur of previously invalid field.
+- add prerender for full page post back to ensure defaults repaint.
 
 ## 11/30/2020
 

@@ -864,6 +864,12 @@ export function initKomo<T extends IModel, D extends IModel = {}>(options?: Opti
   _options.promisifiedDefaults = promisifyDefaults(options.defaults, normalizedSchema.defaults) as Promise<Model>;
   _options.castHandler = normalizeCasting(_options.castHandler);
 
+  function setInitDefaults(defs) {
+    if (!defs || !Object.keys(defs || {}).length)
+      initDefaults.current = null;
+    initDefaults.current = defs;
+  }
+
   const api = initForm<Model>(_options);
 
   // Override setModel so exposed method
@@ -882,8 +888,6 @@ export function initKomo<T extends IModel, D extends IModel = {}>(options?: Opti
     const reinit = !api.hasInit.current ? false : true;
 
     api.init(options.defaults as any, reinit);
-
-    initDefaults.current = !options.defaults || !Object.keys(options.defaults || {}).length ? null : options.defaults;
     api.mounted.current = true;
 
     return () => {
@@ -898,10 +902,11 @@ export function initKomo<T extends IModel, D extends IModel = {}>(options?: Opti
 
   useEffect(() => {
     if (options.defaults !== initDefaults.current) {
-      [...api.fields.current.values()].forEach(element => {
+      render();
+      [...api.fields.current.values()].forEach((element) => {
         element.reinit();
       });
-      initDefaults.current = options.defaults;
+      setInitDefaults(options.defaults);
       setTimeout(() => {
         render();
       });

@@ -102,7 +102,7 @@ function initApi(options) {
             defaults.current = current;
         }
     };
-    const syncDefaults = (defs, isReinit = false) => {
+    const syncDefaults = react_1.useCallback((defs, isReinit = false) => {
         defaults.current = utils_1.merge({ ...defaults.current }, { ...defs });
         const defKeys = Object.keys(defs);
         if (defKeys.length) {
@@ -126,7 +126,7 @@ function initApi(options) {
             }
             element.reinit();
         });
-    };
+    }, [options.defaults]);
     const setModel = react_1.useCallback((pathOrModel, value) => {
         if (!pathOrModel) {
             // tslint:disable-next-line: no-console
@@ -144,7 +144,7 @@ function initApi(options) {
             else
                 model.current = pathOrModel;
         }
-    }, [defaults.current, model]);
+    }, [model.current]);
     const hasModel = (path) => {
         return lodash_has_1.default(model.current, path);
     };
@@ -454,8 +454,9 @@ function initForm(options) {
         debug_init('mount:defaults', data);
         if (err && utils_1.isPlainObject(err))
             debug_init('err', err);
+        const sync = { ...err, ...data };
         // Err and data both 
-        syncDefaults({ ...err, ...data }, isReinit);
+        syncDefaults(sync, isReinit);
         // Init normalize the validation schema.
         if (!isReinit)
             initSchema();
@@ -599,7 +600,8 @@ function initForm(options) {
         removeError,
         clearError,
         removeDirty,
-        removeTouched
+        removeTouched,
+        syncDefaults
     };
     return api;
 }
@@ -623,14 +625,14 @@ function initKomo(options) {
     api.setModel = (pathOrModel, value) => { setModel(pathOrModel, value); render(`model:set`); };
     const hooks = hooks_1.initHooks(api);
     const komo = utils_1.extend(api, hooks);
-    const canInit = options.defaults !== initDefaults.current;
+    const canInit = initDefaults.current !== options.defaults;
     react_1.useEffect(() => {
-        const reinit = api.mounted.current ? true : false;
+        const reinit = !api.hasInit.current ? false : true;
         api.init(options.defaults, reinit);
+        initDefaults.current = !options.defaults || !Object.keys(options.defaults || {}).length ? null : options.defaults;
         api.mounted.current = true;
-        initDefaults.current = options.defaults;
         return () => {
-            // initDefaults.current = null;
+            initDefaults.current = null;
             api.mounted.current = false;
             [...api.fields.current.values()].forEach(e => {
                 api.unregister(e);
@@ -638,8 +640,16 @@ function initKomo(options) {
         };
     }, [canInit]);
     react_1.useEffect(() => {
-        render();
-    }, [api.hasInit.current]);
+        if (options.defaults !== initDefaults.current) {
+            [...api.fields.current.values()].forEach(element => {
+                element.reinit();
+            });
+            initDefaults.current = options.defaults;
+            setTimeout(() => {
+                render();
+            });
+        }
+    }, [api.fields.current, options.defaults]);
     return komo;
 }
 exports.initKomo = initKomo;

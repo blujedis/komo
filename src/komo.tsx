@@ -154,7 +154,7 @@ function initApi<T extends IModel>(options: IOptions<T>) {
 
   };
 
-  const syncDefaults = (defs: T, isReinit = false) => {
+  const syncDefaults = useCallback((defs: T, isReinit = false) => {
 
     defaults.current = merge({ ...defaults.current }, { ...defs });
 
@@ -190,7 +190,7 @@ function initApi<T extends IModel>(options: IOptions<T>) {
 
     });
 
-  };
+  }, [options.defaults]);
 
   const setModel = useCallback((pathOrModel: string | T, value?: any) => {
 
@@ -218,7 +218,7 @@ function initApi<T extends IModel>(options: IOptions<T>) {
 
     }
 
-  }, [defaults.current, model]);
+  }, [model.current]);
 
   const hasModel = (path?: string) => {
     return has(model.current, path);
@@ -611,6 +611,7 @@ function initForm<T extends IModel>(options: IOptions<T>) {
       defs = undefined;
     }
 
+
     if (mounted.current && !isReinit && hasInit.current)
       return;
 
@@ -630,8 +631,10 @@ function initForm<T extends IModel>(options: IOptions<T>) {
     if (err && isPlainObject(err))
       debug_init('err', err);
 
+    const sync = { ...err, ...data };
+
     // Err and data both 
-    syncDefaults({ ...err, ...data }, isReinit);
+    syncDefaults(sync, isReinit);
 
     // Init normalize the validation schema.
     if (!isReinit)
@@ -831,7 +834,8 @@ function initForm<T extends IModel>(options: IOptions<T>) {
     removeError,
     clearError,
     removeDirty,
-    removeTouched
+    removeTouched,
+    syncDefaults
 
   };
 
@@ -871,18 +875,19 @@ export function initKomo<T extends IModel, D extends IModel = {}>(options?: Opti
   const hooks = initHooks<Model>(api);
   const komo = extend(api, hooks);
 
-  const canInit = options.defaults !== initDefaults.current;
+  const canInit = initDefaults.current !== options.defaults;
 
   useEffect(() => {
 
-    const reinit = api.mounted.current ? true : false;
+    const reinit = !api.hasInit.current ? false : true;
 
     api.init(options.defaults as any, reinit);
+
+    initDefaults.current = !options.defaults || !Object.keys(options.defaults || {}).length ? null : options.defaults;
     api.mounted.current = true;
-    initDefaults.current = options.defaults;
 
     return () => {
-      // initDefaults.current = null;
+      initDefaults.current = null;
       api.mounted.current = false;
       [...api.fields.current.values()].forEach(e => {
         api.unregister(e);
@@ -892,8 +897,16 @@ export function initKomo<T extends IModel, D extends IModel = {}>(options?: Opti
   }, [canInit]);
 
   useEffect(() => {
-    render();
-  }, [api.hasInit.current]);
+    if (options.defaults !== initDefaults.current) {
+      [...api.fields.current.values()].forEach(element => {
+        element.reinit();
+      });
+      initDefaults.current = options.defaults;
+      setTimeout(() => {
+        render();
+      });
+    }
+  }, [api.fields.current, options.defaults]);
 
 
   return komo as IKomo<Model>;

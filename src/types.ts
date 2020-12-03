@@ -946,7 +946,7 @@ export interface IUseFieldsHook<T extends IModel> {
 //   <K extends KeyOf<T>>(...names: K[]) => IUseFields<K, IUseField<T>>;
 
 type BasePicked = 'render' | 'state' | 'getModel' | 'hasModel' | 'setModel' | 'validateModel' |
-  'validateModelAt' | 'setError' | 'removeError' | 'clearError' | 'getElement' | 'getDefault' |
+  'validateModelAt' | 'setError' | 'removeError' | 'clearError' | 'getElement' | 'getDefault' | 'syncDefaults' |
   'isTouched' | 'isDirty' | 'unregister' | 'fields' | 'mounted' | 'removeDirty' | 'removeTouched' | 'hasInit';
 
 /**

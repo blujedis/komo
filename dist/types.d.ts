@@ -716,7 +716,7 @@ export interface IUseFieldsHook<T extends IModel> {
 /**
  * Create useFields type returning IUseFields.
  */
-declare type BasePicked = 'render' | 'state' | 'getModel' | 'hasModel' | 'setModel' | 'validateModel' | 'validateModelAt' | 'setError' | 'removeError' | 'clearError' | 'getElement' | 'getDefault' | 'isTouched' | 'isDirty' | 'unregister' | 'fields' | 'mounted' | 'removeDirty' | 'removeTouched' | 'hasInit';
+declare type BasePicked = 'render' | 'state' | 'getModel' | 'hasModel' | 'setModel' | 'validateModel' | 'validateModelAt' | 'setError' | 'removeError' | 'clearError' | 'getElement' | 'getDefault' | 'syncDefaults' | 'isTouched' | 'isDirty' | 'unregister' | 'fields' | 'mounted' | 'removeDirty' | 'removeTouched' | 'hasInit';
 /**
  * The base API interface used by form field elements and form submit, reset handlers.
  */

@@ -524,7 +524,7 @@ export function initElement<T extends IModel>(api?: IKomoBase<T>) {
 
     element.validate = async () => {
       const currentValue = getModel(element.path);
-      return validateElementModel(element, currentValue) as PromiseStrict<Partial<T>, Partial<ErrorModel<T>>>;
+      return validateElementModel(element, currentValue, true) as PromiseStrict<Partial<T>, Partial<ErrorModel<T>>>;
     };
 
     // Reset the element to initial values.
@@ -547,7 +547,7 @@ export function initElement<T extends IModel>(api?: IKomoBase<T>) {
     };
 
     // Unbind any events and then unref
-    // the lement from any collections.
+    // the element from any collections.
     element.unregister = () => {
       unregister(element as IRegisteredElement<any>);
     };
@@ -626,7 +626,7 @@ export function initElement<T extends IModel>(api?: IKomoBase<T>) {
       const initVal = element.initValue(model.current);
 
       element.defaultValue = element.defaultValuePersist =
-        initVal || element.value || modelVal || '';
+        initVal || element.value || modelVal || element.defaultValue || '';
 
     }
 
@@ -790,6 +790,8 @@ export function initElement<T extends IModel>(api?: IKomoBase<T>) {
       // Add to current field to the collection.
       fields.current.add(element as IRegisteredElement<T>);
 
+      (element as any).__bound__ = true;
+
     }
 
     return element;
@@ -863,6 +865,8 @@ export function initElement<T extends IModel>(api?: IKomoBase<T>) {
         if (!normalized)
           return;
 
+
+
         if (_element.virtual)
           debug_register('virtual', _element.name, _element.path, _element.virtual);
         else
@@ -873,7 +877,6 @@ export function initElement<T extends IModel>(api?: IKomoBase<T>) {
       };
 
     }
-
 
     // if ((elementOrOptions as any).name === 'loginDisabled') {}
 

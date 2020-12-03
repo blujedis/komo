@@ -89,6 +89,7 @@ export function initHooks<T extends IModel>(komo: IKomo<T>) {
         if (isObject(elementOrOptions)) {
 
           elementOrOptions.__hooked__ = true;
+
           elementOrOptions.virtual = virtual;
 
           // Virtual props must use same name.

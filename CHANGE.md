@@ -1,5 +1,13 @@
 # Changes
 
+## 12/3/2020
+
+- fix issue where valid form still tiggers invalid after blur of previously invalid field.
+
+## 11/30/2020
+
+- fix SSR latency render and sync issues.
+
 ## 11/21/2020
 
 - more render fixes.

@@ -383,7 +383,7 @@ function initElement(api) {
         };
         element.validate = async () => {
             const currentValue = getModel(element.path);
-            return validateElementModel(element, currentValue);
+            return validateElementModel(element, currentValue, true);
         };
         // Reset the element to initial values.
         element.reset = () => {
@@ -402,7 +402,7 @@ function initElement(api) {
             });
         };
         // Unbind any events and then unref
-        // the lement from any collections.
+        // the element from any collections.
         element.unregister = () => {
             unregister(element);
         };
@@ -452,7 +452,7 @@ function initElement(api) {
         else {
             const initVal = element.initValue(model.current);
             element.defaultValue = element.defaultValuePersist =
-                initVal || element.value || modelVal || '';
+                initVal || element.value || modelVal || element.defaultValue || '';
         }
     }
     /**
@@ -571,6 +571,7 @@ function initElement(api) {
                 unregistered.current = unregistered.current.filter(k => k !== element.name);
             // Add to current field to the collection.
             fields.current.add(element);
+            element.__bound__ = true;
         }
         return element;
     }

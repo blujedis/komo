@@ -25,8 +25,8 @@ function initHooks(komo) {
             if (!element && state.mounted) {
                 if (!virtual && !unregistered)
                     // tslint:disable-next-line: no-console
-                    console.warn(unavailableMsg(prop));
-                return def;
+                    // console.warn(unavailableMsg(prop));
+                    return def;
             }
             if (utils_1.isUndefined(prop))
                 return element || def;

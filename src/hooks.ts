@@ -68,8 +68,8 @@ export function initHooks<T extends IModel>(komo: IKomo<T>) {
       if (!element && state.mounted) {
         if (!virtual && !unregistered)
           // tslint:disable-next-line: no-console
-          console.warn(unavailableMsg(prop));
-        return def;
+          // console.warn(unavailableMsg(prop));
+          return def;
       }
 
       if (isUndefined(prop))

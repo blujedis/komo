@@ -855,6 +855,7 @@ export function initKomo<T extends IModel, D extends IModel = {}>(options?: Opti
   type Model = T & Partial<D>;
 
   const initDefaults = useRef(null);
+  const hasReinit = useRef(false);
 
   const _options = { ...DEFAULTS, ...options } as IOptions<Model>;
 
@@ -884,9 +885,8 @@ export function initKomo<T extends IModel, D extends IModel = {}>(options?: Opti
   const canInit = initDefaults.current !== options.defaults;
 
   useEffect(() => {
-
     const reinit = !api.hasInit.current ? false : true;
-
+    setInitDefaults(options.defaults);
     api.init(options.defaults as any, reinit);
     api.mounted.current = true;
 
@@ -901,17 +901,23 @@ export function initKomo<T extends IModel, D extends IModel = {}>(options?: Opti
   }, [canInit]);
 
   useEffect(() => {
-    if (options.defaults !== initDefaults.current) {
+
+    if (canInit) {
+      setInitDefaults(options.defaults);
       render();
       [...api.fields.current.values()].forEach((element) => {
         element.reinit();
       });
-      setInitDefaults(options.defaults);
       setTimeout(() => {
+        hasReinit.current = true;
         render();
       });
     }
-  }, [api.fields.current, options.defaults]);
+
+    return () => {
+      hasReinit.current = false;
+    };
+  }, [api.fields.current, canInit, !hasReinit.current]);
 
 
   return komo as IKomo<Model>;

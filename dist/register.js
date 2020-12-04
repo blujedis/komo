@@ -241,7 +241,6 @@ function initElement(api) {
             modelValue = undefined;
         return new Promise((resolve, reject) => {
             modelValue = castHandler(modelValue, element.path, element.name);
-            ;
             // Set the model value.
             setModel(element.path, modelValue);
             resolve(modelValue);

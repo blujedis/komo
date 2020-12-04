@@ -612,6 +612,7 @@ function initForm(options) {
  */
 function initKomo(options) {
     const initDefaults = react_1.useRef(null);
+    const hasReinit = react_1.useRef(false);
     const _options = { ...DEFAULTS, ...options };
     const normalizedSchema = validate_1.parseDefaults(_options.validationSchema, _options.validationSchemaPurge);
     _options.validationSchema = normalizedSchema.schema;
@@ -633,6 +634,7 @@ function initKomo(options) {
     const canInit = initDefaults.current !== options.defaults;
     react_1.useEffect(() => {
         const reinit = !api.hasInit.current ? false : true;
+        setInitDefaults(options.defaults);
         api.init(options.defaults, reinit);
         api.mounted.current = true;
         return () => {
@@ -644,17 +646,21 @@ function initKomo(options) {
         };
     }, [canInit]);
     react_1.useEffect(() => {
-        if (options.defaults !== initDefaults.current) {
+        if (canInit) {
+            setInitDefaults(options.defaults);
             render();
             [...api.fields.current.values()].forEach((element) => {
                 element.reinit();
             });
-            setInitDefaults(options.defaults);
             setTimeout(() => {
+                hasReinit.current = true;
                 render();
             });
         }
-    }, [api.fields.current, options.defaults]);
+        return () => {
+            hasReinit.current = false;
+        };
+    }, [api.fields.current, canInit, !hasReinit.current]);
     return komo;
 }
 exports.initKomo = initKomo;

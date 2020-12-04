@@ -267,6 +267,7 @@ export function initElement<T extends IModel>(api?: IKomoBase<T>) {
         console.error(`Element "${element.name}" contains invalid typeof "${typeof value}", ${element.type} can only accept strings. Is this a virtual?`);
         return;
       }
+
     }
 
     // Don't set undefined unchecked
@@ -331,7 +332,7 @@ export function initElement<T extends IModel>(api?: IKomoBase<T>) {
     if (modelValue === '') modelValue = undefined;
 
     return new Promise((resolve, reject) => {
-      modelValue = castHandler(modelValue, element.path, element.name);;
+      modelValue = castHandler(modelValue, element.path, element.name);
 
       // Set the model value.
       setModel(element.path, modelValue);

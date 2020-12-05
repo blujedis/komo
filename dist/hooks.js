@@ -35,9 +35,11 @@ function initHooks(komo) {
         }
         const field = {
             register: (elementOrOptions) => {
+                if (elementOrOptions === null)
+                    return null;
                 // binds hidden prop so we know this 
                 // is a hooked element or virtual.
-                if (elementOrOptions !== null && utils_1.isObject(elementOrOptions) && !(elementOrOptions instanceof HTMLElement)) {
+                if (utils_1.isObject(elementOrOptions)) {
                     elementOrOptions.__hooked__ = true;
                     elementOrOptions.virtual = virtual;
                     // Virtual props must use same name.

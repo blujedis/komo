@@ -84,9 +84,12 @@ export function initHooks<T extends IModel>(komo: IKomo<T>) {
 
       register: (elementOrOptions) => {
 
+        if (elementOrOptions === null)
+          return null;
+
         // binds hidden prop so we know this 
         // is a hooked element or virtual.
-        if (elementOrOptions !== null && isObject(elementOrOptions) && !(elementOrOptions instanceof HTMLElement)) {
+        if (isObject(elementOrOptions)) {
 
           elementOrOptions.__hooked__ = true;
 

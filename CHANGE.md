@@ -1,5 +1,9 @@
 # Changes
 
+## 12/4/2020
+
+- fix issue where element is mounted as virtual in hook.
+
 ## 12/3/2020
 
 - fix issue where valid form still tiggers invalid after blur of previously invalid field.

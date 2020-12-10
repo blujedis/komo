@@ -611,19 +611,12 @@ function initForm(options) {
  * @param options the komo options.
  */
 function initKomo(options) {
-    const initDefaults = react_1.useRef(null);
-    const hasReinit = react_1.useRef(false);
     const _options = { ...DEFAULTS, ...options };
     const normalizedSchema = validate_1.parseDefaults(_options.validationSchema, _options.validationSchemaPurge);
     _options.validationSchema = normalizedSchema.schema;
     _options.normalizedDefaults = normalizedSchema.defaults;
     _options.promisifiedDefaults = validate_1.promisifyDefaults(options.defaults, normalizedSchema.defaults);
     _options.castHandler = validate_1.normalizeCasting(_options.castHandler);
-    function setInitDefaults(defs) {
-        if (!defs || !Object.keys(defs || {}).length)
-            initDefaults.current = null;
-        initDefaults.current = defs;
-    }
     const api = initForm(_options);
     // Override setModel so exposed method
     // causes render.
@@ -631,36 +624,34 @@ function initKomo(options) {
     api.setModel = (pathOrModel, value) => { setModel(pathOrModel, value); render(`model:set`); };
     const hooks = hooks_1.initHooks(api);
     const komo = utils_1.extend(api, hooks);
-    const canInit = initDefaults.current !== options.defaults;
     react_1.useEffect(() => {
-        const reinit = !api.hasInit.current ? false : true;
-        setInitDefaults(options.defaults);
+        const reinit = !api.mounted.current ? false : true;
         api.init(options.defaults, reinit);
         api.mounted.current = true;
+        setTimeout(() => {
+            render();
+        });
         return () => {
-            initDefaults.current = null;
             api.mounted.current = false;
             [...api.fields.current.values()].forEach(e => {
                 api.unregister(e);
             });
         };
-    }, [canInit]);
-    react_1.useEffect(() => {
-        if (canInit) {
-            setInitDefaults(options.defaults);
-            render();
-            [...api.fields.current.values()].forEach((element) => {
-                element.reinit();
-            });
-            setTimeout(() => {
-                hasReinit.current = true;
-                render();
-            });
-        }
-        return () => {
-            hasReinit.current = false;
-        };
-    }, [api.fields.current, canInit, !hasReinit.current]);
+    }, [options.defaults]);
+    // useEffect(() => {
+    //   initDefaults.current = options.defaults;
+    //   render();
+    //   [...api.fields.current.values()].forEach((element) => {
+    //     element.reinit();
+    //   });
+    //   setTimeout(() => {
+    //     hasReinit.current = true;
+    //     render();
+    //   });
+    //   return () => {
+    //     hasReinit.current = false;
+    //   };
+    // }, [api.fields.current, canInit, !hasReinit.current]);
     return komo;
 }
 exports.initKomo = initKomo;

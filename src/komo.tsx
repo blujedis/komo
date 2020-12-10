@@ -854,9 +854,6 @@ export function initKomo<T extends IModel, D extends IModel = {}>(options?: Opti
 
   type Model = T & Partial<D>;
 
-  const initDefaults = useRef(null);
-  const hasReinit = useRef(false);
-
   const _options = { ...DEFAULTS, ...options } as IOptions<Model>;
 
   const normalizedSchema = parseSchema(_options.validationSchema, _options.validationSchemaPurge);
@@ -864,12 +861,6 @@ export function initKomo<T extends IModel, D extends IModel = {}>(options?: Opti
   _options.normalizedDefaults = normalizedSchema.defaults;
   _options.promisifiedDefaults = promisifyDefaults(options.defaults, normalizedSchema.defaults) as Promise<Model>;
   _options.castHandler = normalizeCasting(_options.castHandler);
-
-  function setInitDefaults(defs) {
-    if (!defs || !Object.keys(defs || {}).length)
-      initDefaults.current = null;
-    initDefaults.current = defs;
-  }
 
   const api = initForm<Model>(_options);
 
@@ -882,42 +873,49 @@ export function initKomo<T extends IModel, D extends IModel = {}>(options?: Opti
   const hooks = initHooks<Model>(api);
   const komo = extend(api, hooks);
 
-  const canInit = initDefaults.current !== options.defaults;
-
   useEffect(() => {
-    const reinit = !api.hasInit.current ? false : true;
-    setInitDefaults(options.defaults);
+
+    const reinit = !api.mounted.current ? false : true;
+
     api.init(options.defaults as any, reinit);
     api.mounted.current = true;
 
+    setTimeout(() => {
+      render();
+    });
+
     return () => {
-      initDefaults.current = null;
+
       api.mounted.current = false;
+
       [...api.fields.current.values()].forEach(e => {
         api.unregister(e);
       });
+
     };
 
-  }, [canInit]);
+  }, [options.defaults]);
 
-  useEffect(() => {
+  // useEffect(() => {
 
-    if (canInit) {
-      setInitDefaults(options.defaults);
-      render();
-      [...api.fields.current.values()].forEach((element) => {
-        element.reinit();
-      });
-      setTimeout(() => {
-        hasReinit.current = true;
-        render();
-      });
-    }
 
-    return () => {
-      hasReinit.current = false;
-    };
-  }, [api.fields.current, canInit, !hasReinit.current]);
+
+  //   initDefaults.current = options.defaults;
+
+  //   render();
+  //   [...api.fields.current.values()].forEach((element) => {
+  //     element.reinit();
+  //   });
+
+  //   setTimeout(() => {
+  //     hasReinit.current = true;
+  //     render();
+  //   });
+  //   return () => {
+  //     hasReinit.current = false;
+  //   };
+
+  // }, [api.fields.current, canInit, !hasReinit.current]);
 
 
   return komo as IKomo<Model>;

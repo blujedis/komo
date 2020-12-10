@@ -3,6 +3,7 @@
 ## 12/4/2020
 
 - fix issue where element is mounted as virtual in hook.
+- fix multiselect binding.
 
 ## 12/3/2020
 

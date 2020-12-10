@@ -436,7 +436,9 @@ function initElement(api) {
         }
         else if (element.multiple) {
             const initVal = element.initValue(model.current);
-            let arr = element.defaultValue = initVal || element.value || modelVal || [];
+            let arr = element.defaultValue = initVal || element.value || [];
+            if (!arr || !arr.length)
+                arr = modelVal || [];
             if (!Array.isArray(arr))
                 arr = [element.defaultValue];
             arr = arr.filter(v => !utils_1.isUndefined(v));
@@ -546,8 +548,9 @@ function initElement(api) {
         if (element.type && element.type.startsWith('select')) {
             // @ts-ignore
             const initOpts = element.__init_options__;
-            if (!initOpts || initOpts && typeof initOpts.enableChangeEvents === 'undefined')
+            if (!initOpts || initOpts && typeof initOpts.enableChangeEvents === 'undefined') {
                 element.enableChangeEvents = true;
+            }
         }
         // Normalizes the element and defaults for use with Komo.
         initDefaults(element);
@@ -569,6 +572,8 @@ function initElement(api) {
             if (unregistered.current.includes(element.name))
                 unregistered.current = unregistered.current.filter(k => k !== element.name);
             // Add to current field to the collection.
+            if (fields.current.has(element))
+                fields.current.delete(element);
             fields.current.add(element);
             element.__bound__ = true;
         }
